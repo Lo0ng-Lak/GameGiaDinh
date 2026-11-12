@@ -43,6 +43,18 @@ npm run preview
 
 `npm run build` tạo thư mục `dist/`; `npm run preview` chạy thử bản `dist/` đó trên máy.
 
+## Chơi trên web (GitHub Pages)
+
+Game được deploy tự động lên GitHub Pages mỗi lần push code lên nhánh `main` (workflow `.github/workflows/deploy.yml`: build rồi deploy, không cần làm gì thêm):
+
+```
+https://lo0ng-lak.github.io/GameGiaDinh/
+```
+
+Mở link trên máy tính hoặc điện thoại là chơi được ngay, không cần cài Node hay chạy `npm run dev`.
+
+**Lưu ý về dữ liệu lưu game:** game lưu vào localStorage của trình duyệt, gắn với từng địa chỉ web (origin). Bản trên GitHub Pages là một địa chỉ khác với `localhost:5173`, nên **bản Pages bắt đầu với dữ liệu lưu mới (trống)** — dữ liệu lưu cũ trên localhost vẫn còn nguyên trong trình duyệt, không bị xóa, chỉ là hai bản lưu riêng biệt ở hai địa chỉ khác nhau. Muốn chơi tiếp tiến trình cũ thì vẫn chạy `npm run dev` trên máy như trước.
+
 ## Cấu trúc dự án
 
 ```
