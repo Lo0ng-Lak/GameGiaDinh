@@ -16,6 +16,9 @@ import { sndCoin } from '../world/sound';
       { id: "harvest", targets: [3, 5, 7],    txt: function (n) { return "Thu hoạch " + n + " món nông sản"; },        get: function () { return G.harvestedToday; }, reward: { money: 12000, stars: 1 } },
       { id: "plant",   targets: [3, 4, 6],    txt: function (n) { return "Gieo trồng " + n + " luống rau"; },          get: function () { return G.plantedToday; },   reward: { money: 9000, stars: 0 } },
       { id: "water",   targets: [4, 6, 8],    txt: function (n) { return "Tưới nước " + n + " lượt luống"; },          get: function () { return G.wateredToday; },   reward: { money: 8000, stars: 0 } },
+      /* GIAI ĐOẠN 3: chợ & trường */
+      { id: "market",  targets: [30000, 50000], txt: function (n) { return "Bán nông sản ở chợ được " + fmt(n); },      get: function () { return G.marketSoldToday; },  reward: { money: 0, stars: 1 } },
+      { id: "teacher", targets: [2],            txt: function () { return "Mang 2 trứng gà cho cô giáo"; },             get: function () { return G.teacherEggsToday; }, reward: { money: 15000, stars: 1 } },
       { id: "sell",    targets: [30000, 50000, 80000], txt: function (n) { return "Bán nông sản được " + fmt(n); },   get: function () { return G.earnedToday; },    reward: { money: 0, stars: 1 } },
       { id: "eggs",    targets: [3, 5],       txt: function (n) { return "Nhặt " + n + " trứng gà"; },                 get: function () { return G.eggsToday; },      reward: { money: 6000, stars: 0 } },
       { id: "fish",    targets: [1, 2],       txt: function (n) { return "Câu " + n + " con cá rô ở ao"; },            get: function () { return G.fishToday; },      reward: { money: 10000, stars: 0 } },
@@ -31,7 +34,10 @@ import { sndCoin } from '../world/sound';
     export function rollQuests() {
       var pool = QUEST_DEFS.slice();
       // Việc đưa con đi học chỉ có ý nghĩa buổi sáng — luôn ưu tiên có mặt, thêm 2 việc ngẫu nhiên
-      var picked = [pool.splice(8, 1)[0]];
+      // (tìm theo id, không theo chỉ số — danh sách việc dài thêm theo từng giai đoạn)
+      var si = -1;
+      for (var i = 0; i < pool.length; i++) if (pool[i].id === "school") { si = i; break; }
+      var picked = si >= 0 ? [pool.splice(si, 1)[0]] : [];
       // PHASE 2: việc chăn nuôi / cây ăn quả chỉ giao khi nhà đã có vật nuôi, cây trồng đó
       pool = pool.filter(function (d) {
         if (d.id === "duckeggs" && !G.ducks.owned) return false;

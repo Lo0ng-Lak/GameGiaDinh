@@ -9,7 +9,7 @@ test là hàm thật, không phải bản sao.
 
 ```sh
 npm install            # lần đầu (cần esbuild — đã có qua vite)
-node test/save-shopping.test.mjs   # 76 kiểm tra, tự build bundle rồi chạy
+node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi chạy
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
 ```
 
@@ -30,7 +30,7 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
 
 ## Cái gì đã được test thật
 
-`test/save-shopping.test.mjs` (76 kiểm tra, đều đậu):
+`test/save-shopping.test.mjs` (124 kiểm tra, đều đậu):
 - **Save/load:** lưu trạng thái có tivi, cây giống, cây xoài đang lớn, vịt, 2
   lợn con, 1 luống rau → xóa sạch → tải lại → mọi thứ khớp. Save cũ Phase 2
   (không có `ripen`, lợn dùng `growDays` chung) vẫn đọc được, tự chuyển sang
@@ -45,6 +45,17 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
   bán 120.000đ; 1 con lãi ròng đúng 25.000đ.
 - **Qua đêm:** nút "Ngày mới" thật — sang ngày, trừ sinh hoạt 12–16k, cây lớn
   thêm 1/5, luống lớn thêm 0.25, quay giá, nhiệm vụ mới 3 việc.
+- **Làng (Giai đoạn 3, thêm 48 kiểm tra):** lịch sinh hoạt theo giờ đúng
+  (cô Ba 5:30 ở nhà, 8:00 ở sạp, 18:00 về nhà; cô giáo 10:00 ở sân trường;
+  bác Hai 8:00 ở ruộng; ông Tư 10:00 ở tiệm); dân làng đi lại về đúng phía
+  mục tiêu; giá chợ cô Ba +10%, anh Đức +5% và cao hơn giá sạp làng; bán 5
+  cải cho cô Ba nhận đúng tiền, giỏ hết, ghi vào `marketSoldToday`; cô Ba
+  không mua cá; mua bánh đậu xanh trừ 8.000đ +1 sao, mua lần 2 cùng ngày
+  không được, không đủ tiền mua gạo thì không mua; chào bác Hai lần đầu +1
+  sao, chào lại không tăng; đưa cô giáo 2 trứng gà: chưa đủ 2 thì không giao,
+  đủ thì giao xong hết trứng, nhiệm vụ xong, thưởng 15.000đ; `rollQuests` 5
+  lần đều có việc đưa bé đi học (bug chỉ số 8 cũ đã sửa); bảng sạp chợ / tạp
+  hóa mở được không lỗi; qua đêm reset hết số liệu làng.
 
 ## Cái gì KHÔNG test được ở đây
 

@@ -60,6 +60,7 @@ import { stopBikeSound } from '../world/sound';
         '<div class="sum-row"><span>Đưa con đi học</span><b>' + schoolTxt + '</b></div>' +
         '<div class="sum-row"><span>Trộm lẻn vào sân</span><b>' + (G.thief.result || "Không có, nhà yên ổn") + '</b></div>' +
         '<div class="sum-row"><span>Khách qua nhà</span><b>' + (G.visit.talked ? "Bà Tư ghé chơi, biếu hạt giống" : "Không có ai ghé") + '</b></div>' +
+        '<div class="sum-row"><span>Làng xóm &amp; chợ</span><b>' + (G.greetedToday > 0 ? "Chào " + G.greetedToday + " người" : "Chưa chào ai") + ' · Bán chợ ' + fmt(G.marketSoldToday) + (G.teacherEggsToday > 0 ? ' · Đưa cô giáo ' + G.teacherEggsToday + ' trứng' : '') + '</b></div>' +
         '<div class="sum-row"><span>Thời tiết</span><b>' + (G.rainedToday ? "Có mưa rào, rau được trời tưới" : "Nắng cả ngày") + '</b></div>' +
         '<div class="sum-row"><span>Tiền hiện có</span><b>' + fmt(G.money) + '</b></div>';
       dayOverlay.classList.add("show");
@@ -71,6 +72,8 @@ import { stopBikeSound } from '../world/sound';
       G.eggsToday = 0; G.fishToday = 0; G.wateredToday = 0; G.bananaToday = 0; G.livingCost = 0;
       // PHASE 2: reset số liệu ngày, quay giá bán mới, cây ăn quả ra trái mới, vịt/lợn chờ ngày mới
       G.boughtToday = 0; G.duckEggsToday = 0; G.fruitToday = 0; G.pigsSoldToday = 0; G.spentToday = 0;
+      // PHASE 3: reset số liệu làng — chào hỏi, bán chợ, trứng cho cô giáo, đồ tạp hóa
+      G.greetedToday = 0; G.greetedIds = {}; G.marketSoldToday = 0; G.teacherEggsToday = 0; G.groceryToday = {};
       rollPrices();
       G.ducks.fed = false; G.ducks.ready = 0; G.ducks.timer = 0; refreshDuckEggs();
       G.pigs.fedToday = false; refreshPigs();

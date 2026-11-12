@@ -232,6 +232,98 @@ check('quay giá bán mới (priceDay có dữ liệu)', Object.keys(G.priceDay)
 eq('nhiệm vụ mới: đúng 3 việc', G.quests.length, 3);
 eq('hết ngày: dayOver reset', G.dayOver, false);
 
+// ================= G. Làng (Phase 3): lịch dân làng, chợ, tạp hóa, cô giáo =================
+section('G. Làng (Phase 3): lịch dân làng, chợ, tạp hóa, cô giáo');
+resetState();
+G.money = 200000;
+// --- Lịch sinh hoạt theo giờ ---
+const ba = g.villagerById('ba');
+eq('cô Ba 5:30 ở nhà (H2)', g.currentSegment(ba, 330).at, g.HOUSE_POS.h2);
+eq('cô Ba 8:00 đang bán ở sạp', g.currentSegment(ba, 480).stall, 'ba');
+eq('cô Ba 18:00 về nhà', g.currentSegment(ba, 1080).at, g.HOUSE_POS.h2);
+eq('cô giáo 10:00 ở sân trường', g.currentSegment(g.villagerById('giao'), 600).at, g.SCHOOL_YARD_SPOT);
+eq('bác Hai 8:00 ở ruộng', g.currentSegment(g.villagerById('hai'), 480).at, g.FIELD_SPOT);
+eq('ông Tư 10:00 ở tiệm tạp hóa', g.currentSegment(g.villagerById('tu'), 600).at, g.GROCERY_FRONT);
+G.minutes = 480;
+eq('cô Ba 8:00 đang ở sạp (villagerAtStall)', g.villagerAtStall(ba), 'ba');
+G.minutes = 330;
+eq('cô Ba 5:30 chưa ra sạp', g.villagerAtStall(ba), null);
+// --- Dân làng đi lại theo lịch ---
+G.minutes = 480; G.dayOver = false;
+const baMesh = g.villagerMeshes['ba'];
+const before = { x: baMesh.position.x, z: baMesh.position.z };
+const distBefore = Math.hypot(before.x - (-6), before.z - (-10.2));
+g.updateVillagers(2, 100);
+const distAfter = Math.hypot(baMesh.position.x - (-6), baMesh.position.z - (-10.2));
+check('cô Ba đi về phía sạp (8:00)', distAfter < distBefore, 'trước ' + distBefore.toFixed(2) + 'm, sau ' + distAfter.toFixed(2) + 'm');
+// --- Bán ở chợ: giá cao hơn sạp cô Tư ---
+G.priceDay = { cai: 1.0, cachua: 1.0, bido: 1.0, ngo: 1.0, trung: 1.0, ca: 1.0, chuoi: 1.0, trungvit: 1.0, xoai: 1.0, oi: 1.0 };
+eq('giá chợ cô Ba = giá sạp +10%', g.marketPriceOf('ba', 'cai'), Math.round(g.sellPriceOf('cai') * 1.1 / 100) * 100);
+eq('giá chợ anh Đức = giá sạp +5%', g.marketPriceOf('duc', 'cai'), Math.round(g.sellPriceOf('cai') * 1.05 / 100) * 100);
+check('giá chợ cao hơn giá sạp làng', g.marketPriceOf('ba', 'cai') > g.sellPriceOf('cai'));
+G.produce.cai = 5; G.money = 100000;
+const mBefore = G.money;
+const sold = g.sellToVendor('ba', 'cai');
+eq('bán 5 cải cho cô Ba: tiền nhận đúng', sold, 5 * g.marketPriceOf('ba', 'cai'));
+eq('bán xong giỏ hết cải', G.produce.cai, 0);
+eq('tiền tăng đúng số đã bán', G.money, mBefore + sold);
+eq('tiền bán chợ ghi vào marketSoldToday', G.marketSoldToday, sold);
+eq('cô Ba không mua cá (sạp rau)', g.sellToVendor('ba', 'ca'), 0);
+eq('bán khi giỏ trống = 0', g.sellToVendor('ba', 'cai'), 0);
+// --- Tiệm tạp hóa ---
+G.money = 100000; const stBefore = G.stars;
+check('mua bánh đậu xanh được', g.buyGrocery('cake') === true);
+eq('mua bánh trừ 8.000đ', G.money, 92000);
+eq('mua bánh +1 sao', G.stars, stBefore + 1);
+eq('mua rồi ghi đã mua hôm nay', G.groceryToday.cake, true);
+check('mua bánh lần 2 cùng ngày không được', g.buyGrocery('cake') === false);
+G.money = 1000;
+check('không đủ tiền mua bao gạo', g.buyGrocery('rice') === false);
+// --- Chào hỏi hàng xóm ---
+G.stars = 0;
+g.greetVillager('hai');
+eq('chào bác Hai lần đầu: +1 người', G.greetedToday, 1);
+eq('chào lần đầu: +1 sao', G.stars, 1);
+g.greetVillager('hai');
+eq('chào lại cùng ngày: không tăng', G.greetedToday, 1);
+eq('chào lại cùng ngày: không thêm sao', G.stars, 1);
+g.greetVillager('nam');
+eq('chào bà Năm: 2 người', G.greetedToday, 2);
+// --- Đưa trứng cho cô giáo (nhiệm vụ teacher) ---
+const defT = g.QUEST_DEFS.find(d => d.id === 'teacher');
+check('có nhiệm vụ teacher trong QUEST_DEFS', !!defT);
+check('có nhiệm vụ market trong QUEST_DEFS', !!g.QUEST_DEFS.find(d => d.id === 'market'));
+G.quests = [{ id: 'teacher', target: 2, text: defT.txt(), reward: defT.reward, done: false }];
+G.produce.trung = 1;
+check('chưa đủ 2 trứng thì không giao được', g.giveToTeacher() === false);
+eq('chưa giao: trứng vẫn còn', G.produce.trung, 1);
+G.produce.trung = 2; G.money = 50000;
+check('đủ 2 trứng thì giao được', g.giveToTeacher() === true);
+eq('giao xong giỏ hết trứng', G.produce.trung, 0);
+eq('giao xong ghi teacherEggsToday=2', G.teacherEggsToday, 2);
+eq('nhiệm vụ teacher xong', G.quests[0].done, true);
+eq('thưởng nhiệm vụ teacher: +15.000đ', G.money, 65000);
+check('giao lần 2 cùng ngày không được (việc đã xong)', g.giveToTeacher() === false);
+// --- rollQuests luôn có việc đưa bé An đi học (lỗi chỉ số 8 cũ đã sửa) ---
+let schoolAlways = true;
+for (let i = 0; i < 5; i++) { g.rollQuests(); if (!G.quests.some(q => q.id === 'school')) schoolAlways = false; }
+check('rollQuests 5 lần đều có việc đưa bé đi học', schoolAlways);
+eq('mỗi sáng đúng 3 việc', G.quests.length, 3);
+// --- Bảng sạp chợ / tạp hóa mở được, không lỗi ---
+G.produce.cachua = 3; G.money = 100000;
+g.openVendorPanel('ba');
+check('mở bảng sạp cô Ba có hàng để bán', globalThis.document.getElementById('market-rows').children.length > 0);
+g.openGroceryPanel();
+check('mở bảng tiệm tạp hóa có 3 món', globalThis.document.getElementById('market-rows').children.length >= 3);
+// --- Qua đêm reset số liệu làng ---
+G.greetedToday = 2; G.greetedIds = { hai: true, nam: true }; G.marketSoldToday = 50000; G.teacherEggsToday = 2; G.groceryToday = { cake: true };
+g.endDay(); nextDay();
+eq('qua đêm: chào hỏi reset', G.greetedToday, 0);
+eq('qua đêm: danh sách đã chào reset', G.greetedIds, {});
+eq('qua đêm: tiền bán chợ reset', G.marketSoldToday, 0);
+eq('qua đêm: trứng cho cô giáo reset', G.teacherEggsToday, 0);
+eq('qua đêm: đồ tạp hóa reset', G.groceryToday, {});
+
 console.log('\n================ KẾT QUẢ ================');
 console.log(`PASS: ${pass} | FAIL: ${fail}`);
 if (fail > 0) { console.log('Thất bại: ' + failures.join(', ')); process.exit(1); }

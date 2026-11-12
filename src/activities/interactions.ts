@@ -11,6 +11,9 @@ import { endDay } from '../core/day';
 import { saveGame } from '../core/save';
 import { G, fmt, goodName, produceTotal } from '../core/state';
 import { openShop } from '../economy/shop';
+import { openVendorPanel, openGroceryPanel, VENDORS } from '../economy/market';
+import { VILLAGERS, villagerMeshes, villagerAtStall, villagerById, greetVillager, giveToTeacher } from '../npc/villagers';
+import { GROCERY_FRONT, MARKET_STALLS, stallFront } from '../world/village';
 import { addMemory } from '../events/quests';
 import { drawCrop, plots } from '../farming/garden';
 import { TREE_SPOTS, drawTree, waterTree, harvestTree } from '../farming/trees';
@@ -55,6 +58,24 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
       if (G.visit.state === "here") consider("visitor", visitor.position.x, visitor.position.z, 2.4);
       if (G.childState === "home") consider("child", child.position.x, child.position.z, 2.4);
       if (G.childState === "play") consider("childplay", child.position.x, child.position.z, 2.4);
+      // PHASE 3: dân làng — người bán đang đứng sạp thì mở sạp chợ, ông Tư mở
+      // tiệm tạp hóa khi tiệm mở cửa, cô giáo nhận trứng gà, còn lại thì chào hỏi
+      VILLAGERS.forEach(function (v) {
+        var mesh = villagerMeshes[v.id];
+        if (!mesh) return;
+        var stall = villagerAtStall(v);
+        if (stall) {
+          var s = null;
+          MARKET_STALLS.forEach(function (ms) { if (ms.vendor === stall) s = ms; });
+          if (s) { var f = stallFront(s); consider("vendor", f.x, f.z, 2.8, { vendor: stall, villagerId: v.id }); }
+        } else if (v.id === "tu" && Math.abs(mesh.position.z - GROCERY_FRONT.z) < 0.5) {
+          consider("grocer", mesh.position.x, mesh.position.z, 2.6, { villagerId: v.id });
+        } else if (v.teacher) {
+          consider("teacher", mesh.position.x, mesh.position.z, 2.6, { villagerId: v.id });
+        } else {
+          consider("villager", mesh.position.x, mesh.position.z, 2.4, { villagerId: v.id });
+        }
+      });
       if (!best) return null;
       // Nhãn theo ngữ cảnh
       if (best.kind === "plot") {
@@ -113,6 +134,18 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
       else if (best.kind === "husband") best.label = "Nói chuyện với anh";
       else if (best.kind === "thief") best.label = "Đuổi trộm ra khỏi sân!";
       else if (best.kind === "visitor") best.label = G.tuQuest ? "Nói chuyện với bà Tư (bà đang nhờ mua hộ đồ)" : G.visit.talked ? "Chào bà Tư hàng xóm" : "Nói chuyện với bà Tư hàng xóm";
+      else if (best.kind === "vendor") best.label = "Bán hàng cho " + VENDORS[best.vendor].name + " (giá chợ cao hơn sạp làng)";
+      else if (best.kind === "grocer") best.label = "Mua đồ nhà ở tiệm tạp hóa ông Tư";
+      else if (best.kind === "teacher") {
+        var tq = null; G.quests.forEach(function (qq) { if (qq.id === "teacher") tq = qq; });
+        if (tq && !tq.done && (G.produce.trung || 0) >= 2) best.label = "Đưa cô giáo 2 trứng gà cho lớp";
+        else if (tq && !tq.done) best.label = "Nói chuyện với cô giáo (lớp cần 2 trứng gà)";
+        else best.label = "Nói chuyện với cô giáo";
+      }
+      else if (best.kind === "villager") {
+        var vd = villagerById(best.villagerId);
+        best.label = vd ? "Chào hỏi " + vd.name : "Chào hỏi hàng xóm";
+      }
       return best;
     }
 
@@ -405,6 +438,18 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         } else {
           toast("Lợn đã ăn no rồi — mai cho ăn tiếp, mỗi con ăn đủ " + LIVESTOCK.piglet.growDays + " hôm là lớn.");
         }
+      } else if (t.kind === "vendor") {
+        // PHASE 3: bán nông sản cho sạp chợ — giá chợ cao hơn sạp cô Tư
+        openVendorPanel(t.vendor);
+      } else if (t.kind === "grocer") {
+        // PHASE 3: tiệm tạp hóa — đồ dùng cho nhà, mỗi món +1 sao, 1 lần/ngày
+        openGroceryPanel();
+      } else if (t.kind === "teacher") {
+        // PHASE 3: đưa cô giáo trứng gà cho lớp (nhiệm vụ "teacher")
+        giveToTeacher();
+      } else if (t.kind === "villager") {
+        // PHASE 3: chào hỏi hàng xóm — lần đầu mỗi người mỗi ngày +1 sao
+        greetVillager(t.villagerId);
       }
       updateHUD();
     }

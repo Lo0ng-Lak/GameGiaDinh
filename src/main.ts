@@ -28,6 +28,8 @@ import { child, childHome, childParts } from './npc/child';
 import { husband, husbandParts, husbandPath } from './npc/husband';
 import { thief, thiefParts, thiefPath } from './npc/thief';
 import { visitPath, visitor, visitorParts } from './npc/visitor';
+import { updateVillagers } from './npc/villagers'; // PHASE 3: dân làng đi lại theo lịch sinh hoạt
+import { SCHOOL_PLAY_SPOT } from './world/village'; // PHASE 3: sân trường bé An ra chơi
 import { collide, finePointer, joyVec, keys, mouseLocked, overlayOpen, player, tryLock } from './player/player';
 import { el, objectiveText, toast, updateHUD } from './ui/hud';
 import { gatePos, schoolPos } from './world/buildings';
@@ -237,7 +239,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
             { x: window.__dogHome.x + 0.9, z: window.__dogHome.z + 0.4 },             // chơi với chó mực
             { x: 5.5, z: 5.5 },                                                        // đầu vườn rau
             { x: 11.5, z: 4.0 },                                                       // bờ ao ngắm cá
-            { x: -1.2, z: 4.2 }                                                        // gần chuồng gà xem gà
+            { x: -1.2, z: 4.2 },                                                       // gần chuồng gà xem gà
+            { x: SCHOOL_PLAY_SPOT.x, z: SCHOOL_PLAY_SPOT.z }                          // PHASE 3: ra sân trường chơi
           ];
           if (window.__bananas && window.__bananas[0]) spots.push({ x: window.__bananas[0].x + 1, z: window.__bananas[0].z + 1 });
           var homework = G.minutes >= 1110;   // 18:30 trở đi: về hiên ngồi học bài
@@ -283,6 +286,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           child.position.y = Math.abs(Math.sin(tNow * 2.2)) * 0.03;
         }
       }
+      // PHASE 3: dân làng đi lại theo lịch sinh hoạt — nhà, ruộng, chợ, trường
+      updateVillagers(dt, tNow);
       if (window.__gateRing) window.__gateRing.material.opacity = G.childState === "follow" ? 0.65 + Math.sin(tNow * 4) * 0.3 : 0.3;
       if (window.__flag) window.__flag.rotation.y = Math.sin(tNow * 3) * 0.25;
       if (window.__cloths) window.__cloths.forEach(function (c, i) { c.rotation.x = Math.sin(tNow * (1.1 + G.wind * 1.5) + i * 1.3) * (0.05 + G.wind * 0.17); });

@@ -19,3 +19,6 @@ export { feedDucks, collectDuckEggs, feedPigs, sellGrownPig, refreshPigs, refres
 export { plots, drawCrop, ensureExtraPlots } from '../src/farming/garden';
 export { checkQuestsAchievements, rollQuests, QUEST_DEFS, ACHIEVEMENTS } from '../src/events/quests';
 export { updateHUD } from '../src/ui/hud';
+export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes } from '../src/npc/villagers';
+export { VENDORS, GROCERY, marketPriceOf, sellToVendor, buyGrocery, vendorBuyableCount, openVendorPanel, openGroceryPanel } from '../src/economy/market';
+export { MARKET_STALLS, GROCERY_POS, GROCERY_FRONT, HOUSE_POS, SCHOOL_YARD_SPOT, SCHOOL_PLAY_SPOT, FIELD_SPOT, POND_SPOT, stallFront } from '../src/world/village';

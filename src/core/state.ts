@@ -68,7 +68,12 @@ import { CROPS, GOODS, priceOf } from './data';
       ducks: { owned: false, fed: false, timer: 0, ready: 0 },
       pigs: { count: 0, grown: 0, fedToday: false, days: [] },
       priceDay: {},
-      boughtToday: 0, duckEggsToday: 0, fruitToday: 0, pigsSoldToday: 0, spentToday: 0
+      boughtToday: 0, duckEggsToday: 0, fruitToday: 0, pigsSoldToday: 0, spentToday: 0,
+      /* ===== GIAI ĐOẠN 3: làng — chợ, tiệm tạp hóa, trường, hàng xóm ===== */
+      greetedToday: 0, greetedIds: {},        // chào hàng xóm: đếm hôm nay + id đã chào
+      marketSoldToday: 0,                     // tiền bán được ở chợ hôm nay
+      teacherEggsToday: 0,                    // trứng đã đưa cô giáo hôm nay
+      groceryToday: {}                       // đồ tạp hóa đã mua hôm nay: id -> true
     };
     export var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     export var DAY_END = 19 * 60;                     // 19:00
