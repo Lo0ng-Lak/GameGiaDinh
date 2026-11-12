@@ -63,13 +63,22 @@ GameGiaDinh/
 │   │                   # âm thanh (sound), hạt (particles)
 │   ├── player/         # di chuyển, chuột/joystick, va chạm
 │   ├── npc/            # bé An (child), chồng (husband), trộm (thief), bà Tư (visitor)
-│   ├── farming/        # vườn, luống rau (garden)
+│   ├── farming/        # vườn, luống rau (garden); cây ăn quả (trees); vịt, lợn (livestock)
 │   ├── activities/     # tương tác (interactions), đưa con đi học (school)
-│   ├── economy/        # chợ, bán hàng (shop)
+│   ├── economy/        # chợ, bán hàng (shop); mua đồ nhà, vật nuôi (upgrades)
 │   ├── events/         # nhiệm vụ, thành tựu (quests)
 │   └── ui/             # HUD, nút đi tới (goto), bảng cấu trúc code (structure)
 └── README.md
 ```
+
+## Giai đoạn 2 — Làm giàu: nâng cấp nhà, kinh tế, mua sắm
+
+- **Nâng cấp nhà cửa:** mua ở sạp cô Tư — Tivi (150.000đ, +2 sao, màn hình sáng lúc chiều tối), Tủ lạnh (180.000đ, +1 sao, nấu ăn được +2 sao), Xe máy (250.000đ, +2 sao, đi nhanh hơn ~40%), Mở rộng đất trồng (120.000đ — thêm 4 luống, tổng 16), Mở rộng chuồng gà (80.000đ — gà đẻ 5–7 trứng), Xây chuồng lợn (50.000đ). Sửa nhà bằng Quỹ sửa nhà khi đủ 300.000đ (tường sơn mới, đèn lồng đỏ, +2 sao).
+- **Cây ăn quả:** mua cây xoài / cây ổi giống ở sạp, trồng ở 3 mô đất trống trong sân, tưới 2 lần thì lớn; mỗi sáng ra trái mới (xoài 3, ổi 2), hái bán được tiền. Trộm cũng hái trộm trái chín nếu không canh.
+- **Vật nuôi mới:** Đàn vịt (30.000đ, ở bờ ao) — cho ăn cám 4.000đ, ~30 giây sau đẻ 2–3 trứng vịt. Lợn con (60.000đ/con, tối đa 2, cần chuồng lợn) — cho ăn 5.000đ/con mỗi ngày, ăn đủ 3 hôm là lớn, bán 120.000đ/con.
+- **Giá bán theo ngày:** giá nông sản lên xuống ±10% mỗi sáng (bảng giá ở sạp cô Tư, có dấu ▲/▼) — bán lúc được giá thì lời hơn.
+- **Nhiệm vụ & thành tựu mới:** nhiệm vụ mua sắm, nhặt trứng vịt, hái trái cây, bán lợn; thành tựu "Nhà cửa khang trang", "Vườn rộng nhà to", "Trang trại nhỏ". Tổng kết cuối ngày ghi rõ tiền mua đồ, đồ đã mua, trứng vịt, trái cây, lợn bán được.
+- Mọi thứ đều lưu vào `localStorage` cùng save cũ (đồ đã mua, cây, vịt, lợn, giá theo ngày) — tải lại game vẫn còn.
 
 ## Ghi chú về bản chuyển đổi này
 

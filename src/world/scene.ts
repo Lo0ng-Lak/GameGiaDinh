@@ -257,6 +257,7 @@ import * as THREE from 'three';
       var g = new THREE.Group();
       var walls = new THREE.Mesh(new THREE.BoxGeometry(8, 3.1, 5.4), texMat(plasterTex));
       walls.position.y = 1.55; walls.castShadow = true; walls.receiveShadow = true; g.add(walls);
+      window.__houseWalls = walls; // PHASE 2: sửa nhà — sơn lại tường cho mới
       // Mái ngói hai dốc — tấm mái phải dài hơn thân nhà (8m) để phủ kín hai đầu hồi
       var roofMat = texMat(roofTex);
       [-1, 1].forEach(function (s) {

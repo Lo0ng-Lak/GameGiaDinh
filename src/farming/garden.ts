@@ -167,3 +167,35 @@ import { mat, scene, soilTex, soilTexWet, texMat } from '../world/scene';
       }
     })();
 
+    // PHASE 2: mở rộng đất — thêm 4 luống mới ở phía Bắc vườn (hàng -1), tổng 16 luống.
+    // Chỉ gọi 1 lần (khi mua "Mở rộng đất trồng" hoặc khi tải save đã mua). Idempotent.
+    export var extraPlotsBuilt = false;
+    export function ensureExtraPlots() {
+      if (extraPlotsBuilt) return;
+      extraPlotsBuilt = true;
+      var fm = mat(0xb59a5e);
+      for (var i = 0; i < 14; i++) {
+        var px = 2.6 + i * 0.95;
+        var post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6), fm);
+        post.position.set(px, 0.3, -2.7); scene.add(post);
+      }
+      for (var col = 0; col < 4; col++) {
+        var ctr = plotCenter(col, -1);
+        var g = new THREE.Group(); g.position.set(ctr.x, 0, ctr.z); scene.add(g);
+        var soil = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.32, 2.3), soilDry);
+        soil.position.y = 0.16; soil.receiveShadow = true; soil.castShadow = true; g.add(soil);
+        for (var rI = -1; rI <= 1; rI++) {
+          var ridge = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.14, 0.3), soilDry);
+          ridge.position.set(0, 0.36, rI * 0.7); g.add(ridge);
+        }
+        var cropGroup = new THREE.Group(); cropGroup.position.y = 0.35; g.add(cropGroup);
+        var markGroup = new THREE.Group(); g.add(markGroup);
+        var p = {
+          col: col, row: -1, x: ctr.x, z: ctr.z, group: g, soil: soil,
+          cropGroup: cropGroup, markGroup: markGroup,
+          state: "empty", type: null, progress: 0, watered: false, waterings: 0, dryT: 0
+        };
+        plots.push(p);
+      }
+    }
+

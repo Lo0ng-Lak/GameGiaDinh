@@ -10,17 +10,21 @@ import * as THREE from 'three';
 import './world/weather';
 import './world/ambient';
 import './world/details';
+import './world/upgrades'; // PHASE 2: tivi, tủ lạnh, xe máy, chuồng gà mở rộng, sửa nhà
 import './ui/goto';
 import './ui/structure';
 import { currentTarget, findTarget, refreshEggs, setCurrentTarget, thiefSteal } from './activities/interactions';
 import { deliverChild } from './activities/school';
-import { CROPS } from './core/data';
+import { CROPS, FRUIT_TREES, LIVESTOCK } from './core/data';
 import { endDay } from './core/day';
 import { SAVE_KEY, applySave, pendingSave, readSave, saveGame, setPendingSave } from './core/save';
 import { DAY_END, G, SCHOOL_BELL, fmt } from './core/state';
-import { shopOverlay } from './economy/shop';
+import { rollPrices, shopOverlay } from './economy/shop';
+import { applyUpgrades } from './world/upgrades';
 import { addMemory, rollQuests } from './events/quests';
 import { drawCrop, plots } from './farming/garden';
+import { drawTree } from './farming/trees';
+import { chickenLayCount, refreshDuckEggs } from './farming/livestock';
 import { child, childHome, childParts } from './npc/child';
 import { husband, husbandParts, husbandPath } from './npc/husband';
 import { thief, thiefParts, thiefPath } from './npc/thief';
@@ -55,6 +59,9 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
     el("btn-start").addEventListener("click", function () {
       el("start-overlay").classList.remove("show");
       if (pendingSave) { applySave(pendingSave); setPendingSave(null); rollQuests(); }
+      // PHASE 2: giá bán theo ngày (ban đầu chưa có thì quay mới) + hiện đồ đã mua
+      if (!G.priceDay || Object.keys(G.priceDay).length === 0) rollPrices();
+      applyUpgrades();
       G.started = true;
       tryLock();
       try { setAC(new (window.AudioContext || window.webkitAudioContext)()); } catch (e) { setAC(null); }
@@ -118,6 +125,24 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
             if (mk.name === "ring") { var s = 1 + Math.sin(tNow * 2.4) * 0.05; mk.scale.set(s, s, 1); }
           });
         });
+        // PHASE 2: cây ăn quả lớn dần — tưới đủ 2 lần mới chín (giống cà chua, bí đỏ)
+        G.trees.forEach(function (tr, ti) {
+          if (tr.type && tr.state === "growing" && tr.watered) {
+            var tdef = FRUIT_TREES[tr.type];
+            tr.progress += dt / tdef.grow;
+            if (tdef.waters === 2 && tr.waterings === 1 && tr.progress >= 0.5) {
+              tr.watered = false; tr.progress = 0.5; drawTree(ti);
+              toast(tdef.name + " khô nước rồi — tưới thêm lần nữa nhé.");
+            }
+            if (tr.progress >= 1) {
+              tr.progress = 1; tr.state = "mature"; tr.fruitReady = tdef.fruitPerDay; drawTree(ti); sndHarvest();
+              toast(tdef.name + " đã lớn, ra " + tr.fruitReady + " " + tdef.fruitName.toLowerCase() + " chín — hái mang bán nhé!");
+            } else if (Math.floor(tr.progress * 20) !== tr._lastStage) {
+              tr._lastStage = Math.floor(tr.progress * 20);
+              if (tr._lastStage % 7 === 0) drawTree(ti);
+            }
+          }
+        });
       }
 
       /* --- Di chuyển --- */
@@ -133,8 +158,9 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       if (mag > 1) { fwd /= mag; strafe /= mag; }
       // Đi bộ có quán tính như người thật: tăng tốc dần, dừng cũng trượt một chút, không giật cục
       var sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
-      var tvx = (-sin * fwd + cos * strafe) * 4.4;
-      var tvz = (-cos * fwd - sin * strafe) * 4.4;
+      var walkSpeed = G.owned.bike ? 6.2 : 4.4; // PHASE 2: có xe máy thì đi nhanh hơn ~40%
+      var tvx = (-sin * fwd + cos * strafe) * walkSpeed;
+      var tvz = (-cos * fwd - sin * strafe) * walkSpeed;
       var acc = 1 - Math.exp(-dt * 9);
       player.vx += (tvx - player.vx) * acc;
       player.vz += (tvz - player.vz) * acc;
@@ -309,9 +335,18 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
         if (G.chicken.fed && G.chicken.ready === 0) {
           G.chicken.timer -= dt;
           if (G.chicken.timer <= 0) {
-            G.chicken.ready = 3 + Math.floor(Math.random() * 3);
+            G.chicken.ready = chickenLayCount(); // PHASE 2: chuồng mở rộng thì đẻ 5–7 trứng
             refreshEggs(); sndCluck();
             toast("Gà đẻ trứng rồi — ra ổ ở chuồng gà nhặt trứng!");
+          }
+        }
+        // PHASE 2: cho vịt ăn rồi thì chờ đẻ trứng vịt ở bờ ao
+        if (G.ducks.owned && G.ducks.fed && G.ducks.ready === 0) {
+          G.ducks.timer -= dt;
+          if (G.ducks.timer <= 0) {
+            G.ducks.ready = LIVESTOCK.duckFlock.eggMin + Math.floor(Math.random() * (LIVESTOCK.duckFlock.eggMax - LIVESTOCK.duckFlock.eggMin + 1));
+            refreshDuckEggs(); sndCluck();
+            toast("Vịt đẻ trứng rồi — ra ổ ở bờ ao nhặt trứng vịt!");
           }
         }
         // Câu cá: chờ -> cắn câu (1,6 giây để giật) -> tuột

@@ -7,6 +7,7 @@
  */
 import { saveGame } from '../core/save';
 import { G, fmt } from '../core/state';
+import { UPGRADES } from '../core/data';
 import { el, toast } from '../ui/hud';
 import { sndCoin } from '../world/sound';
 
@@ -20,12 +21,24 @@ import { sndCoin } from '../world/sound';
       { id: "fish",    targets: [1, 2],       txt: function (n) { return "Câu " + n + " con cá rô ở ao"; },            get: function () { return G.fishToday; },      reward: { money: 10000, stars: 0 } },
       { id: "banana",  targets: [1, 2],       txt: function (n) { return "Hái " + n + " nải chuối chín"; },            get: function () { return G.bananaToday; },   reward: { money: 7000, stars: 0 } },
       { id: "cook",    targets: [1],          txt: function () { return "Nấu bữa cơm nhà ở bếp củi"; },                get: function () { return G.cookedToday ? 1 : 0; }, reward: { money: 0, stars: 1 } },
-      { id: "school",  targets: [1],          txt: function () { return "Đưa bé An tới trường đúng giờ"; },            get: function () { return G.schoolOnTime === true ? 1 : 0; }, reward: { money: 0, stars: 1 } }
+      { id: "school",  targets: [1],          txt: function () { return "Đưa bé An tới trường đúng giờ"; },            get: function () { return G.schoolOnTime === true ? 1 : 0; }, reward: { money: 0, stars: 1 } },
+      // PHASE 2: việc mua sắm, chăn nuôi, cây ăn quả — chỉ giao khi nhà đã có thứ đó (xem rollQuests)
+      { id: "buy",     targets: [1],          txt: function () { return "Mua 1 món ở sạp cô Tư (hạt giống, đồ nhà, vật nuôi)"; }, get: function () { return G.boughtToday; }, reward: { money: 5000, stars: 0 } },
+      { id: "duckeggs", targets: [2, 3],      txt: function (n) { return "Nhặt " + n + " trứng vịt ở bờ ao"; },           get: function () { return G.duckEggsToday; }, reward: { money: 6000, stars: 0 } },
+      { id: "fruit",   targets: [2, 3],      txt: function (n) { return "Hái " + n + " trái cây chín trong sân"; },       get: function () { return G.fruitToday; },   reward: { money: 8000, stars: 0 } },
+      { id: "pig",     targets: [1],          txt: function () { return "Bán 1 con lợn đã lớn"; },                       get: function () { return G.pigsSoldToday; }, reward: { money: 0, stars: 1 } }
     ];
     export function rollQuests() {
       var pool = QUEST_DEFS.slice();
       // Việc đưa con đi học chỉ có ý nghĩa buổi sáng — luôn ưu tiên có mặt, thêm 2 việc ngẫu nhiên
       var picked = [pool.splice(8, 1)[0]];
+      // PHASE 2: việc chăn nuôi / cây ăn quả chỉ giao khi nhà đã có vật nuôi, cây trồng đó
+      pool = pool.filter(function (d) {
+        if (d.id === "duckeggs" && !G.ducks.owned) return false;
+        if (d.id === "pig" && G.pigs.count === 0) return false;
+        if (d.id === "fruit" && !G.trees.some(function (t) { return t.type; })) return false;
+        return true;
+      });
       while (picked.length < 3 && pool.length) {
         picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
       }
@@ -44,7 +57,11 @@ import { sndCoin } from '../world/sound';
       { id: "stars10", name: "Nhà mình vui vẻ", desc: "Đạt 10 sao vui vẻ", test: function () { return G.stars >= 10; } },
       { id: "guard", name: "Canh nhà giỏi", desc: "Đuổi kịp trộm 2 lần", test: function () { return G.thiefChased >= 2; } },
       { id: "worker", name: "Siêng năng đảm đang", desc: "Hoàn thành 5 nhiệm vụ hằng ngày", test: function () { return G.questsDoneTotal >= 5; } },
-      { id: "saver", name: "Có của để dành", desc: "Quỹ sửa nhà đạt 300.000đ", test: function () { return G.savingsGoalDone; } }
+      { id: "saver", name: "Có của để dành", desc: "Quỹ sửa nhà đạt 300.000đ", test: function () { return G.savingsGoalDone; } },
+      // PHASE 2: thành tựu làm giàu
+      { id: "nha-dep", name: "Nhà cửa khang trang", desc: "Mua tivi, tủ lạnh và xe máy cho nhà", test: function () { return G.owned.tv && G.owned.fridge && G.owned.bike; } },
+      { id: "vuon-rong", name: "Vườn rộng nhà to", desc: "Mở rộng đất trồng (16 luống) và trồng cây ăn quả", test: function () { return G.owned.land && G.trees.some(function (t) { return t.type; }); } },
+      { id: "trang-trai", name: "Trang trại nhỏ", desc: "Nuôi vịt và lợn cùng lúc", test: function () { return G.ducks.owned && G.pigs.count > 0; } }
     ];
     export function addMemory(txt) {
       G.memories.push("Ngày " + G.day + " — " + txt);
@@ -103,8 +120,16 @@ import { sndCoin } from '../world/sound';
       });
       if (G.tuQuest) full += '<div class="ach-row"><span>Việc bà Tư nhờ: mang ' + G.tuQuest.n + " " + G.tuQuest.name + ' qua nhà bà</span><b>Thưởng ' + fmt(G.tuQuest.reward) + '</b></div>';
       el("quest-full").innerHTML = full || '<div class="mem-row">Chưa có nhiệm vụ nào.</div>';
+      // PHASE 2: đồ đã mua cho nhà — hiện ở mục mục tiêu dài hạn
+      var ownedNames = Object.keys(UPGRADES).filter(function (id) { return G.owned[id]; }).map(function (id) { return UPGRADES[id].name; });
+      if (G.owned.houseFixed) ownedNames.push("Nhà đã sửa");
+      if (G.ducks.owned) ownedNames.push("Đàn vịt");
+      if (G.pigs.count > 0) ownedNames.push("Lợn (" + G.pigs.count + " con)");
+      var treeNames = G.trees.filter(function (t) { return t.type; }).length;
+      if (treeNames > 0) ownedNames.push(treeNames + " cây ăn quả");
       el("goal-rows").innerHTML =
         '<div class="ach-row"><span>Quỹ sửa nhà (gửi ở sạp cô Tư, 10.000đ mỗi lần)</span><b>' + fmt(G.savings) + " / 300.000đ" + (G.savingsGoalDone ? " — Đủ rồi!" : "") + '</b></div>' +
+        '<div class="ach-row"><span>Đồ đã mua cho nhà</span><b>' + (ownedNames.length ? ownedNames.join(", ") : "Chưa có gì — ra sạp cô Tư") + '</b></div>' +
         '<div class="ach-row"><span>Tổng thu nhập từ ngày về quê</span><b>' + fmt(G.totalEarned) + '</b></div>' +
         '<div class="ach-row"><span>Nhiệm vụ đã hoàn thành</span><b>' + G.questsDoneTotal + ' việc</b></div>';
       var ach = "";

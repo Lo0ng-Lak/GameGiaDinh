@@ -6,13 +6,15 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import * as THREE from 'three';
-import { CROPS, CROP_KEYS, GOOD_KEYS, priceOf } from '../core/data';
+import { CROPS, CROP_KEYS, GOOD_KEYS, priceOf, FRUIT_TREES, LIVESTOCK } from '../core/data';
 import { endDay } from '../core/day';
 import { saveGame } from '../core/save';
 import { G, fmt, goodName, produceTotal } from '../core/state';
 import { openShop } from '../economy/shop';
 import { addMemory } from '../events/quests';
 import { drawCrop, plots } from '../farming/garden';
+import { TREE_SPOTS, drawTree, waterTree, harvestTree } from '../farming/trees';
+import { DUCK_POS, PIG_POS, feedDucks, collectDuckEggs, feedPigs, sellGrownPig, refreshDuckEggs } from '../farming/livestock';
 import { child } from '../npc/child';
 import { husband } from '../npc/husband';
 import { thief, thiefParts } from '../npc/thief';
@@ -36,6 +38,10 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         if (d < range && d < bestD) { bestD = d; best = { kind: kind, d: d }; if (extra) for (var k in extra) best[k] = extra[k]; }
       }
       plots.forEach(function (p) { consider("plot", p.x, p.z, 2.3, { plot: p }); });
+      // PHASE 2: cây ăn quả (3 mô đất), đàn vịt ở bờ ao, chuồng lợn góc sân
+      TREE_SPOTS.forEach(function (s, i) { consider("tree", s.x, s.z, 2.4, { treeIndex: i }); });
+      consider("duck", DUCK_POS.interact.x, DUCK_POS.interact.z, 2.5);
+      consider("pigpen", PIG_POS.interact.x, PIG_POS.interact.z, 2.5);
       consider("well", wellPos.x, wellPos.z, 2.6);
       consider("stall", stallPos.x, stallPos.z, 3.1);
       consider("door", doorPos.x, doorPos.z, 2.6);
@@ -79,6 +85,30 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         else best.label = "Nấu cơm nhà (8.000đ đồ ăn)";
       }
       else if (best.kind === "banana") best.label = best.banana.ripe ? "Hái nải chuối chín vàng" : "Buồng chuối còn xanh…";
+      else if (best.kind === "tree") {
+        var tr = G.trees[best.treeIndex], tDef = tr.type ? FRUIT_TREES[tr.type] : null;
+        if (!tr.type) {
+          if (G.saplings.xoai > 0) best.label = "Trồng cây xoài giống ở đây";
+          else if (G.saplings.oi > 0) best.label = "Trồng cây ổi giống ở đây";
+          else best.label = "Chỗ trồng cây ăn quả — mua cây giống ở sạp cô Tư";
+        }
+        else if (tr.state === "growing") best.label = !tr.watered ? (G.can > 0 ? "Tưới cây " + tDef.name + " (" + tr.waterings + "/" + tDef.waters + " lần)" : "Bình hết nước — ra giếng múc") : tDef.name + " đang lớn (" + Math.round(tr.progress * 100) + "%)";
+        else if (tr.fruitReady > 0) best.label = "Hái " + tr.fruitReady + " " + tDef.fruitName.toLowerCase() + " chín";
+        else best.label = tDef.name + " đã lớn — mai ra trái mới";
+      }
+      else if (best.kind === "duck") {
+        if (!G.ducks.owned) best.label = "Đàn vịt ở bờ ao — mua vịt ở sạp cô Tư";
+        else if (G.ducks.ready > 0) best.label = "Nhặt " + G.ducks.ready + " trứng vịt trong ổ";
+        else if (G.ducks.fed) best.label = "Vịt đang ăn cám… sắp đẻ trứng";
+        else best.label = "Cho vịt ăn cám (4.000đ)";
+      }
+      else if (best.kind === "pigpen") {
+        if (!G.owned.pigpen) best.label = "Chỗ này xây được chuồng lợn — mua ở sạp cô Tư";
+        else if (G.pigs.count === 0) best.label = "Chuồng lợn trống — mua lợn con ở sạp";
+        else if (G.pigs.grown > 0) best.label = "Bán 1 con lợn đã lớn (" + fmt(LIVESTOCK.piglet.sell) + ")";
+        else if (!G.pigs.fedToday) best.label = "Cho lợn ăn cám (" + fmt(LIVESTOCK.piglet.feed * G.pigs.count) + ")";
+        else best.label = "Lợn đã ăn no, đang lớn dần (" + G.pigs.grown + "/" + G.pigs.count + " con lớn)";
+      }
       else if (best.kind === "husband") best.label = "Nói chuyện với anh";
       else if (best.kind === "thief") best.label = "Đuổi trộm ra khỏi sân!";
       else if (best.kind === "visitor") best.label = G.tuQuest ? "Nói chuyện với bà Tư (bà đang nhờ mua hộ đồ)" : G.visit.talked ? "Chào bà Tư hàng xóm" : "Nói chuyện với bà Tư hàng xóm";
@@ -96,6 +126,11 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         th.lootKind = "trung"; th.loot = Math.min(G.chicken.ready, 4);
         G.chicken.ready -= th.loot; if (G.chicken.ready === 0) G.chicken.fed = false;
         refreshEggs(); th.lootTxt = th.loot + " trứng gà trong ổ";
+      } else if (G.ducks.owned && G.ducks.ready > 0) {
+        // PHASE 2: trộm cũng hốt trứng vịt ở bờ ao
+        th.lootKind = "trungvit"; th.loot = Math.min(G.ducks.ready, 3);
+        G.ducks.ready -= th.loot; if (G.ducks.ready === 0) G.ducks.fed = false;
+        refreshDuckEggs(); th.lootTxt = th.loot + " trứng vịt trong ổ";
       } else if (produceTotal() > 0) {
         var left = 3; th.lootKind = "produce"; th.lootItems = {}; th.loot = 0;
         for (var k in G.produce) {
@@ -105,6 +140,15 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         }
         th.lootTxt = th.loot + " món nông sản trong giỏ";
       } else {
+        // PHASE 2: trộm cũng hái trái chín trên cây ăn quả
+        var ripeTree = -1;
+        G.trees.forEach(function (t, ti) { if (t.type === "mature" && t.fruitReady > 0 && ripeTree < 0) ripeTree = ti; });
+        if (ripeTree >= 0) {
+          var rt = G.trees[ripeTree];
+          th.lootKind = "tree"; th.lootType = rt.type; th.loot = rt.fruitReady;
+          th.lootTxt = th.loot + " " + FRUIT_TREES[rt.type].fruitName.toLowerCase() + " chín trên cây";
+          rt.fruitReady = 0; drawTree(ripeTree);
+        } else {
         var mp = null;
         plots.forEach(function (p) { if (p.state === "mature" && !mp) mp = p; });
         if (mp) {
@@ -113,6 +157,7 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           mp.state = "empty"; mp.type = null; mp.progress = 0; mp.watered = false; mp.waterings = 0;
           drawCrop(mp);
         } else { th.lootKind = ""; th.loot = 0; th.lootTxt = "chưa kịp lấy gì"; }
+        }
       }
       if (th.loot > 0 && thiefParts.sack) thiefParts.sack.scale.set(1.45, 1.65, 1.15);
       updateHUD();
@@ -120,6 +165,8 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
     export function thiefReturnLoot() {
       var th = G.thief;
       if (th.lootKind === "trung") { G.chicken.ready += th.loot; refreshEggs(); }
+      else if (th.lootKind === "trungvit") { G.ducks.ready += th.loot; refreshDuckEggs(); }
+      else if (th.lootKind === "tree") { G.produce[FRUIT_TREES[th.lootType].fruit] += th.loot; }
       else if (th.lootKind === "produce" && th.lootItems) { for (var k in th.lootItems) G.produce[k] += th.lootItems[k]; }
       else if (th.lootKind === "plot") { G.produce[th.lootType] += th.loot; }
       th.loot = 0; th.lootKind = ""; th.lootItems = null;
@@ -127,9 +174,11 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
     }
 
     export function cookMeal(dish) {
-      G.cookedToday = true; G.stars++; G.smokeBoost = 22;
+      G.cookedToday = true; G.smokeBoost = 22;
+      var bonus = G.owned.fridge ? 2 : 1; // PHASE 2: có tủ lạnh, đồ ăn tươi ngon hơn — +2 sao
+      G.stars += bonus;
       sndCook();
-      toast("Đã nấu xong bữa cơm " + dish + ". Cả nhà vui vẻ +1 sao", true);
+      toast("Đã nấu xong bữa cơm " + dish + ". Cả nhà vui vẻ +" + bonus + " sao" + (G.owned.fridge ? " (tủ lạnh giữ đồ ăn tươi ngon)" : ""), true);
     }
 
     export function doInteract() {
@@ -294,6 +343,58 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
             "Bà Tư: \"Chồng chị chịu khó, vợ chị đảm đang — nhà này có phúc.\""
           ];
           toast(vlines[Math.floor(Math.random() * vlines.length)]);
+        }
+      } else if (t.kind === "tree") {
+        // PHASE 2: cây ăn quả — trồng cây giống, tưới 2 lần, hái trái mỗi ngày
+        var ti = t.treeIndex, tr2 = G.trees[ti];
+        if (!tr2.type) {
+          var kind = G.saplings.xoai > 0 ? "xoai" : (G.saplings.oi > 0 ? "oi" : null);
+          if (!kind) { toast("Chưa có cây giống — ra sạp cô Tư mua cây xoài hoặc cây ổi giống đã."); return; }
+          G.saplings[kind]--;
+          tr2.type = kind; tr2.state = "growing"; tr2.progress = 0; tr2.watered = false; tr2.waterings = 0; tr2.fruitReady = 0;
+          drawTree(ti); sndPlant();
+          toast("Đã trồng cây " + FRUIT_TREES[kind].name + ". Tưới nước 2 lần cho cây lớn nhé.");
+          saveGame();
+        } else if (tr2.state === "growing") {
+          var wmsg = waterTree(ti);
+          if (wmsg) { sndWater(); sndPour(); toast(wmsg + "."); saveGame(); }
+          else if (tr2.watered) toast(FRUIT_TREES[tr2.type].name + " đã tưới rồi, đang lớn dần.");
+          else toast("Bình hết nước — ra giếng múc đầy bình trước.");
+        } else if (tr2.state === "mature" && tr2.fruitReady > 0) {
+          var n2 = harvestTree(ti);
+          if (n2 > 0) { sndHarvest(); toast("Hái được " + n2 + " " + FRUIT_TREES[tr2.type].fruitName.toLowerCase() + " chín vào giỏ.", true); saveGame(); }
+        } else {
+          toast(FRUIT_TREES[tr2.type].name + " đã lớn — sáng mai ra trái mới.");
+        }
+      } else if (t.kind === "duck") {
+        // PHASE 2: vịt ở bờ ao — cho ăn cám rồi nhặt trứng vịt
+        if (!G.ducks.owned) { toast("Chưa có vịt — ra sạp cô Tư mua đàn vịt (3 con) rồi nuôi ở bờ ao."); return; }
+        if (G.ducks.ready > 0) {
+          var nd = collectDuckEggs();
+          if (nd > 0) { sndHarvest(); toast("Nhặt được " + nd + " trứng vịt vào giỏ.", true); saveGame(); }
+        } else if (G.ducks.fed) {
+          toast("Vịt đang mổ cám, lát nữa mới đẻ trứng.");
+        } else if (G.money >= LIVESTOCK.duckFlock.feed) {
+          var fmsg = feedDucks();
+          if (fmsg) { sndCluck(); toast(fmsg + "."); saveGame(); }
+        } else {
+          toast("Không đủ tiền mua cám cho vịt — cần 4.000đ.");
+        }
+      } else if (t.kind === "pigpen") {
+        // PHASE 2: chuồng lợn — cho ăn mỗi ngày, đủ 3 hôm thì lớn, bán được tiền
+        if (!G.owned.pigpen) { toast("Chỗ này xây được chuồng lợn — mua ở sạp cô Tư (50.000đ)."); return; }
+        if (G.pigs.count === 0) { toast("Chuồng lợn trống — ra sạp mua lợn con (60.000đ/con)."); return; }
+        if (G.pigs.grown > 0) {
+          var sp = sellGrownPig();
+          if (sp > 0) { sndCoin(); toast("Bán 1 con lợn đã lớn — +" + fmt(sp) + ".", true); saveGame(); }
+          return;
+        }
+        if (!G.pigs.fedToday) {
+          if (G.money < LIVESTOCK.piglet.feed * G.pigs.count) { toast("Không đủ tiền mua cám cho lợn."); return; }
+          var pmsg = feedPigs();
+          if (pmsg) { sndCluck(); toast(pmsg + "."); saveGame(); }
+        } else {
+          toast("Lợn đã ăn no rồi — mai cho ăn tiếp, ăn đủ 3 hôm là lớn.");
         }
       }
       updateHUD();

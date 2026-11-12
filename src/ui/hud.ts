@@ -75,16 +75,29 @@ import { AMB, sndCoin } from '../world/sound';
       if (mature) return "Có luống <b>rau đã chín</b> (vòng vàng) — lại gần bấm E để thu hoạch.";
       if (G.fish.state === "bite") return "<b>Cá đang cắn câu ở ao!</b> — chạy nhanh ra bờ ao giật cần.";
       if (G.chicken.ready > 0) return "Ổ gà có <b>" + G.chicken.ready + " trứng</b> — ra chuồng gà nhặt trứng vào giỏ.";
+      // PHASE 2: trái cây chín, trứng vịt
+      var treeRipe = G.trees.filter(function (t) { return t.type === "mature" && t.fruitReady > 0; }).length;
+      if (treeRipe > 0) return "Cây ăn quả có <b>trái chín</b> (vòng vàng) — lại gần bấm E để hái.";
+      if (G.ducks.owned && G.ducks.ready > 0) return "Ổ vịt có <b>" + G.ducks.ready + " trứng vịt</b> — ra bờ ao nhặt trứng vào giỏ.";
       if (!G.cookedToday && G.minutes >= 630 && G.minutes < 1080)
         return "Nhớ ghé <b>bếp củi nấu cơm</b> cho cả nhà — có cá hay trứng trong giỏ thì dùng luôn.";
       if (G.husband.state === "walking") return "Anh đi làm thuê đang về tới — ra hiên đón anh nhé.";
       if (produceTotal() > 0) return "Giỏ đang có rau — mang ra <b>sạp cô Tư</b> ở đầu đường để bán, mua thêm hạt.";
+      // PHASE 2: lợn chưa ăn, cây ăn quả khát nước
+      if (G.owned.pigpen && G.pigs.count > 0 && !G.pigs.fedToday) return "Lợn trong chuồng <b>chưa ăn</b> — ra góc sân cho lợn ăn cám, ăn đủ 3 hôm là lớn.";
+      var dryTree = G.trees.some(function (t) { return t.type === "growing" && !t.watered; });
+      if (dryTree) return "Cây ăn quả đang <b>khô nước</b> (giọt xanh) — múc nước ở giếng rồi tưới, cây mới lớn tiếp.";
       var dry = plots.some(function (p) { return p.state === "growing" && !p.watered; });
       if (dry) return "Có luống đang <b>khô nước</b> (giọt xanh) — múc nước ở giếng rồi tưới, cây mới lớn tiếp.";
       var growing = plots.some(function (p) { return p.state === "growing"; });
       if (growing) return "Rau đang lớn dần. Trong lúc chờ, trồng thêm luống trống hoặc ngắm sân nhà.";
       if (CROP_KEYS.some(function (k) { return G.seeds[k] > 0; }))
         return "Ra vườn <b>trồng rau</b>: chọn hạt ở thanh dưới, lại gần luống trống bấm E.";
+      // PHASE 2: nhắc trồng cây giống, nhắc mua đồ khi tiền đã dư
+      if (G.saplings.xoai > 0 || G.saplings.oi > 0)
+        return "Trong túi có <b>cây giống</b> — ra mô đất trống trong sân bấm E để trồng.";
+      if (G.money >= 150000 && (!G.owned.tv || !G.owned.bike))
+        return "Tiền đã dư " + fmt(G.money) + " — ra <b>sạp cô Tư</b> mua tivi, xe máy cho nhà khang trang hơn.";
       return "Hết hạt rồi — ra <b>sạp cô Tư</b> mua thêm hạt giống nhé.";
     }
 

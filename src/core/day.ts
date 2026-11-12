@@ -9,7 +9,11 @@ import { refreshEggs } from '../activities/interactions';
 import { saveGame } from './save';
 import { G, fmt } from './state';
 import { rollQuests } from '../events/quests';
+import { rollPrices } from '../economy/shop';
 import { drawCrop, plots } from '../farming/garden';
+import { drawTree } from '../farming/trees';
+import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
+import { FRUIT_TREES, UPGRADES } from '../core/data';
 import { child, childHome } from '../npc/child';
 import { husband, husbandPath } from '../npc/husband';
 import { thief, thiefParts, thiefPath } from '../npc/thief';
@@ -35,14 +39,22 @@ import { stopBikeSound } from '../world/sound';
       G.livingCost = Math.min(G.money, 12000 + Math.floor(Math.random() * 5) * 1000);
       G.money -= G.livingCost;
       var questsDoneTxt = G.quests.filter(function (q) { return q.done; }).length + "/3 việc";
+      // PHASE 2: đồ đã mua cho nhà — liệt kê tên món đã có
+      var ownedNames = Object.keys(UPGRADES).filter(function (id) { return G.owned[id]; }).map(function (id) { return UPGRADES[id].name; });
+      if (G.owned.houseFixed) ownedNames.push("Nhà đã sửa");
+      if (G.ducks.owned) ownedNames.push("Đàn vịt");
+      if (G.pigs.count > 0) ownedNames.push("Lợn (" + G.pigs.count + " con)");
       el("sum-rows").innerHTML =
         '<div class="sum-row"><span>Tiền bán nông sản hôm nay</span><b>' + fmt(G.earnedToday) + '</b></div>' +
         '<div class="sum-row"><span>Tiền công anh đi làm thuê</span><b>' + (G.noWorkToday ? "Hôm nay không có việc" : G.husband.wage > 0 ? fmt(G.husband.wage) : "Anh về trễ, chưa kịp") + '</b></div>' +
         '<div class="sum-row"><span>Chi tiêu sinh hoạt (gạo mắm, điện nước)</span><b>-' + fmt(G.livingCost) + '</b></div>' +
+        '<div class="sum-row"><span>Tiền mua đồ, hạt giống & chăn nuôi</span><b>-' + fmt(G.spentToday) + '</b></div>' +
         '<div class="sum-row"><span>Nhiệm vụ hôm nay</span><b>' + questsDoneTxt + '</b></div>' +
         '<div class="sum-row"><span>Quỹ sửa nhà đã để dành</span><b>' + fmt(G.savings) + ' / 300.000đ</b></div>' +
+        '<div class="sum-row"><span>Đồ đã mua cho nhà</span><b>' + (ownedNames.length ? ownedNames.join(", ") : "Chưa mua gì — ra sạp cô Tư") + '</b></div>' +
         '<div class="sum-row"><span>Số rau đã thu hoạch</span><b>' + G.harvestedToday + ' món</b></div>' +
         '<div class="sum-row"><span>Trứng nhặt được · Cá câu được</span><b>' + G.eggsToday + ' trứng · ' + G.fishToday + ' cá</b></div>' +
+        '<div class="sum-row"><span>Trứng vịt nhặt được · Trái cây hái được · Lợn bán được</span><b>' + G.duckEggsToday + ' trứng vịt · ' + G.fruitToday + ' trái · ' + G.pigsSoldToday + ' con</b></div>' +
         '<div class="sum-row"><span>Số luống đã trồng</span><b>' + G.plantedToday + ' luống</b></div>' +
         '<div class="sum-row"><span>Bữa cơm nhà</span><b>' + (G.cookedToday ? "Đã nấu, cả nhà vui vẻ" : "Chưa nấu hôm nay") + '</b></div>' +
         '<div class="sum-row"><span>Đưa con đi học</span><b>' + schoolTxt + '</b></div>' +
@@ -57,6 +69,11 @@ import { stopBikeSound } from '../world/sound';
       G.day++; G.minutes = 5 * 60 + 30; G.dayOver = false;
       G.earnedToday = 0; G.harvestedToday = 0; G.plantedToday = 0;
       G.eggsToday = 0; G.fishToday = 0; G.wateredToday = 0; G.bananaToday = 0; G.livingCost = 0;
+      // PHASE 2: reset số liệu ngày, quay giá bán mới, cây ăn quả ra trái mới, vịt/lợn chờ ngày mới
+      G.boughtToday = 0; G.duckEggsToday = 0; G.fruitToday = 0; G.pigsSoldToday = 0; G.spentToday = 0;
+      rollPrices();
+      G.ducks.fed = false; G.ducks.ready = 0; G.ducks.timer = 0; refreshDuckEggs();
+      G.pigs.fedToday = false; refreshPigs();
       rollQuests();   // ngày mới, việc mới
       G.husbandAt = 990 + Math.random() * 105;
       G.noWorkToday = Math.random() < 0.12;
@@ -94,6 +111,15 @@ import { stopBikeSound } from '../world/sound';
         if (p.state === "growing") {
           if (p.watered) p.progress = Math.min(0.92, p.progress + 0.25);
           p.watered = false; drawCrop(p);
+        }
+      });
+      // PHASE 2: qua đêm cây ăn quả cũng lớn thêm, cây đã lớn thì ra trái mới mỗi sáng
+      G.trees.forEach(function (t, ti) {
+        if (t.type === "growing") {
+          if (t.watered) t.progress = Math.min(0.92, t.progress + 0.25);
+          t.watered = false; drawTree(ti);
+        } else if (t.type === "mature") {
+          t.fruitReady = FRUIT_TREES[t.type].fruitPerDay; drawTree(ti);
         }
       });
       toast("Ngày mới bắt đầu. Bé An đang chờ ở hiên nhà.");

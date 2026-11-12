@@ -13,7 +13,7 @@ import { CROPS, GOODS, priceOf } from './data';
       day: 1, minutes: 5 * 60 + 30,           // 05:30
       money: 60000, stars: 0,
       seeds: { cai: 4, cachua: 2, bido: 1, ngo: 2 },
-      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0 },
+      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0, trungvit: 0, xoai: 0, oi: 0 },
       selSeed: "cai",
       can: 5, canMax: 5,
       childState: "home",                      // home | follow | school | away
@@ -51,7 +51,19 @@ import { CROPS, GOODS, priceOf } from './data';
       noWorkToday: Math.random() < 0.12,         // có hôm chủ không có việc, anh về tay không
       husbandMode: "rest", husbandT: 25, husbandTx: 0, husbandTz: 0, husbandPlot: null,
       childPlay: { wp: 0, spot: -1, pauseT: 4, lineT: 30, mood: "vui", playedToday: false },
-      childBack: false
+      childBack: false,
+      /* ===== GIAI ĐOẠN 2: nâng cấp nhà, cây ăn quả, chăn nuôi, giá theo ngày ===== */
+      owned: { tv: false, fridge: false, bike: false, land: false, coopBig: false, pigpen: false, houseFixed: false },
+      saplings: { xoai: 0, oi: 0 },
+      trees: [
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 },
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 },
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 }
+      ],
+      ducks: { owned: false, fed: false, timer: 0, ready: 0 },
+      pigs: { count: 0, grown: 0, fedToday: false, growDays: 0 },
+      priceDay: {},
+      boughtToday: 0, duckEggsToday: 0, fruitToday: 0, pigsSoldToday: 0, spentToday: 0
     };
     export var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     export var DAY_END = 19 * 60;                     // 19:00
@@ -63,7 +75,12 @@ import { CROPS, GOODS, priceOf } from './data';
     }
     export function produceTotal() { var t = 0; for (var k in G.produce) t += G.produce[k]; return t; }
     export function produceValue() {
-      var v = 0; for (var k in G.produce) v += G.produce[k] * priceOf(k); return v;
+      var v = 0; for (var k in G.produce) v += G.produce[k] * sellPriceOf(k); return v;
+    }
+    // PHASE 2: giá bán theo ngày — mỗi ngày giá lên xuống ±10% so với giá gốc
+    export function sellPriceOf(k) {
+      var f = (G.priceDay && G.priceDay[k] != null) ? G.priceDay[k] : 1;
+      return Math.round(priceOf(k) * f / 100) * 100;
     }
     export function goodName(k) { return CROPS[k] ? CROPS[k].name : (GOODS[k] ? GOODS[k].name : k); }
 

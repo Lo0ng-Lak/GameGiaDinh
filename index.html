@@ -177,6 +177,10 @@
       }
       .panel h2 { margin: 0 0 4px; font-size: 20px; }
       .panel p.sub { margin: 0 0 14px; font-size: 13px; opacity: .85; line-height: 1.5; }
+      .shop-sec {
+        font-weight: 800; font-size: 14px; color: #ffd97a;
+        padding: 16px 0 2px; border-top: 2px solid rgba(253,246,227,.25);
+      }
       .shop-row {
         display: flex; align-items: center; justify-content: space-between; gap: 10px;
         padding: 10px 0; border-top: 1px solid rgba(253,246,227,.12);
@@ -346,7 +350,7 @@
     <div class="overlay" id="shop-overlay">
       <div class="panel">
         <h2>Sạp của cô Tư ở đầu chợ</h2>
-        <p class="sub">Bán hết nông sản trong giỏ — rau, ngô, trứng gà, cá câu ở ao, chuối hái trong vườn — rồi mua thêm hạt giống. Giá để sẵn, không mặc cả.</p>
+        <p class="sub">Bán nông sản trong giỏ — rau, ngô, trứng gà, trứng vịt, cá, chuối, xoài, ổi — rồi mua hạt giống, cây giống, vật nuôi, đồ dùng cho nhà. Giá lên xuống mỗi ngày, theo bảng giá ở trên.</p>
         <div id="shop-sell"></div>
         <div id="shop-rows"></div>
         <button class="ghost-btn" id="shop-close" type="button">Đóng sạp, về làm vườn</button>
@@ -396,6 +400,7 @@
           <li><b>Hái chuối:</b> buồng chuối chín vàng ở các cây chuối quanh sân thì hái mang bán; hái xong cây ra buồng mới.</li>
           <li><b>Chiều về:</b> khoảng 17:00 anh đi làm thuê về tới hiên, mang theo tiền công ngày — hôm được hôm ít, như đi làm thật.</li>
           <li><b>Coi chừng trộm:</b> có hôm một gã lạ lẻn vào sân hốt trứng với rau, giờ giấc không biết trước được, có hôm chẳng có ai — nghe chó mực sủa ầm thì chạy lại gần bấm <b>E</b> đuổi nó ra trước khi nó vác bao chạy thoát. Đuổi kịp thì giữ nguyên của cải.</li>
+          <li><b>Giai đoạn 2 — làm giàu:</b> kiếm tiền rồi ra sạp mua <b>tivi, tủ lạnh, xe máy</b>, mở rộng đất trồng thêm 4 luống, mở rộng chuồng gà, xây chuồng lợn nuôi lợn bán; mua <b>cây xoài, cây ổi</b> trồng ở 3 mô đất trống trong sân, mua <b>đàn vịt</b> nuôi ở bờ ao. Giá nông sản lên xuống mỗi ngày — xem bảng giá ở sạp rồi bán lúc được giá. Tiền dư gửi vào Quỹ sửa nhà, đủ 300.000đ là sửa nhà cho mới.</li>
           <li><b>Nhiệm vụ mỗi ngày:</b> mỗi sáng nhà có 3 việc ngắn ghi ở góc trái (thu hoạch, câu cá, nấu cơm…) — làm xong được thưởng tiền với sao. Bấm nút <b>Mục tiêu &amp; kỷ niệm</b> để xem cả mục tiêu dài hạn, thành tựu với những kỷ niệm của nhà mình.</li>
           <li><b>Tiền với sao có chỗ dùng:</b> ở sạp cô Tư, gửi tiền dư vào <b>Quỹ sửa nhà</b> (mục tiêu 300.000đ), đổi <b>3 sao vui vẻ lấy túi quà quê</b>. Mỗi tối nhà trừ ít chi tiêu sinh hoạt, nên phải tính toán chi tiêu như nhà thật.</li>
           <li><b>Nhà mình tự sống:</b> bé An tan học tự đi bộ về, chạy chơi quanh sân, ngắm gà, chơi với chó mực, tối về hiên học bài — bé vui hay buồn tùy ngày hôm đó. Anh đi làm về giờ giấc với tiền công mỗi ngày một khác, có hôm mất việc; về tới nhà nghỉ một lát là anh tự đi tưới luống khô hay chẻ củi phụ vợ. Bà Tư qua chơi có hôm biếu hạt, có hôm <b>nhờ mua hộ đồ</b> trả giá hậu.</li>
@@ -417,7 +422,7 @@
     <div class="overlay" id="struct-overlay">
       <div class="panel">
         <h2>Cấu trúc code của game</h2>
-        <p class="sub">Game <b>không viết lại</b> — engine Three.js và toàn bộ vòng chơi giữ nguyên. Code vốn nằm gọn trong một file nay đã <b>tách thành 25 module</b> theo đúng cây thư mục bên dưới, mỗi module là một file riêng nạp theo thứ tự cố định. Khi đưa về máy chạy Vite, chỉ việc đổi tên <code>.js → .ts</code> theo cột bên phải và thêm dần kiểu dữ liệu.</p>
+        <p class="sub">Game <b>không viết lại</b> — engine Three.js và toàn bộ vòng chơi giữ nguyên. Code vốn nằm gọn trong một file nay đã <b>tách thành 29 module</b> theo đúng cây thư mục bên dưới, mỗi module là một file riêng nạp theo thứ tự cố định. Khi đưa về máy chạy Vite, chỉ việc đổi tên <code>.js → .ts</code> theo cột bên phải và thêm dần kiểu dữ liệu.</p>
         <h3>Cây thư mục đích (TypeScript + Vite + Three.js)</h3>
         <div class="code-tree">GameGiaDinh/
 ├── index.html
@@ -460,10 +465,14 @@
           <tr><td><code>src/npc/husband.js</code></td><td><code>src/npc/husband.ts</code></td><td>Dựng hình anh chồng đi làm thuê</td></tr>
           <tr><td><code>src/npc/thief.js</code></td><td><code>src/npc/thief.ts</code></td><td>Dựng hình gã trộm lẻn vào sân</td></tr>
           <tr><td><code>src/npc/visitor.js</code></td><td><code>src/npc/visitor.ts</code></td><td>Dựng hình bà Tư hàng xóm</td></tr>
-          <tr><td><code>src/farming/garden.js</code></td><td><code>src/farming/garden.ts</code></td><td>12 luống rau, vòng đời cây, héo khi thiếu nước</td></tr>
+          <tr><td><code>src/farming/garden.js</code></td><td><code>src/farming/garden.ts</code></td><td>12 luống rau, vòng đời cây, héo khi thiếu nước (+4 luống khi mở rộng đất)</td></tr>
+          <tr><td><code>src/farming/trees.js</code></td><td><code>src/farming/trees.ts</code></td><td>Giai đoạn 2: cây ăn quả xoài, ổi — trồng, tưới, hái trái</td></tr>
+          <tr><td><code>src/farming/livestock.js</code></td><td><code>src/farming/livestock.ts</code></td><td>Giai đoạn 2: đàn vịt ở bờ ao, lợn trong chuồng</td></tr>
           <tr><td><code>src/activities/interactions.js</code></td><td><code>src/activities/interactions.ts</code></td><td>Mọi tương tác phím E: trồng, tưới, gà, câu cá, nấu cơm…</td></tr>
           <tr><td><code>src/activities/school.js</code></td><td><code>src/activities/school.ts</code></td><td>Đưa bé An tới trường, chấm đúng giờ</td></tr>
           <tr><td><code>src/economy/shop.js</code></td><td><code>src/economy/shop.ts</code></td><td>Sạp bán: bán nông sản, mua hạt, Quỹ sửa nhà, đổi sao</td></tr>
+          <tr><td><code>src/economy/upgrades.js</code></td><td><code>src/economy/upgrades.ts</code></td><td>Giai đoạn 2: mua đồ nhà, cây giống, vật nuôi; sửa nhà bằng quỹ</td></tr>
+          <tr><td><code>src/world/upgrades.js</code></td><td><code>src/world/upgrades.ts</code></td><td>Giai đoạn 2: dựng 3D tivi, tủ lạnh, xe máy, ổ gà mới, sửa nhà</td></tr>
           <tr><td><code>src/ui/hud.js</code></td><td><code>src/ui/hud.ts</code></td><td>Đồng hồ, tiền, sao, thông báo, thẻ nhiệm vụ</td></tr>
           <tr><td><code>src/ui/goto.js</code></td><td><code>src/ui/goto.ts</code></td><td>Nút đi tới nhanh các điểm trong làng</td></tr>
         </table>

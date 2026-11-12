@@ -44,6 +44,7 @@ import { camera, cloudMat, fireflies, hemi, renderer, scene, skyUni, sun, sunDis
       if (window.__porchLight) window.__porchLight.intensity = m > 1030 ? Math.min(1.15, (m - 1030) / 55 * 1.15) : 0;
       if (window.__porchBulb) window.__porchBulb.material.color.setHex(m > 1030 ? 0xffd97a : 0xcfc8ae);
       if (window.__lantern) window.__lantern.material.color.setHex(m > 1030 ? 0xffc46b : 0xd4573a);
+      if (window.__tvScreen) window.__tvScreen.material.color.setHex(m > 1030 ? 0x8fd8ff : 0x2c4a5e); // PHASE 2: tivi sáng lúc chập tối
       if (window.__moonG) {
         var mo = m > 1065 ? Math.min(0.95, (m - 1065) / 70) : 0;
         window.__moonG.children[0].material.opacity = mo;

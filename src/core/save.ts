@@ -7,7 +7,9 @@
  */
 import { G } from './state';
 import { rollQuests } from '../events/quests';
-import { drawCrop, plots } from '../farming/garden';
+import { drawCrop, plots, ensureExtraPlots } from '../farming/garden';
+import { drawTree } from '../farming/trees';
+import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
 
     /* ---- Lưu game vào trình duyệt: tiền, sao, hạt, giỏ, luống rau, quỹ, thành tựu, kỷ niệm ---- */
     export var SAVE_KEY = "gia-dinh-que-save-v1";
@@ -22,6 +24,12 @@ import { drawCrop, plots } from '../farming/garden';
           can: G.can, selSeed: G.selSeed, savings: G.savings, savingsGoalDone: G.savingsGoalDone, tuQuest: G.tuQuest,
           totalEarned: G.totalEarned, totalHarvest: G.totalHarvest, thiefChased: G.thiefChased,
           questsDoneTotal: G.questsDoneTotal, achievements: G.achievements, memories: G.memories.slice(-40),
+          // PHASE 2: đồ đã mua, cây ăn quả, vịt, lợn, giá theo ngày
+          owned: G.owned, saplings: G.saplings, priceDay: G.priceDay,
+          trees: G.trees.map(function (t) {
+            return { type: t.type, state: t.state, progress: t.progress, watered: t.watered, waterings: t.waterings, fruitReady: t.fruitReady };
+          }),
+          ducks: G.ducks, pigs: G.pigs,
           plots: plots.map(function (p) {
             return { state: p.state, type: p.type, progress: p.progress, watered: p.watered, waterings: p.waterings };
           })
@@ -42,6 +50,19 @@ import { drawCrop, plots } from '../farming/garden';
       G.thiefChased = d.thiefChased || 0; G.questsDoneTotal = d.questsDoneTotal || 0;
       G.achievements = d.achievements || {}; G.memories = d.memories || [];
       G.tuQuest = d.tuQuest || null;
+      // PHASE 2: khôi phục đồ đã mua — đất mở rộng phải dựng trước khi khôi phục luống
+      if (d.owned) for (var ok in G.owned) if (d.owned[ok] != null) G.owned[ok] = !!d.owned[ok];
+      if (G.owned.land) ensureExtraPlots();
+      if (d.saplings) for (var sk in G.saplings) if (d.saplings[sk] != null) G.saplings[sk] = d.saplings[sk];
+      if (d.priceDay) G.priceDay = d.priceDay;
+      if (d.trees) d.trees.forEach(function (st, i) {
+        var t = G.trees[i]; if (!t || !st) return;
+        t.type = st.type || null; t.state = st.state || "empty";
+        t.progress = st.progress || 0; t.watered = !!st.watered; t.waterings = st.waterings || 0;
+        t.fruitReady = st.fruitReady || 0; drawTree(i);
+      });
+      if (d.ducks) { G.ducks = d.ducks; refreshDuckEggs(); }
+      if (d.pigs) { G.pigs = d.pigs; refreshPigs(); }
       if (d.plots) d.plots.forEach(function (sp, i) {
         var p = plots[i]; if (!p) return;
         p.state = sp.state || "empty"; p.type = sp.type || null;
