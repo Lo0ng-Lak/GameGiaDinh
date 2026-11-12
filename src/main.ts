@@ -11,6 +11,7 @@ import './world/weather';
 import './world/ambient';
 import './world/details';
 import './world/places'; // PHASE 4.3: chùa, rừng tre, đồi ngắm ruộng ở rìa làng
+import './world/lanterns'; // PHASE 4.4: đèn lồng sạp chợ + đèn đá chùa lúc chập tối
 import './world/upgrades'; // PHASE 2: tivi, tủ lạnh, xe máy, chuồng gà mở rộng, sửa nhà
 import './ui/goto';
 import './ui/structure';
@@ -37,7 +38,9 @@ import { SCHOOL_PLAY_SPOT } from './world/village'; // PHASE 3: sân trường b
 import { collide, finePointer, joyVec, keys, mouseLocked, overlayOpen, player, tryLock } from './player/player';
 import { el, objectiveText, toast, updateHUD } from './ui/hud';
 import { gatePos, schoolPos } from './world/buildings';
-import { updateSky } from './world/daylight';
+import { updateSky, stormDimFactor } from './world/daylight';
+import { updateLanterns } from './world/lanterns';
+import { smoothFacing, walkBobY } from './npc/walkAnim'; // PHASE 4.4: xoay mặt êm + nhấp nhô khi đi
 import { updateParticles } from './world/particles';
 import { _sv, buffalo, camera, chickens, clouds, fireflies, hemi, renderer, scene, skyDome, sun, sunDisc, sunGlow, wellBucket } from './world/scene';
 import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndHarvest, sndPour, sndRooster, sndStepReal, startBikeSound, stopBikeSound, updateAmbient, updateBikeSound } from './world/sound';
@@ -237,11 +240,13 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           if (d > 1.15) {
             var cs = Math.min(d - 0.9, dt * 3.6);
             child.position.x += dx / d * cs; child.position.z += dz / d * cs;
-            child.rotation.y = Math.atan2(dx, dz);
+            child.rotation.y = smoothFacing(child.rotation.y, Math.atan2(dx, dz), dt, 6);
+            child.position.y = walkBobY(tNow, true, 3.6);
             var sw = Math.sin(tNow * 9) * 0.5;
             childParts.legL.rotation.x = sw; childParts.legR.rotation.x = -sw;
             childParts.armL.rotation.x = -sw * 0.7; childParts.armR.rotation.x = sw * 0.7;
           } else {
+            child.position.y = 0; // đứng lại chờ mẹ: hết nhấp nhô
             childParts.legL.rotation.x *= 0.8; childParts.legR.rotation.x *= 0.8;
             childParts.armL.rotation.x *= 0.8; childParts.armR.rotation.x *= 0.8;
           }
@@ -253,7 +258,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           var td = Math.hypot(tx, tz);
           if (td > 0.3) {
             child.position.x += tx / td * dt * 2.2; child.position.z += tz / td * dt * 2.2;
-            child.rotation.y = Math.atan2(tx, tz);
+            child.rotation.y = smoothFacing(child.rotation.y, Math.atan2(tx, tz), dt, 6);
+            child.position.y = walkBobY(tNow, true, 2.2);
             var sw2 = Math.sin(tNow * 9) * 0.5;
             childParts.legL.rotation.x = sw2; childParts.legR.rotation.x = -sw2;
             childParts.armR.rotation.x = Math.PI + Math.sin(tNow * 6) * 0.3; // vẫy tay
@@ -273,7 +279,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
               }
             } else {
               child.position.x += rdx / rdd * dt * 2.3; child.position.z += rdz / rdd * dt * 2.3;
-              child.rotation.y = Math.atan2(rdx, rdz);
+              child.rotation.y = smoothFacing(child.rotation.y, Math.atan2(rdx, rdz), dt, 6);
+              child.position.y = walkBobY(tNow, true, 2.3);
               var rsw = Math.sin(tNow * 9) * 0.5;
               childParts.legL.rotation.x = rsw; childParts.legR.rotation.x = -rsw;
               childParts.armL.rotation.x = -rsw * 0.7; childParts.armR.rotation.x = rsw * 0.7;
@@ -303,11 +310,11 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           var sdd = Math.hypot(sdx, sdz);
           if (sdd > 0.3) {
             child.position.x += sdx / sdd * dt * 2.5; child.position.z += sdz / sdd * dt * 2.5;
-            child.rotation.y = Math.atan2(sdx, sdz);
+            child.rotation.y = smoothFacing(child.rotation.y, Math.atan2(sdx, sdz), dt, 6);
             var psw = Math.sin(tNow * 10) * 0.55;
             childParts.legL.rotation.x = psw; childParts.legR.rotation.x = -psw;
             childParts.armL.rotation.x = -psw * 0.7; childParts.armR.rotation.x = psw * 0.7;
-            child.position.y = Math.abs(Math.sin(tNow * 5)) * 0.03;
+            child.position.y = walkBobY(tNow, true, 2.5);
           } else {
             cp.pauseT -= dt;
             childParts.legL.rotation.x *= 0.8; childParts.legR.rotation.x *= 0.8;
@@ -578,7 +585,9 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
         } else {
           husband.position.x += hx / hd * dt * 2.3;
           husband.position.z += hz / hd * dt * 2.3;
-          husband.rotation.y = Math.atan2(hx, hz);
+          // PHASE 4.4: xoay mặt êm + nhấp nhô theo nhịp bước như dân làng
+          husband.rotation.y = smoothFacing(husband.rotation.y, Math.atan2(hx, hz), dt, 6);
+          husband.position.y = walkBobY(tNow, true, 2.3);
           var hsw = Math.sin(tNow * 8) * 0.45;
           husbandParts.legL.rotation.x = hsw; husbandParts.legR.rotation.x = -hsw;
           husbandParts.armL.rotation.x = -hsw * 0.6; husbandParts.armR.rotation.x = hsw * 0.6;
@@ -593,7 +602,7 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           if (dd < 0.3) return true;
           husband.position.x += dx / dd * dt * spd;
           husband.position.z += dz / dd * dt * spd;
-          husband.rotation.y = Math.atan2(dx, dz);
+          husband.rotation.y = smoothFacing(husband.rotation.y, Math.atan2(dx, dz), dt, 6);
           hMoving = true;
           return false;
         }
@@ -634,7 +643,9 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           var hsw2 = Math.sin(tNow * 8) * 0.45;
           husbandParts.legL.rotation.x = hsw2; husbandParts.legR.rotation.x = -hsw2;
           husbandParts.armL.rotation.x = -hsw2 * 0.6; husbandParts.armR.rotation.x = hsw2 * 0.6;
+          husband.position.y = walkBobY(tNow, true, 2.1);
         } else if (G.husbandMode !== "work") {
+          husband.position.y = 0; // đứng/nghỉ: hết nhấp nhô
           husbandParts.legL.rotation.x *= 0.8; husbandParts.legR.rotation.x *= 0.8;
           husbandParts.armL.rotation.x *= 0.8;
           husbandParts.armR.rotation.x = Math.sin(tNow * 1.4) * 0.08;
@@ -688,13 +699,18 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           if (G._saveT >= 5) { G._saveT = 0; saveGame(); }
         }
         updateSky();
+        // PHASE 4.4: đèn sạp chợ + đèn chùa sáng dần theo giờ (xem lanterns.ts).
+        updateLanterns(tNow);
         // Đang mưa rào: nắng dịu lại, sương mù dày hơn. PHASE 4.1: giông thì
         // trời tối hẳn hơn mưa thường; ngày nhiều mây thì nắng cũng dịu đi.
+        // PHASE 4.4: hệ số tối CỘNG với ánh hoàng hôn (nhân, không ghi đè)
+        // — xem stormDimFactor() trong daylight.ts.
+        var dim = stormDimFactor(G.weather, G.raining);
+        sun.intensity *= dim.sun; hemi.intensity *= dim.hemi;
         if (G.raining) {
           var storm = G.weather === "storm";
-          sun.intensity *= storm ? 0.32 : 0.5; hemi.intensity *= storm ? 0.6 : 0.75;
           scene.fog.near = storm ? 14 : 20; scene.fog.far = storm ? 45 : 58;
-        } else if (G.weather === "cloudy") { sun.intensity *= 0.85; hemi.intensity *= 0.92; }
+        } else if (G.weather === "cloudy") { /* mây chỉ tối nắng, sương giữ nguyên */ }
         else { scene.fog.near = 34; scene.fog.far = 95; }
       }
       fireflies.position.y = Math.sin(tNow * 0.7) * 0.15;

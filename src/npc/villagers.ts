@@ -16,6 +16,7 @@ import { toast } from '../ui/hud';
 import { mat, scene, blockers } from '../world/scene';
 import { FIELD_SPOT, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, MARKET_STALLS, POND_SPOT, SCHOOL_YARD_SPOT, stallFront } from '../world/village';
 import { GROVE_REST_SPOT, TEMPLE_SPOT } from '../world/places';
+import { applyWalkAnim } from './walkAnim'; // PHASE 4.4: nhấp nhô + xoay mặt êm + đung đưa lúc đứng
 
 // ---- Định nghĩa dân làng ----
 export var VILLAGERS = [
@@ -221,7 +222,7 @@ function slide(nx, nz) {
 }
 export function updateVillagers(dt, tNow) {
   if (!G.started || G.dayOver) return;
-  VILLAGERS.forEach(function (def) {
+  VILLAGERS.forEach(function (def, vi) {
     var mesh = villagerMeshes[def.id];
     var parts = villagerParts[def.id];
     var seg = currentSegment(def);
@@ -234,21 +235,18 @@ export function updateVillagers(dt, tNow) {
     var target = pts[def._via];
     var dx = target.x - mesh.position.x, dz = target.z - mesh.position.z;
     var d = Math.hypot(dx, dz);
-    var sw = 0;
+    var moving = false, targetYaw = null;
     if (d > 0.3) {
       var step = Math.min(d, dt * 1.6); // đi bộ làng quê, không chạy
       var s = slide(mesh.position.x + dx / d * step, mesh.position.z + dz / d * step);
       mesh.position.x = s.x; mesh.position.z = s.z;
-      mesh.rotation.y = Math.atan2(dx, dz);
-      sw = Math.sin(tNow * 8) * 0.45;
+      moving = true; targetYaw = Math.atan2(dx, dz);
     } else if (def._via < pts.length - 1) {
       def._via++; // tới điểm via thì đi tiếp điểm sau
-    } else {
-      // Đứng một chỗ: khẽ đung đưa, tay buông
-      mesh.rotation.y += Math.sin(tNow * 0.7) * 0.001;
     }
-    if (parts.legL) { parts.legL.rotation.x = sw; parts.legR.rotation.x = -sw; }
-    if (parts.armL) { parts.armL.rotation.x = -sw * 0.7; parts.armR.rotation.x = sw * 0.7; }
+    // PHASE 4.4: xoay mặt êm về hướng đi (không bẻ ngoặt), thân nhấp
+    // nhô theo nhịp bước, đứng yên thì khẽ đung đưa thay cho đứng đơ.
+    applyWalkAnim(mesh, parts, { moving: moving, dt: dt, tNow: tNow, targetYaw: targetYaw, speed: 1.6, seed: vi });
   });
 }
 

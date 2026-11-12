@@ -28,7 +28,7 @@ import { stallPos } from '../world/buildings';
 import { HILL_REST_SPOT, TEMPLE_PRAY_SPOT } from '../world/places';
 import { spawnParticles } from '../world/particles';
 import { coopPos, wellPos } from '../world/scene';
-import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPlant, sndPour, sndSplash, sndWater } from '../world/sound';
+import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPlant, sndPour, sndSplash, sndTempleBell, sndWater } from '../world/sound';
 
     /* ================== TƯƠNG TÁC ================== */
     export var currentTarget = null; // {kind, plot?, label}
@@ -329,7 +329,7 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         // PHASE 4.3: thắp hương ở chùa — 1 lần/ngày, +1 sao vui vẻ
         if (G.templePrayedToday) { toast("Hôm nay đã thắp hương rồi — lòng nhẹ như mây, cứ thong thả làm việc nhà."); return; }
         G.templePrayedToday = true; G.stars++;
-        sndBell();
+        sndTempleBell(); // PHASE 4.4: chuông chùa trầm, vang lâu — khác chuông trường
         toast("Thắp một nén hương ở chùa làng, khấn cho cả nhà bình an, vụ mùa thuận lợi. +1 sao vui vẻ", true);
         addMemory("Thắp hương ở chùa làng, cầu bình an cho cả nhà.");
         saveGame();

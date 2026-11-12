@@ -13,6 +13,7 @@ node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi ch�
 node test/npc-pathing.test.mjs     # 177 kiểm tra đường đi + lịch dân làng + địa điểm mới 4.3
 node test/weather.test.mjs         # 66 kiểm tra thời tiết + mùa (Phase 4.1)
 node test/festivals.test.mjs       # 110 kiểm tra lễ hội trong năm (Phase 4.2)
+node test/lighting.test.mjs        # 104 kiểm tra ánh sáng, đèn, chuyển động, âm thanh (Phase 4.4)
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
 # OLD_CROPS=1 node test/economy-sim.mjs   # chạy lại với giá rau cũ để so sánh trước/sau
 ```
@@ -161,6 +162,34 @@ xong là hoàn thành việc đó nên tiền tăng thêm 5.000đ. Đây là hà
 tra tiền không còn nhiễm thưởng nhiệm vụ; test nào cần nhiệm vụ thì tự đặt
 tường minh. Sau khi sửa: 10/10 lần chạy đều 124/124.
 
+`test/lighting.test.mjs` (104 kiểm tra, đều đậu — Phase 4.4):
+- **Ánh sáng hoàng hôn:** `daylightState()` thuần theo phút — 05:30 cường
+  độ 0.75, 12:00 cường độ 1.05, 18:30 cường độ ~0.62, nắng ngả cam (hue
+  nhỏ hơn trưa, đậm màu, tối dần), bóng dài > 2.5 lần trưa, 19:00 còn
+  0.5; `updateSky()` thật áp dụng đúng vào scene (sun.intensity, khung
+  bóng mở ×1.8 lúc hoàng hôn); `smooth01` kẹp đúng biên 0/1.
+- **Đèn chập tối:** `lanternLevel()` tắt trước 17:00, sáng dần 17:00–
+  17:30, sáng hẳn tới 19:00; `updateLanterns()` thật: ban ngày 2 đèn
+  PointLight mới (sạp + chùa) cường độ 0, bóng mờ; 18:30 cả hai sáng,
+  bóng ngả vàng, đèn sạp sáng hơn đèn chùa; giông 18:30 đèn vẫn sáng
+  (đèn chỉ theo giờ, không theo thời tiết).
+- **Giông cộng hoàng hôn:** `stormDimFactor()` đúng hệ số cũ (giông
+  ×0.32, mưa ×0.5, mây ×0.85, nắng ×1); `finalSunIntensity()` 18:30
+  giông ~0.20 < 18:30 nắng ~0.62 nhưng > 0, và trưa giông vẫn sáng hơn
+  hoàng hôn giông.
+- **Chuyển động:** `smoothFacing()` giới hạn tốc độ quay, đi đường ngắn
+  qua vòng ±PI; `walkBobY()` = 0 khi đứng, > 0 giữa nhịp khi đi, đi
+  nhanh nhấp nhiều hơn; `idleSway()` rất nhẹ và lệch pha mỗi người;
+  `applyWalkAnim()` trên hình nộm + `updateVillagers()` thật: bác Hai
+  đi bộ về nhà thì mặt xoay dần (không bẻ ngoặt), thân nhấp nhô, chân
+  vung; tới đích thì chân về 0, thân khẽ nghiêng.
+- **Âm thanh:** mọi hàm tiếng mới đều no-op an toàn khi `AC` null
+  (chuông chùa, dế, `initAmbient`, `updateAmbient` cả khi tắt tiếng);
+  `cricketLevel()` 0 ban ngày → ~0.5 lúc 17:00 → 1 lúc 18:00;
+  `bambooWindLevel()` = 1 trong rừng (≤6m), ~2/3 ở 12m, 0 ngoài 24m
+  và giữa làng; thắp hương ở chùa thật (E tại điểm thắp hương) vẫn
+  +1 sao và không lỗi khi `AC` null.
+
 ## Cái gì KHÔNG test được ở đây
 
 - **Trình duyệt headless: không có.** Chrome hệ thống (`/opt/meta-chromium`)
@@ -177,4 +206,14 @@ tường minh. Sau khi sửa: 10/10 lần chạy đều 124/124.
   `doInteract`) không test được trong Node — test đặt trạng thái cây/lợn trực
   tiếp rồi gọi hàm logic. Phần tính toán của vườn rau trong mô phỏng kinh tế
   cũng là mô hình bằng số liệu thật của CROPS, không lái qua tương tác 3D.
-- **Âm thanh** không test (AudioContext không có trong Node, `AC` luôn null).
+- **Âm thanh** không nghe được thật (AudioContext không có trong Node,
+  `AC` luôn null) — test Phase 4.4 chỉ kiểm chứng các hàm tiếng mới
+  không lỗi khi `AC` null, mức dế/gió tre tính đúng theo giờ và khoảng
+  cách, và cổng `Sound` chặn được. Tiếng chuông chùa, gió rừng tre, dế
+  chiều tối có vang đúng như thiết kế hay không cần nghe trên trình
+  duyệt thật.
+- **Ánh sáng / đèn / chuyển động** chỉ kiểm chứng bằng số liệu hàm thuần
+  và trạng thái scene trong stub (cường độ nắng, màu hue, khung bóng,
+  cường độ PointLight, góc xoay, độ nhấp nhô) — chưa nhìn thấy bằng mắt
+  rằng hoàng hôn trông ấm hơn, đèn lồng sáng đẹp, hay dân làng đi có
+  hồn hơn. Cần mở trình duyệt thật lúc chập tối trong game để xem.

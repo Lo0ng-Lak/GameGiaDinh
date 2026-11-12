@@ -23,11 +23,18 @@ export { YEAR_CYCLE, FESTIVALS, FESTIVAL_ITEMS, FESTIVAL_GOODS, dayOfYear, event
 export { showFestivalDecor, festivalDecorState } from '../src/world/festivalDecor';
 export { buyFestivalItem } from '../src/economy/shop';
 export { updateHUD } from '../src/ui/hud';
-export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes } from '../src/npc/villagers';
+export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes, villagerParts } from '../src/npc/villagers';
 export { VENDORS, GROCERY, marketPriceOf, sellToVendor, buyGrocery, vendorBuyableCount, openVendorPanel, openGroceryPanel } from '../src/economy/market';
-export { blockers } from '../src/world/scene';
+export { blockers, sun, hemi } from '../src/world/scene';
 export { MARKET_STALLS, GROCERY_POS, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, SCHOOL_YARD_SPOT, SCHOOL_PLAY_SPOT, FIELD_SPOT, POND_SPOT, stallFront } from '../src/world/village';
 export { TEMPLE_POS, TEMPLE_PRAY_SPOT, TEMPLE_SPOT, GROVE_CENTER, GROVE_CLUSTERS, GROVE_SHOOTS, GROVE_REST_SPOT, HILL_POS, HILL_REST_SPOT, refreshBambooShoots } from '../src/world/places';
 export { gotoTargets } from '../src/ui/goto';
 export { collide, player } from '../src/player/player';
 export { findTarget, doInteract, setCurrentTarget, currentTarget } from '../src/activities/interactions';
+// PHASE 4.4: ánh sáng hoàng hôn, đèn chập tối, chuyển động, âm thanh
+export { daylightState, lanternLevel, shadowLengthFactor, stormDimFactor, finalSunIntensity, smooth01, updateSky } from '../src/world/daylight';
+export { updateLanterns, lanternsState, STALL_LANTERN_POS, TEMPLE_LAMP_POS, TEMPLE_LIGHT_POS } from '../src/world/lanterns';
+export { smoothFacing, angleDelta, walkBobY, walkSwing, idleSway, applyWalkAnim } from '../src/npc/walkAnim';
+export { AC, setAC, AMB, initAmbient, updateAmbient, sndTempleBell, sndCricket, cricketLevel, bambooWindLevel, sndBell } from '../src/world/sound';
+export { child, childParts } from '../src/npc/child';
+export { husband, husbandParts } from '../src/npc/husband';

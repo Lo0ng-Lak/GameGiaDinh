@@ -27,6 +27,12 @@ import { player } from '../player/player';
     export function sndHarvest() { beep(520, 0.09, "square", 0.08); beep(760, 0.12, "square", 0.08, 0.07); }
     export function sndCoin() { beep(990, 0.1, "square", 0.09); beep(1320, 0.18, "square", 0.09, 0.08); }
     export function sndBell() { beep(1568, 0.5, "sine", 0.1); beep(1568, 0.7, "sine", 0.08, 0.55); }
+    // PHASE 4.4: chuông chùa — trầm, vang lâu (196Hz + hài 294/392),
+    // nghe khác hẳn chuông trường (1568Hz). Gọi khi thắp hương ở chùa
+    // (interactions.ts). beep() đã chặn khi AC null / tắt tiếng.
+    export function sndTempleBell() {
+      beep(196, 2.2, "sine", 0.14); beep(294, 1.8, "sine", 0.05, 0.05); beep(392, 1.0, "sine", 0.03, 0.1);
+    }
     export function sndStep() { beep(120 + Math.random() * 40, 0.05, "triangle", 0.03); }
     export function sndCluck() { beep(500, 0.07, "square", 0.07); beep(420, 0.09, "square", 0.07, 0.1); beep(560, 0.07, "square", 0.06, 0.22); }
     export function sndSplash() { beep(340, 0.16, "sine", 0.1); beep(620, 0.22, "sine", 0.07, 0.07); beep(950, 0.14, "sine", 0.05, 0.15); }
@@ -43,6 +49,24 @@ import { player } from '../player/player';
     /* ---- Âm thanh tự nhiên nền: gió thổi, mưa rơi (tiếng ồn lọc), chim hót, dế kêu ----
        Tất cả tổng hợp bằng WebAudio, không cần file nhạc. Bật khi bấm bắt đầu ngày. */
     export var AMB = { ready: false, chirpT: 3, cricketT: 1 };
+    // PHASE 4.4: dế kêu to dần về chiều tối — 0 trước 16:00, lên dần
+    // 16:00–18:00, to hẳn từ 18:00 (cùng nhịp với đèn chập tối + đom đóm).
+    export function cricketLevel(m) {
+      if (m < 960) return 0;
+      if (m >= 1080) return 1;
+      var t = (m - 960) / 120;
+      return t * t * (3 - 2 * t);
+    }
+    // PHASE 4.4: gió rì rào trong rừng tre — to nhất khi đứng trong rừng
+    // (cách tâm rừng <= 6m), nhỏ dần ra tới 24m thì hết. Rừng tre ở
+    // GROVE_CENTER (26,14) — xem places.ts. Hàm thuần, test được.
+    export function bambooWindLevel(px, pz) {
+      var dx = px - 26, dz = pz - 14;
+      var d = Math.hypot(dx, dz);
+      if (d <= 6) return 1;
+      if (d >= 24) return 0;
+      return 1 - (d - 6) / 18;
+    }
     export function noiseBuffer() {
       var len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate);
       var d = buf.getChannelData(0);
@@ -65,6 +89,11 @@ import { player } from '../player/player';
       AMB.wind = noiseLoop(320, "lowpass", 0.012);          // gió rì rào qua lá
       AMB.rain = noiseLoop(1800, "bandpass", 0);            // mưa rào, chỉ kêu khi mưa
       AMB.rain.filter.Q.value = 0.6;
+      // PHASE 4.4: gió qua rừng tre — tiếng xào xạc cao hơn gió thường
+      // (bandpass ~900Hz), gain 0 lúc đầu, updateAmbient() mở dần khi
+      // người chơi lại gần rừng tre. AC null thì initAmbient đã return.
+      AMB.bamboo = noiseLoop(900, "bandpass", 0);
+      AMB.bamboo.filter.Q.value = 0.8;
     }
     // Tiếng ồn ngắn một lần: bước chân trên đất, nước dội, đất xới — nghe "thật" hơn tiếng bíp
     export function noiseHit(dur, freq, vol, type) {
@@ -89,7 +118,7 @@ import { player } from '../player/player';
         beep(f0 * 0.82, 0.07, "sine", 0.022, i * 0.14 + 0.07);
       }
     }
-    export function sndCricket() { for (var i = 0; i < 3; i++) beep(4300, 0.05, "sine", 0.012, i * 0.09); }
+    export function sndCricket(vol) { for (var i = 0; i < 3; i++) beep(4300, 0.05, "sine", vol || 0.012, i * 0.09); }
     export function sndFrog() { beep(160, 0.12, "square", 0.02); beep(140, 0.14, "square", 0.018, 0.2); }
     // Cập nhật lớp âm thanh nền theo giờ giấc + thời tiết, gọi trong vòng lặp chính
     export function updateAmbient(dt) {
@@ -97,14 +126,23 @@ import { player } from '../player/player';
       AMB.wind.gain.gain.value = 0.008 + G.wind * 0.012;
       var rainTarget = G.raining ? 0.11 : 0;
       AMB.rain.gain.gain.value += (rainTarget - AMB.rain.gain.gain.value) * Math.min(1, dt * 2);
+      // PHASE 4.4: gió rừng tre mở dần khi lại gần rừng (0 ngoài 24m),
+      // to thêm khi gió chung mạnh — trượt êm như gain mưa.
+      if (AMB.bamboo) {
+        var bambooTarget = bambooWindLevel(player.x, player.z) * (0.02 + G.wind * 0.03);
+        AMB.bamboo.gain.gain.value += (bambooTarget - AMB.bamboo.gain.gain.value) * Math.min(1, dt * 2);
+      }
       AMB.chirpT -= dt; AMB.cricketT -= dt;
       if (AMB.chirpT <= 0) {
         AMB.chirpT = 2.5 + Math.random() * 6;
         if (!G.raining && G.minutes > 345 && G.minutes < 1060 && Math.random() < 0.75) sndChirp();
       }
       if (AMB.cricketT <= 0) {
-        AMB.cricketT = 0.7 + Math.random() * 1.6;
-        if (G.minutes > 1050 || G.minutes < 345) sndCricket();                 // dế kêu lúc chập tối
+        // PHASE 4.4: chiều tối dế kêu dày + to hơn (theo cricketLevel):
+        // trưa 1.1–2.3s một đợt, 18:00 chỉ còn 0.4–1.6s, to gấp ~2.7 lần.
+        var ck = cricketLevel(G.minutes);
+        AMB.cricketT = (1.1 - 0.7 * ck) + Math.random() * 1.2;
+        if (G.minutes > 1050 || G.minutes < 345) sndCricket(0.012 + 0.02 * ck); // dế kêu lúc chập tối
         else if (G.minutes > 960 && Math.random() < 0.4) sndFrog();           // ếch kêu ngoài ao buổi chiều tối
       }
     }
