@@ -87,6 +87,35 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
     export var clockT = new THREE.Clock();
     export var fpsEMA = 60, prLevel = 0, prTimer = 0;
     export var PR_STEPS = [2, 1.75, 1.5, 1.3, 1.15, 1];
+    // PHASE 4.5: tầng chất lượng — máy yếu không chỉ hạ phân giải màn hình
+    // mà còn hạ kích thước bản đồ bóng (shadow map 2048 -> 768): bản đồ
+    // bóng nhỏ thì lượt vẽ bóng của mặt trời rẻ hơn nhiều, bóng vẫn đủ
+    // nét vì khung bóng vốn đã rộng 68m. Đổi kích thước xong phải dispose
+    // bản đồ bóng cũ để renderer vẽ lại (three r128).
+    export var SHADOW_SIZES = [2048, 1536, 1280, 1024, 1024, 768];
+    export function shadowSizeForLevel(level) {
+      if (level <= 0) return SHADOW_SIZES[0];
+      if (level >= SHADOW_SIZES.length) return SHADOW_SIZES[SHADOW_SIZES.length - 1];
+      return SHADOW_SIZES[level];
+    }
+    export var qualityState = { level: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2), shadowSize: 2048 };
+    export function applyQualityLevel(level) {
+      if (level < 0) level = 0;
+      if (level > PR_STEPS.length - 1) level = PR_STEPS.length - 1;
+      var maxPR = Math.min(window.devicePixelRatio || 1, 2);
+      var pr = Math.min(maxPR, PR_STEPS[level]);
+      var ss = shadowSizeForLevel(level);
+      renderer.setPixelRatio(pr);
+      if (ss !== qualityState.shadowSize) {
+        sun.shadow.mapSize.set(ss, ss);
+        if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+      }
+      qualityState.level = level; qualityState.pixelRatio = pr; qualityState.shadowSize = ss;
+    }
+    // PHASE 4.5: giá trị đã ghi lần trước cho các thứ cập nhật mỗi khung —
+    // chỉ ghi lại khi đổi đủ lớn, khỏi ghi đè cùng 1 giá trị 60 lần/giây.
+    var lastShade = -1, lastPudO = -1, lastRbO = -1;
+    var lastObjective = null, lastPrompt = null, promptKeyEl = null;
     export var stepSndT = 0, promptEl = el("prompt"), promptText = el("prompt-text"), objEl = el("objective");
     export var hudT = 0;
     /* --- PHASE 4.1: cơn mưa bắt đầu — tưới miễn phí + giông quật rau ---
@@ -347,7 +376,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       if (window.__gateRing) window.__gateRing.material.opacity = G.childState === "follow" ? 0.65 + Math.sin(tNow * 4) * 0.3 : 0.3;
       if (window.__flag) window.__flag.rotation.y = Math.sin(tNow * 3) * 0.25;
       if (window.__cloths) window.__cloths.forEach(function (c, i) { c.rotation.x = Math.sin(tNow * (1.1 + G.wind * 1.5) + i * 1.3) * (0.05 + G.wind * 0.17); });
-      if (buffalo) { var tl = buffalo.getObjectByName("tail"); if (tl) tl.rotation.x = Math.sin(tNow * 1.7) * 0.4; }
+      // PHASE 4.5: đuôi trâu giữ sẵn ở scene.ts, không getObjectByName() mỗi khung.
+      if (window.__buffaloTail) window.__buffaloTail.rotation.x = Math.sin(tNow * 1.7) * 0.4;
       if (wellBucket) wellBucket.position.y = 1.55 + Math.sin(tNow * 1.3) * 0.05;
 
       /* --- Gà đi lại --- */
@@ -368,7 +398,10 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
         if (nx < -14 || nx > 10 || nz < -6 || nz > 11) { u.ang += Math.PI; }
         else { c.position.x = nx; c.position.z = nz; }
         c.rotation.y = u.ang;
-        var head = c.getObjectByName("head");
+        // PHASE 4.5: đầu gà giữ sẵn trong userData lúc dựng (scene.ts),
+        // chỉ tìm lại 1 lần nếu thiếu — không getObjectByName() mỗi khung.
+        var head = c.userData.head;
+        if (!head) { head = c.getObjectByName("head"); c.userData.head = head; }
         if (head) head.position.y = 0.42 + (Math.sin(tNow * 6 + i * 2) > 0.6 ? -0.09 : 0);
       });
 
@@ -685,15 +718,25 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       if (hudT > 0.2) {
         hudT = 0;
         setCurrentTarget((G.started && !G.dayOver) ? findTarget() : null);
-        if (currentTarget) {
-          promptText.textContent = currentTarget.label;
-          promptEl.classList.add("show");
-          promptEl.querySelector(".key").textContent = document.body.classList.contains("touch") ? "Chạm" : "E";
-        } else promptEl.classList.remove("show");
+        // PHASE 4.5: chỉ ghi DOM gợi ý khi nhãn đổi (kèm cả querySelector
+        // ".key" chỉ tìm 1 lần) — trước đây ghi lại + tìm lại mỗi 0,2s.
+        var curLabel = currentTarget ? currentTarget.label : null;
+        if (curLabel !== lastPrompt) {
+          lastPrompt = curLabel;
+          if (currentTarget) {
+            promptText.textContent = curLabel;
+            promptEl.classList.add("show");
+            if (!promptKeyEl) promptKeyEl = promptEl.querySelector(".key");
+            promptKeyEl.textContent = document.body.classList.contains("touch") ? "Chạm" : "E";
+          } else promptEl.classList.remove("show");
+        }
         var lh = el("lock-hint");
         if (lh) lh.classList.toggle("show", !!(G.started && !G.dayOver && !mouseLocked && finePointer && !overlayOpen()));
         if (G.started) {
-          objEl.innerHTML = objectiveText(); updateHUD();
+          // PHASE 4.5: mục tiêu chỉ ghi innerHTML khi chuỗi đổi.
+          var objHtml = objectiveText();
+          if (objHtml !== lastObjective) { lastObjective = objHtml; objEl.innerHTML = objHtml; }
+          updateHUD();
           // Tự lưu nhà mỗi ~5 giây để tắt trang mở lại vẫn sống tiếp được
           G._saveT = (G._saveT || 0) + 0.2;
           if (G._saveT >= 5) { G._saveT = 0; saveGame(); }
@@ -765,16 +808,27 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       G.wind = Math.max(0.12, Math.min(1, 0.55 + 0.5 * Math.sin(tNow * 0.11) * Math.sin(tNow * 0.043 + 1.7)));
       var wetTgt = G.raining ? 1 : 0;
       G.wet += (wetTgt - G.wet) * Math.min(1, dt * (G.raining ? 0.22 : 0.025));
+      // PHASE 4.5: đất ướt đổi rất chậm — chỉ ghi lại màu đất/vũng nước/
+      // cầu vồng khi giá trị đổi đủ lớn, khỏi ghi đè cùng 1 giá trị mỗi khung.
       if (window.__groundMats) {
         var gshade = 1 - 0.32 * G.wet;
-        window.__groundMats.forEach(function (gm) { gm.color.setRGB(gshade, gshade, gshade); });
+        if (Math.abs(gshade - lastShade) > 0.002) {
+          lastShade = gshade;
+          window.__groundMats.forEach(function (gm) { gm.color.setRGB(gshade, gshade, gshade); });
+        }
       }
-      if (window.__puddleMat) window.__puddleMat.opacity = Math.max(0, G.wet - 0.3) * 0.8;
+      if (window.__puddleMat) {
+        var pudO = Math.max(0, G.wet - 0.3) * 0.8;
+        if (Math.abs(pudO - lastPudO) > 0.001) { lastPudO = pudO; window.__puddleMat.opacity = pudO; }
+      }
       if (G.rainbowT > 0) G.rainbowT -= dt;
       if (window.__rainbowMats) {
         var rbO = 0;
         if (G.rainbowT > 0) rbO = 0.36 * Math.min(1, (45 - G.rainbowT) / 4 + 0.1) * Math.min(1, G.rainbowT / 7);
-        window.__rainbowMats.forEach(function (rm) { rm.opacity = rbO; });
+        if (Math.abs(rbO - lastRbO) > 0.001) {
+          lastRbO = rbO;
+          window.__rainbowMats.forEach(function (rm) { rm.opacity = rbO; });
+        }
       }
       if (window.__cloudShadows) window.__cloudShadows.forEach(function (cs, csi2) {
         cs.position.x += dt * (1.0 + G.wind * 1.8 + csi2 * 0.3);
@@ -812,9 +866,10 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       prTimer += dt;
       if (prTimer > 2.5) {
         prTimer = 0;
-        var maxPR = Math.min(window.devicePixelRatio || 1, 2);
-        if (fpsEMA < 42 && prLevel < PR_STEPS.length - 1) { prLevel++; renderer.setPixelRatio(Math.min(maxPR, PR_STEPS[prLevel])); }
-        else if (fpsEMA > 57 && prLevel > 0) { prLevel--; renderer.setPixelRatio(Math.min(maxPR, PR_STEPS[prLevel])); }
+        // PHASE 4.5: đổi tầng thì đổi luôn cả phân giải lẫn bản đồ bóng
+        // (xem applyQualityLevel) thay vì chỉ đổi phân giải như trước.
+        if (fpsEMA < 42 && prLevel < PR_STEPS.length - 1) { prLevel++; applyQualityLevel(prLevel); }
+        else if (fpsEMA > 57 && prLevel > 0) { prLevel--; applyQualityLevel(prLevel); }
       }
       renderer.render(scene, camera);
     }

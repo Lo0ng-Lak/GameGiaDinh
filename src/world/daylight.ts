@@ -8,12 +8,15 @@
 import * as THREE from 'three';
 import { G } from '../core/state';
 import { player } from '../player/player';
-import { camera, cloudMat, fireflies, hemi, renderer, scene, skyUni, sun, sunDisc, sunGlow } from './scene';
+import { camera, cloudMat, fireflies, hemi, renderer, scene, skyUni, sun, sunDisc, sunGlow, windowGlass } from './scene';
 
     /* ================== ÁNH SÁNG THEO GIỜ ================== */
     export var skyDay = new THREE.Color(0x9fd3e8), skyDawn = new THREE.Color(0xf6c98f),
         skyDusk = new THREE.Color(0xe8906a), skyNight = new THREE.Color(0x35486b);
     export var tmpColor = new THREE.Color();
+    // PHASE 4.5: 3 màu cố định dùng chung — trước đây updateSky() tạo mới
+    // 3 Color mỗi lần gọi (5 lần/giây) chỉ để pha màu trời/mây.
+    var WHITE = new THREE.Color(0xffffff), SKY_TOP = new THREE.Color(0x2e6cb0), SKY_BOT = new THREE.Color(0xffd9a0);
     export function lerpColor(a, b, t) { return tmpColor.copy(a).lerp(b, t); }
     // PHASE 4.4: chuyển mượt 0..1 (smoothstep) — bình minh/hoàng hôn không
     // còn gãy khúc ở ranh giới khung giờ như nội suy tuyến tính cũ.
@@ -103,11 +106,11 @@ import { camera, cloudMat, fireflies, hemi, renderer, scene, skyUni, sun, sunDis
       else if (m < 1140) { skyC = lerpColor(skyDay, skyDusk, (m - 1020) / 120); }
       else { skyC = lerpColor(skyDusk, skyNight, Math.min(1, (m - 1140) / 60)); }
       scene.background.copy(skyC);
-      scene.fog.color.copy(skyC).lerp(new THREE.Color(0xffffff), 0.25);
+      scene.fog.color.copy(skyC).lerp(WHITE, 0.25);
       skyUni.mid.value.copy(skyC);
-      skyUni.top.value.copy(skyC).lerp(new THREE.Color(0x2e6cb0), 0.55);
-      skyUni.bot.value.copy(skyC).lerp(new THREE.Color(0xffd9a0), 0.5);
-      cloudMat.color.copy(skyC).lerp(new THREE.Color(0xffffff), 0.6);
+      skyUni.top.value.copy(skyC).lerp(SKY_TOP, 0.55);
+      skyUni.bot.value.copy(skyC).lerp(SKY_BOT, 0.5);
+      cloudMat.color.copy(skyC).lerp(WHITE, 0.6);
       var sunVis = Math.max(0.12, st.sunSin);
       sunDisc.material.opacity = sunVis * 0.95;
       sunGlow.material.opacity = sunVis * 0.85;
@@ -149,6 +152,9 @@ import { camera, cloudMat, fireflies, hemi, renderer, scene, skyUni, sun, sunDis
       if (window.__stars) window.__stars.position.copy(camera.position);
       // Đèn cửa sổ nhà sáng lên lúc chập tối
       var glow = m > 1050 ? 1 : 0.15;
-      scene.traverse(function (o) { if (o.name === "window-glass") o.material.color.setRGB(1 * glow + 0.3, 0.91 * glow + 0.25, 0.66 * glow); });
+      // PHASE 4.5: trước đây duyệt toàn bộ scene (~1.400 vật) mỗi 0,2s chỉ
+      // để tìm 2 ô kính này — giờ dùng thẳng danh sách windowGlass giữ sẵn
+      // ở scene.ts, đổi màu đúng 2 ô kính, không duyệt gì thêm.
+      for (var gi = 0; gi < windowGlass.length; gi++) windowGlass[gi].material.color.setRGB(1 * glow + 0.3, 0.91 * glow + 0.25, 0.66 * glow);
     }
 

@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { G } from '../core/state';
 import { LIVESTOCK } from '../core/data';
-import { scene, mat, box, cyl, sph, block } from '../world/scene';
+import { scene, mat, box, cyl, sph, block, boxGeo } from '../world/scene';
 import { GEO, addMesh } from './garden';
 
 // Vị trí ổ vịt ở bờ ao (cách mép nước ~3.6m, không chắn đường đi)
@@ -50,7 +50,7 @@ var eggM = mat(0xf2e8d5), pigM = mat(0xf0a8b8), pigM2 = mat(0xe08a9a);
   pg.visible = false;
   var fenceM = mat(0x8a5f3c), troughM = mat(0x6b4a29);
   function penBox(w, h, d, x, y, z) {
-    var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), fenceM);
+    var m = new THREE.Mesh(boxGeo(w, h, d), fenceM);
     m.position.set(x, y, z); m.castShadow = true; pg.add(m); return m;
   }
   // hàng rào chuồng: 2 cạnh dài + 2 cạnh ngắn + 4 cọc góc
@@ -59,9 +59,9 @@ var eggM = mat(0xf2e8d5), pigM = mat(0xf0a8b8), pigM2 = mat(0xe08a9a);
   penBox(0.1, 0.9, 0.1, -1.4, 0.45, -1.2); penBox(0.1, 0.9, 0.1, 1.4, 0.45, -1.2);
   penBox(0.1, 0.9, 0.1, -1.4, 0.45, 1.2); penBox(0.1, 0.9, 0.1, 1.4, 0.45, 1.2);
   // 2 máng ăn bằng gỗ
-  var tr1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, 0.5), troughM);
+  var tr1 = new THREE.Mesh(boxGeo(1.1, 0.25, 0.5), troughM);
   tr1.position.set(-0.6, 0.13, -0.9); tr1.castShadow = true; pg.add(tr1);
-  var tr2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.25, 0.5), troughM);
+  var tr2 = new THREE.Mesh(boxGeo(1.1, 0.25, 0.5), troughM);
   tr2.position.set(0.6, 0.13, 0.9); tr2.castShadow = true; pg.add(tr2);
   // 2 con lợn — ẩn cho đến khi mua, lớn dần theo growDays
   for (var p = 0; p < 2; p++) {

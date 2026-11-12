@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 import { stallPos } from './buildings';
-import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, woodTex } from './scene';
+import { bladeTex, block, box, boxGeo, coneGeo, cylGeo, glowCv, mat, matTex, planeGeoT, scene, sphGeo, texMat, torusGeo, wellPos, woodTex } from './scene';
 
     /* ================== LỚP CHI TIẾT — đồ đạc, sân vườn, ao, đồng lúa ================== */
     (function buildDetails() {
@@ -19,7 +19,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
         return new THREE.Vector3(-11 + x * c + z * s, y, -6 - x * s + z * c);
       }
       function houseBox(w, h, d, color, lx, ly, lz, tex) {
-        var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), tex ? texMat(tex) : mat(color));
+        var m = new THREE.Mesh(boxGeo(w, h, d), tex ? texMat(tex) : mat(color));
         var p = houseLocal(lx, ly, lz); m.position.copy(p); m.rotation.y = 0.5;
         m.castShadow = true; m.receiveShadow = true; scene.add(m); return m;
       }
@@ -68,7 +68,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       scene.add(blades1); scene.add(blades2);
 
       /* --- Sỏi đá rải sân, hai bên đường, quanh vườn --- */
-      var peb = new THREE.InstancedMesh(new THREE.SphereGeometry(0.09, 7, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }), 140);
+      var peb = new THREE.InstancedMesh(sphGeo(0.09, 7, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }), 140);
       var pebCols = [new THREE.Color(0x9a938a), new THREE.Color(0x8a8378), new THREE.Color(0xaaa294), new THREE.Color(0x7d766a)];
       for (var pi2 = 0; pi2 < 140; pi2++) {
         var px2, pz2;
@@ -114,27 +114,27 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       var lampStrP = houseLocal(2.2, 2.38, 3.95);
       var lampStr = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42, 5), mat(0x5a3a22));
       lampStr.position.copy(lampStrP); scene.add(lampStr);
-      var lantern = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), new THREE.MeshBasicMaterial({ color: 0xd4573a }));
+      var lantern = new THREE.Mesh(sphGeo(0.17, 10, 8), new THREE.MeshBasicMaterial({ color: 0xd4573a }));
       var lampP = houseLocal(2.2, 2.12, 3.95);
       lantern.position.copy(lampP); lantern.scale.y = 0.82; scene.add(lantern);
       window.__lantern = lantern;
       // Xâu ngô khô treo cột hiên
       for (var ci2 = 0; ci2 < 6; ci2++) {
         var cornP = houseLocal(-3.2 + (ci2 % 2) * 0.14, 2.25 - Math.floor(ci2 / 2) * 0.19, 3.98);
-        var corn = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.17, 7), mat(0xf2c230));
+        var corn = new THREE.Mesh(cylGeo(0.035, 0.045, 0.17, 7), mat(0xf2c230));
         corn.position.copy(cornP); corn.rotation.z = 0.15; scene.add(corn);
       }
       // Chậu hoa hai đầu hiên
       [[-1.8, 4.18, 0xe2483a], [1.7, 4.18, 0xffd94d]].forEach(function (fp) {
         var potP = houseLocal(fp[0], 0.29, fp[1]);
-        var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.22, 9), mat(0xa55736));
+        var pot = new THREE.Mesh(cylGeo(0.13, 0.1, 0.22, 9), mat(0xa55736));
         pot.position.copy(potP); pot.castShadow = true; scene.add(pot);
         var bushP = houseLocal(fp[0], 0.48, fp[1]);
-        var bushF = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 7), mat(0x4e7d33));
+        var bushF = new THREE.Mesh(sphGeo(0.15, 8, 7), mat(0x4e7d33));
         bushF.position.copy(bushP); bushF.scale.y = 0.75; scene.add(bushF);
         for (var fj = 0; fj < 4; fj++) {
           var flP = houseLocal(fp[0] + rnd(-0.11, 0.11), 0.56 + rnd(0, 0.06), fp[1] + rnd(-0.11, 0.11));
-          var fl3 = new THREE.Mesh(new THREE.SphereGeometry(0.05, 7, 6), mat(fp[2]));
+          var fl3 = new THREE.Mesh(sphGeo(0.05, 7, 6), mat(fp[2]));
           fl3.position.copy(flP); scene.add(fl3);
         }
       });
@@ -157,14 +157,14 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       var dogMat = mat(0xc9a06b), dogDark = mat(0x8a6a42);
       var dBody = new THREE.Mesh(new THREE.SphereGeometry(0.27, 10, 8), dogMat);
       dBody.scale.set(1.15, 0.9, 0.85); dBody.position.y = 0.26; dBody.castShadow = true; dog.add(dBody);
-      var dHead = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), dogMat);
+      var dHead = new THREE.Mesh(sphGeo(0.16, 10, 8), dogMat);
       dHead.position.set(0.26, 0.44, 0); dog.add(dHead);
       var dSnout = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.09, 0.11), dogDark);
       dSnout.position.set(0.4, 0.4, 0); dog.add(dSnout);
       [-1, 1].forEach(function (s) {
-        var ear = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.13, 6), dogDark);
+        var ear = new THREE.Mesh(coneGeo(0.055, 0.13, 6), dogDark);
         ear.position.set(0.2, 0.58, s * 0.09); ear.rotation.x = s * 0.35; dog.add(ear);
-        var legF = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.3, 6), dogMat);
+        var legF = new THREE.Mesh(cylGeo(0.035, 0.035, 0.3, 6), dogMat);
         legF.position.set(0.22, 0.15, s * 0.13); dog.add(legF);
       });
       var dogTailPiv = new THREE.Group(); dogTailPiv.position.set(-0.3, 0.34, 0);
@@ -202,7 +202,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       var coals = new THREE.Group();
       var coalMat = new THREE.MeshBasicMaterial({ color: 0xff7a33 });
       [[-0.09, 0], [0.07, 0.05], [0, -0.07]].forEach(function (co) {
-        var cm2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 7, 6), coalMat);
+        var cm2 = new THREE.Mesh(sphGeo(0.055, 7, 6), coalMat);
         cm2.position.set(co[0], 0, co[1]); coals.add(cm2);
       });
       coals.position.set(-16.4, 0.17, 1.26); scene.add(coals);
@@ -211,14 +211,14 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       stoveLight.position.set(-16.4, 0.5, 1.55); scene.add(stoveLight);
       window.__stoveLight = stoveLight;
       for (var gi = 0; gi < 5; gi++) {
-        var gar = new THREE.Mesh(new THREE.SphereGeometry(0.05, 7, 6), mat(0xf3ede0));
+        var gar = new THREE.Mesh(sphGeo(0.05, 7, 6), mat(0xf3ede0));
         gar.position.set(-16.15, 1.62 - gi * 0.11, -0.08); gar.scale.y = 1.2; scene.add(gar);
       }
       // Phên phơi ớt trước bếp
       var dryMat = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.05, 1.5), texMat(matTex));
       dryMat.position.set(-13.5, 0.06, 3.1); dryMat.rotation.y = 0.35; dryMat.receiveShadow = true; scene.add(dryMat);
       for (var chi = 0; chi < 14; chi++) {
-        var chili = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 5), mat(chi % 3 ? 0xd43a2a : 0xef8f2e));
+        var chili = new THREE.Mesh(sphGeo(0.045, 6, 5), mat(chi % 3 ? 0xd43a2a : 0xef8f2e));
         chili.scale.set(1.6, 0.5, 0.7);
         chili.position.set(-13.5 + rnd(-0.95, 0.95), 0.11, 3.1 + rnd(-0.55, 0.55));
         chili.rotation.y = Math.random() * 3; scene.add(chili);
@@ -227,7 +227,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       /* --- Chuồng gà: hàng rào quây + máng ăn + máng nước --- */
       var penMat = mat(0xb59a5e);
       function penPost(x, z) {
-        var p = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 6), penMat);
+        var p = new THREE.Mesh(cylGeo(0.035, 0.035, 0.55, 6), penMat);
         p.position.set(x, 0.27, z); scene.add(p);
       }
       var pxA = -2.9, pxB = 1.9, pzA = 6.1, pzB = 10.1, k2;
@@ -235,7 +235,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       for (k2 = 1; k2 < 4; k2++) { penPost(pxA, pzA + k2 * (pzB - pzA) / 4); penPost(pxB, pzA + k2 * (pzB - pzA) / 4); }
       [[pxA, pzB, pxB, pzB], [pxA, pzA, -1.3, pzA], [0.3, pzA, pxB, pzA], [pxA, pzA, pxA, pzB], [pxB, pzA, pxB, pzB]].forEach(function (rl) {
         var len = Math.hypot(rl[2] - rl[0], rl[3] - rl[1]);
-        var rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.055, 0.055), penMat);
+        var rail = new THREE.Mesh(boxGeo(len, 0.055, 0.055), penMat);
         rail.position.set((rl[0] + rl[2]) / 2, 0.42, (rl[1] + rl[3]) / 2);
         rail.rotation.y = -Math.atan2(rl[3] - rl[1], rl[2] - rl[0]); scene.add(rail);
       });
@@ -252,7 +252,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
         cx2.strokeStyle = "#fdf6e3"; cx2.lineWidth = 6; cx2.strokeRect(10, 10, 492, 108);
         cx2.fillStyle = "#fdf6e3"; cx2.font = "bold " + fs + "px sans-serif"; cx2.textAlign = "center";
         cx2.fillText(text, 256, 84);
-        var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(cv) }));
+        var m = new THREE.Mesh(boxGeo(w, h, 0.06), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(cv) }));
         m.castShadow = true; return m;
       }
       var gPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1, 7), mat(0x7a4a21));
@@ -264,7 +264,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       var stallSign = textSign("SẠP RAU CÔ TƯ", 2.7, 0.55, 58);
       stallSign.position.set(stallPos.x, 1.38, stallPos.z + 0.85); scene.add(stallSign);
       [[-2.15, 0.55], [-2.0, -0.55]].forEach(function (sk) {
-        var sack = new THREE.Mesh(new THREE.SphereGeometry(0.34, 9, 8), mat(0xa8895a));
+        var sack = new THREE.Mesh(sphGeo(0.34, 9, 8), mat(0xa8895a));
         sack.scale.y = 0.78; sack.position.set(stallPos.x + sk[0], 0.24, stallPos.z + sk[1]);
         sack.castShadow = true; scene.add(sack);
       });
@@ -279,7 +279,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       scPan.position.set(0.22, 0.34, 0); scaleG.add(scPan);
       scaleG.position.set(stallPos.x - 1.25, 0.93, stallPos.z + 0.25); scene.add(scaleG);
       for (var bni = 0; bni < 5; bni++) {
-        var bn2 = new THREE.Mesh(new THREE.SphereGeometry(0.055, 7, 6), mat(0xf2d13c));
+        var bn2 = new THREE.Mesh(sphGeo(0.055, 7, 6), mat(0xf2d13c));
         bn2.scale.y = 1.5;
         bn2.position.set(stallPos.x + 1.72 + (bni % 2) * 0.09, 1.95 - Math.floor(bni / 2) * 0.13, stallPos.z + 0.95);
         scene.add(bn2);
@@ -312,7 +312,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       var lotus = new THREE.Group();
       var petalMat = mat(0xf2a7c3, { side: THREE.DoubleSide });
       for (var pt2 = 0; pt2 < 6; pt2++) {
-        var petal = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), petalMat);
+        var petal = new THREE.Mesh(sphGeo(0.13, 8, 6), petalMat);
         var pa = pt2 / 6 * Math.PI * 2;
         petal.position.set(Math.cos(pa) * 0.11, 0.03, Math.sin(pa) * 0.11);
         petal.scale.set(0.55, 0.35, 1); petal.rotation.y = -pa + Math.PI / 2; petal.rotation.x = 0.5;
@@ -322,9 +322,9 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       lotusCore.position.y = 0.05; lotus.add(lotusCore);
       lotus.position.set(17.2, 0.07, 4.7); scene.add(lotus);
       [[16.6, 1.6], [14.2, 4.9]].forEach(function (bd) {
-        var budStem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.3, 5), mat(0x3e7d32));
+        var budStem = new THREE.Mesh(cylGeo(0.015, 0.015, 0.3, 5), mat(0x3e7d32));
         budStem.position.set(bd[0], 0.15, bd[1]); scene.add(budStem);
-        var bud = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 8), petalMat);
+        var bud = new THREE.Mesh(coneGeo(0.07, 0.18, 8), petalMat);
         bud.position.set(bd[0], 0.38, bd[1]); scene.add(bud);
       });
       // Vịt bơi vòng quanh ao
@@ -348,10 +348,10 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
         var df = new THREE.Group();
         var dfBody = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.008, 0.24, 5), new THREE.MeshBasicMaterial({ color: 0x3e7dc2 }));
         dfBody.rotation.z = Math.PI / 2; df.add(dfBody);
-        var wingGeoD = new THREE.PlaneGeometry(0.05, 0.2); wingGeoD.translate(0, 0, 0.1);
+        var wingGeoD = planeGeoT(0.05, 0.2, 0, 0.1);
         var wingMatD = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
         var w1 = new THREE.Mesh(wingGeoD, wingMatD); df.add(w1);
-        var wingGeoD2 = new THREE.PlaneGeometry(0.05, 0.2); wingGeoD2.translate(0, 0, -0.1);
+        var wingGeoD2 = planeGeoT(0.05, 0.2, 0, -0.1);
         var w2 = new THREE.Mesh(wingGeoD2, wingMatD); df.add(w2);
         scene.add(df);
         window.__dragonflies.push({ g: df, r: dfc[0], sp: dfc[1], ph: dfc[2], w1: w1, w2: w2 });
@@ -407,7 +407,7 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       [[-16, 9, 1.25, 0xef8f2e], [16.5, 7.5, 1.1, 0xe2483a]].forEach(function (ft) {
         for (var fi3 = 0; fi3 < 8; fi3++) {
           var fa = fi3 / 8 * Math.PI * 2 + ft[0];
-          var fr = new THREE.Mesh(new THREE.SphereGeometry(0.09, 7, 6), mat(ft[3]));
+          var fr = new THREE.Mesh(sphGeo(0.09, 7, 6), mat(ft[3]));
           fr.position.set(ft[0] + Math.cos(fa) * 1.15 * ft[2], (2.35 + (fi3 % 3) * 0.28) * ft[2], ft[1] + Math.sin(fa) * 1.15 * ft[2]);
           scene.add(fr);
         }
@@ -418,12 +418,12 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
         var g = new THREE.Group();
         var tireM = mat(0x2b2b2b), frameM = mat(0x38618c);
         [-0.42, 0.42].forEach(function (wx2) {
-          var w = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.028, 8, 20), tireM);
+          var w = new THREE.Mesh(torusGeo(0.33, 0.028, 8, 20), tireM);
           w.position.set(wx2, 0.33, 0); g.add(w);
         });
         function bar(x1, y1, x2, y2) {
           var len = Math.hypot(x2 - x1, y2 - y1);
-          var b = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, len, 6), frameM);
+          var b = new THREE.Mesh(cylGeo(0.025, 0.025, len, 6), frameM);
           b.position.set((x1 + x2) / 2, (y1 + y2) / 2, 0);
           b.rotation.z = Math.atan2(y2 - y1, x2 - x1) - Math.PI / 2; g.add(b);
         }
@@ -442,10 +442,10 @@ import { bladeTex, block, box, glowCv, mat, matTex, scene, texMat, wellPos, wood
       block(20.3, -11.8, 0.7);
       // Chậu hoa hai bên cổng trường
       [[22.9, -13.9], [27.3, -13.9]].forEach(function (pl) {
-        var planter = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.32, 0.5), texMat(woodTex));
+        var planter = new THREE.Mesh(boxGeo(1.7, 0.32, 0.5), texMat(woodTex));
         planter.position.set(pl[0], 0.16, pl[1]); planter.castShadow = true; scene.add(planter);
         for (var pj = 0; pj < 6; pj++) {
-          var pf = new THREE.Mesh(new THREE.SphereGeometry(0.075, 7, 6), mat([0xe2483a, 0xffd94d, 0xf2a7c3][pj % 3]));
+          var pf = new THREE.Mesh(sphGeo(0.075, 7, 6), mat([0xe2483a, 0xffd94d, 0xf2a7c3][pj % 3]));
           pf.position.set(pl[0] - 0.65 + pj * 0.26, 0.42, pl[1] + rnd(-0.1, 0.1)); scene.add(pf);
         }
       });

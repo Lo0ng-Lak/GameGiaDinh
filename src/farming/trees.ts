@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { G } from '../core/state';
 import { FRUIT_TREES } from '../core/data';
-import { scene, mat, box, block } from '../world/scene';
+import { scene, mat, box, block, ringGeo } from '../world/scene';
 import { clearGroup, GEO, addMesh, sharedGeo } from './garden';
 
 // 3 chỗ trồng cây: góc Đông-Nam, góc Đông gần ao, góc Tây gần chuồng trâu
@@ -34,7 +34,7 @@ var dropM = mat(0x3fa7e0);
     block(s.x, s.z, 0.8); // mô đất cao, không đi xuyên qua được
     var g = new THREE.Group(); g.position.set(s.x, 0, s.z); scene.add(g); treeGroups.push(g);
     // vòng sáng dẫn người chơi tới chỗ có thể trồng
-    var ring = new THREE.Mesh(new THREE.RingGeometry(0.85, 1.05, 20), mat(0xffe9a8, { transparent: true, opacity: 0.35 }));
+    var ring = new THREE.Mesh(ringGeo(0.85, 1.05, 20), mat(0xffe9a8, { transparent: true, opacity: 0.35 })); // PHASE 4.5: 3 vòng sáng dùng chung 1 geometry
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.14; g.add(ring);
     drawTree(i);
   });

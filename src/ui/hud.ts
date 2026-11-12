@@ -16,6 +16,26 @@ import { festivalHudSuffix } from '../events/festivals';
 
     /* ================== TOAST + HUD ================== */
     export var toastBox = document.getElementById("toasts");
+    // PHASE 4.5: HUD chỉ ghi DOM khi giá trị đổi — trước đây updateHUD()
+    // (gọi mỗi 0,2s) ghi lại toàn bộ textContent + innerHTML thẻ nhiệm vụ
+    // dù không có gì thay đổi, gây layout/paint thừa 5 lần/giây. Giờ giữ
+    // giá trị đã ghi lần trước, giống thì bỏ qua, khác mới ghi.
+    var hudLast = {};
+    var hudStats = { writes: 0, skipped: 0, questWrites: 0, questSkipped: 0 };
+    export function hudWriteStats() { return hudStats; }
+    function setHudText(id, value) {
+      if (hudLast[id] === value) { hudStats.skipped++; return; }
+      hudLast[id] = value; hudStats.writes++;
+      el(id).textContent = value;
+    }
+    // Nút chọn hạt + ô đếm hạt: querySelector(All) mỗi 0,2s cũng tốn —
+    // tìm 1 lần rồi giữ lại (nút hạt là thành phần cố định của trang).
+    var seedBtns = null, seedCountEls = {};
+    function getSeedBtns() { if (!seedBtns) seedBtns = document.querySelectorAll(".seed-btn"); return seedBtns; }
+    function seedCountEl(k) {
+      if (!seedCountEls[k]) seedCountEls[k] = document.querySelector('[data-seed-count="' + k + '"]');
+      return seedCountEls[k];
+    }
     export function toast(msg, money) {
       var t = document.createElement("div");
       t.className = "toast" + (money ? " money" : ""); t.textContent = msg;
@@ -26,26 +46,30 @@ import { festivalHudSuffix } from '../events/festivals';
     }
     export var el = function (id) { return document.getElementById(id); };
     export function updateHUD() {
-      el("hud-day").textContent = "Ngày " + G.day;
+      setHudText("hud-day", "Ngày " + G.day);
       // PHASE 4.1: thời tiết hôm nay + mùa hiện tại, hiện ngay dưới số ngày
       // PHASE 4.2: ngày lễ thì thêm tên lễ ngay sau đó ("· 🧧 Tết Mùng 1")
-      el("hud-wx").textContent = weatherLabel(G.weather, G.season) + festivalHudSuffix();
-      el("hud-time").textContent = fmtTime(G.minutes);
+      setHudText("hud-wx", weatherLabel(G.weather, G.season) + festivalHudSuffix());
+      setHudText("hud-time", fmtTime(G.minutes));
       var ph = G.minutes < 420 ? "Bình minh" : G.minutes < 660 ? "Buổi sáng" : G.minutes < 840 ? "Buổi trưa" :
                G.minutes < 1020 ? "Buổi chiều" : "Hoàng hôn";
-      el("hud-phase").textContent = ph;
-      el("hud-money").textContent = fmt(G.money);
-      el("hearts").textContent = "Sao vui vẻ: " + G.stars;
-      el("can-text").textContent = G.can + "/" + G.canMax;
-      el("can-fill").firstElementChild.style.width = (G.can / G.canMax * 100) + "%";
+      setHudText("hud-phase", ph);
+      setHudText("hud-money", fmt(G.money));
+      setHudText("hearts", "Sao vui vẻ: " + G.stars);
+      setHudText("can-text", G.can + "/" + G.canMax);
+      var canW = (G.can / G.canMax * 100) + "%";
+      if (hudLast["can-fill"] === canW) hudStats.skipped++;
+      else { hudLast["can-fill"] = canW; hudStats.writes++; el("can-fill").firstElementChild.style.width = canW; }
       var bt = produceTotal();
-      el("basket-text").textContent = bt === 0 ? "Trống" : bt + " món";
-      el("meal-text").textContent = G.cookedToday ? "Đã nấu" : "Chưa nấu";
+      setHudText("basket-text", bt === 0 ? "Trống" : bt + " món");
+      setHudText("meal-text", G.cookedToday ? "Đã nấu" : "Chưa nấu");
       CROP_KEYS.forEach(function (k) {
-        document.querySelector('[data-seed-count="' + k + '"]').textContent =
-          "Hạt: " + G.seeds[k] + " · Giỏ: " + G.produce[k];
+        var v = "Hạt: " + G.seeds[k] + " · Giỏ: " + G.produce[k];
+        if (hudLast["seed-" + k] === v) { hudStats.skipped++; return; }
+        hudLast["seed-" + k] = v; hudStats.writes++;
+        seedCountEl(k).textContent = v;
       });
-      document.querySelectorAll(".seed-btn").forEach(function (b) {
+      getSeedBtns().forEach(function (b) {
         b.classList.toggle("sel", b.dataset.seed === G.selSeed);
       });
       if (G.started && !G.dayOver) { checkQuestsAchievements(); renderQuestCard(); }

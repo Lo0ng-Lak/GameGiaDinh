@@ -170,6 +170,26 @@ Kết quả mô phỏng 30 ngày (chạy `node test/economy-sim.mjs`, dùng code
 - **Chuyển động có sức sống (`src/npc/walkAnim.ts`, mới)** — chỉ thủ tục trên khớp hộp đã có, không rig xương, không file animation: walk bob (nhấp nhô 0.035m theo nhịp bước), smooth facing (xoay mặt theo hướng đi, tốc độ 6 rad/s, đi đường ngắn qua vòng ±PI thay vì bẻ ngoặt), idle sway (đứng yên khẽ nghiêng ±0.02 rad như đang thở). Áp dụng cho 7 dân làng (`updateVillagers`), bé An và anh chồng (theo/về/chơi/đi làm về trong `main.ts`); nhịp chân tay cũ giữ nguyên.
 - **Âm thanh nền (`src/world/sound.ts`)** — chuông chùa trầm vang lâu (196Hz + hài 294/392Hz, khác hẳn chuông trường 1568Hz) khi thắp hương; gió rừng tre (noise bandpass ~900Hz, to nhất trong vòng 6m quanh rừng, hết ngoài 24m, trượt êm theo khoảng cách); dế chiều tối to dần + kêu dày hơn (mức 0 trước 16:00 → 1 lúc 18:00, âm lượng ×2.7, khoảng cách giữa các đợt ngắn lại). Tất cả qua đúng cổng `AC null` / `Sound` đã có — Node test kiểm chứng không lỗi khi không có AudioContext. Test mới `test/lighting.test.mjs`: 104 kiểm tra, đều đậu.
 
+## Giai đoạn 4.5 — Tối ưu hiệu năng PC (không đổi lối chơi, không đổi hình ảnh đáng kể)
+
+Đo trước, tối ưu sau, đo lại — toàn bộ số đo dưới đây đo trong Node bằng traversal thật của scene (three-stub giữ children/material/geometry), **không phải FPS thật**. FPS thật và số draw call thật chỉ đo được trên máy PC của Sư Huynh bằng trình duyệt thật — chưa đo được ở đây.
+
+- **Số đo trước → sau (cảnh giữ nguyên 1.420 vật / 1.215 mesh / 6 đèn / 44 vòng chặn):**
+  - Vật liệu khác nhau: **651 → 248 (−62%)** — `mat(màu)` trơn giờ dùng chung 1 bản sao cho mỗi màu (riêng màu cọc rào 0xb59a5e trước đây có hàng trăm bản sao). Đèn, bóng, sương mù giữ nguyên.
+  - Hình học khác nhau: **1.088 → 409 (−62%)** — `box()/cyl()/sph()` và các chỗ tạo lặp trong vòng lặp (cọc rào ~150 cái, cọc vườn/sân trường/chuồng gà, chân/tay/đầu dân làng + 4 nhân vật chính, đồ sạp chợ, đất + rãnh 16 luống, vòng sáng cây, đèn lồng lễ hội...) giờ dùng chung geometry theo kích thước (`boxGeo/cylGeo/sphGeo/coneGeo/torusGeo/planeGeoT/circleGeo/ringGeo` ở `src/world/scene.ts`).
+  - Đổ bóng: nền giữ nguyên 297 vật đổ bóng khi vườn trống; **vườn trồng kín 12 luống chín thì 132 mesh rau không đổ bóng nữa** (trước đây mỗi mesh rau là 1 lượt vẽ thừa trong lượt vẽ bóng của mặt trời). Cây ăn quả, nhà, sạp, dân làng vẫn đổ bóng như cũ. Đây là thay đổi hình ảnh duy nhất — rau nhỏ trên luống, bóng gần như không nhìn thấy.
+  - Build: `dist/assets/*.js` 688.659 B → 690.023 B (+1.364 B, +0,2% — code tối ưu thêm vào); `dist/index.html` giữ nguyên 36.885 B.
+- **Bớt việc mỗi khung (`src/main.ts`, `src/ui/hud.ts`, `src/events/quests.ts`, `src/world/daylight.ts`, `src/world/particles.ts`):**
+  - HUD + thẻ nhiệm vụ + mục tiêu + gợi ý E chỉ ghi DOM khi giá trị đổi (trước đây ghi lại toàn bộ 5 lần/giây); nút hạt và ô đếm hạt chỉ `querySelector(All)` 1 lần.
+  - `updateSky()` không duyệt toàn bộ scene (~1.400 vật) mỗi 0,2s để tìm 2 ô kính cửa sổ nữa — giữ sẵn danh sách 2 ô kính (`windowGlass`); 3 màu pha trời/mây hoán đổi thành hằng số thay vì tạo mới mỗi lần gọi.
+  - Đầu gà giữ sẵn trong `userData`, đuôi trâu giữ sẵn ở `window.__buffaloTail` — không `getObjectByName()` mỗi khung nữa.
+  - Hạt hiệu ứng: không có hạt sống thì bỏ qua luôn vòng quét 340 hạt và không đánh dấu buffer cần cập nhật (`pAlive`).
+  - Đất ướt/vũng nước/cầu vồng chỉ ghi lại màu/độ mờ khi đổi đủ lớn (đất ướt đổi rất chậm).
+- **Tầng chất lượng mở rộng (`src/main.ts`)** — tự chỉnh cũ chỉ hạ phân giải màn hình; giờ đổi tầng thì đổi luôn cả kích thước bản đồ bóng: tầng 0: bóng 2048 → tầng 5: bóng 768 (`SHADOW_SIZES = [2048, 1536, 1280, 1024, 1024, 768]`, cùng 6 tầng với `PR_STEPS`), đổi xong dispose bản đồ bóng cũ để renderer vẽ lại. Máy yếu được giảm cả 2 chi phí, máy khỏe vẫn giữ nguyên mức đẹp nhất.
+- **Cố ý KHÔNG làm:** `texMat()` không dùng chung — tường nhà chính bị sơn lại khi sửa nhà (`applyUpgrades` đổi màu tường), dùng chung với tường trường/tạp hóa/chùa thì sơn nhà sẽ sơn luôn cả làng (test kiểm chứng tường nhà ≠ tường trường). Vật liệu buồng chuối (4 buồng riêng — hái xong đổi màu từng buồng) và vòng sáng 3 mô đất trồng cây (đổi màu/độ mờ theo trạng thái từng cây) cũng giữ riêng. Không gộp (merge) hình học tĩnh cả scene — gộp lớn rủi ro vỡ cảnh âm thầm, không kiểm chứng được bằng mắt ở đây. Không đụng tới joystick (`#joy`) và nút "Chạm" (`#btn-act`) — vẫn để nguyên, chờ làm mobile sau.
+- **Test mới `test/perf.test.mjs`: 59 kiểm tra, đều đậu** — số đo cảnh, vật liệu/hình học dùng chung + 3 trường hợp không được dùng chung nhầm, ngưỡng tầng chất lượng, đếm hạt sống, HUD/thẻ nhiệm vụ chỉ ghi khi đổi, rau tắt bóng/cây giữ bóng, `updateSky` không duyệt scene. Tổng test: 124 + 177 + 66 + 110 + 104 + 59 = **640 kiểm tra, đều đậu**.
+- **Chưa kiểm chứng được (cần Sư Huynh chạy trên PC thật):** FPS thật khi chơi (đặc biệt lúc vườn trồng kín, chiều tối nhiều đèn, trời mưa), số draw call thật, và cảm nhận bằng mắt rằng rau tắt bóng không làm vườn xấu đi. Build xanh + test đậu chỉ chứng minh logic và số đo tài nguyên trong Node — **không chứng minh game mượt hơn**.
+
 ## Ghi chú về bản chuyển đổi này
 
 - **Logic game giữ nguyên 100%** so với bản chơi thử v8 (bản một file duy nhất trước đây). Chỉ tách code thành module và đổi cách nạp Three.js — không sửa gameplay, không viết lại engine.

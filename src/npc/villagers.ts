@@ -13,7 +13,7 @@ import { G } from '../core/state';
 import { saveGame } from '../core/save';
 import { addMemory, checkQuestsAchievements } from '../events/quests';
 import { toast } from '../ui/hud';
-import { mat, scene, blockers } from '../world/scene';
+import { mat, scene, blockers, boxGeo, sphGeo, coneGeo } from '../world/scene';
 import { FIELD_SPOT, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, MARKET_STALLS, POND_SPOT, SCHOOL_YARD_SPOT, stallFront } from '../world/village';
 import { GROVE_REST_SPOT, TEMPLE_SPOT } from '../world/places';
 import { applyWalkAnim } from './walkAnim'; // PHASE 4.4: nhấp nhô + xoay mặt êm + đung đưa lúc đứng
@@ -148,28 +148,28 @@ function makeVillagerFigure(def) {
   var v = new THREE.Group();
   var parts = {};
   [-0.1, 0.1].forEach(function (s, idx) {
-    var leg = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.58, 0.13), mat(def.pants));
+    var leg = new THREE.Mesh(boxGeo(0.13, 0.58, 0.13), mat(def.pants));
     leg.position.y = -0.29;
     var piv = new THREE.Group(); piv.position.set(s, 0.72, 0); piv.add(leg); v.add(piv);
     parts[idx === 0 ? "legL" : "legR"] = piv;
   });
-  var torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.26), mat(def.shirt));
+  var torso = new THREE.Mesh(boxGeo(0.48, 0.62, 0.26), mat(def.shirt));
   torso.position.y = 1.03; torso.castShadow = true; v.add(torso);
   [-1, 1].forEach(function (s) {
     var piv = new THREE.Group(); piv.position.set(s * 0.29, 1.28, 0);
-    var arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.52, 0.1), mat(def.shirt));
+    var arm = new THREE.Mesh(boxGeo(0.1, 0.52, 0.1), mat(def.shirt));
     arm.position.y = -0.24; piv.add(arm); v.add(piv);
     parts[s < 0 ? "armL" : "armR"] = piv;
   });
-  var head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), mat(def.skin));
+  var head = new THREE.Mesh(sphGeo(0.19, 12, 10), mat(def.skin));
   head.position.y = 1.56; head.castShadow = true; v.add(head);
   if (def.hat === "nonla") {
-    var hat = new THREE.Mesh(new THREE.ConeGeometry(0.37, 0.16, 12), mat(0xd6b26a));
+    var hat = new THREE.Mesh(coneGeo(0.37, 0.16, 12), mat(0xd6b26a));
     hat.position.y = 1.74; v.add(hat);
   } else if (def.hat === "bun") {
-    var bun = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xcfcfcf));
+    var bun = new THREE.Mesh(sphGeo(0.08, 8, 8), mat(0xcfcfcf));
     bun.position.set(0, 1.66, -0.14); v.add(bun);
-    var hat2 = new THREE.Mesh(new THREE.ConeGeometry(0.37, 0.16, 12), mat(0xd6b26a));
+    var hat2 = new THREE.Mesh(coneGeo(0.37, 0.16, 12), mat(0xd6b26a));
     hat2.position.y = 1.74; v.add(hat2);
   }
   return { group: v, parts: parts };

@@ -116,6 +116,11 @@ import { sndCoin } from '../world/sound';
         saveGame();
       }
     }
+    // PHASE 4.5: thẻ nhiệm vụ vẽ lại mỗi 0,2s dù không đổi — chỉ ghi
+    // innerHTML khi nội dung thật sự khác (tiến độ nhiệm vụ đổi).
+    var lastQuestCard = null;
+    var questCardStats = { writes: 0, skipped: 0 };
+    export function questCardWriteStats() { return questCardStats; }
     export function renderQuestCard() {
       var box = el("quest-list"); if (!box) return;
       var html = "";
@@ -127,7 +132,10 @@ import { sndCoin } from '../world/sound';
         html += '<div class="q-row tu"><span>Bà Tư nhờ: mang ' + G.tuQuest.n + " " + G.tuQuest.name + ' cho bà</span><span class="pr">' +
           Math.min(G.produce[G.tuQuest.key] || 0, G.tuQuest.n) + "/" + G.tuQuest.n + '</span></div>';
       }
-      box.innerHTML = html || '<div class="q-row">Hôm nay chưa có việc nào.</div>';
+      var out = html || '<div class="q-row">Hôm nay chưa có việc nào.</div>';
+      if (lastQuestCard === out) { questCardStats.skipped++; return; }
+      lastQuestCard = out; questCardStats.writes++;
+      box.innerHTML = out;
     }
     export function renderQuestPanel() {
       var full = "";

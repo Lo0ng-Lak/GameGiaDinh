@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 import { G } from '../core/state';
-import { ground, mat, road, scene, yard } from './scene';
+import { boxGeo, cylGeo, ground, mat, road, scene, torusGeo, yard } from './scene';
 
     /* ================== LỚP CHÂN THẬT: cột điện, bóng mây, vũng nước, cầu vồng, xe máy ================== */
     (function buildRealism() {
@@ -37,9 +37,9 @@ import { ground, mat, road, scene, yard } from './scene';
       var poleMat = mat(0x9a958c), wireMat = new THREE.LineBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.75 });
       var poleTops = [];
       [-26, -10, 6, 22].forEach(function (px) {
-        var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 6.8, 8), poleMat);
+        var pole = new THREE.Mesh(cylGeo(0.09, 0.13, 6.8, 8), poleMat);
         pole.position.set(px, 3.4, -17.6); pole.castShadow = true; scene.add(pole);
-        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.7), poleMat);
+        var arm = new THREE.Mesh(boxGeo(0.08, 0.08, 1.7), poleMat);
         arm.position.set(px, 6.15, -17.6); scene.add(arm);
         poleTops.push(px);
       });
@@ -68,14 +68,14 @@ import { ground, mat, road, scene, yard } from './scene';
       var bike = new THREE.Group();
       var tireM2 = mat(0x232326), bodyM2 = mat(0xb03030);
       [-0.42, 0.42].forEach(function (wx) {
-        var w = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.05, 8, 16), tireM2);
+        var w = new THREE.Mesh(torusGeo(0.27, 0.05, 8, 16), tireM2);
         w.position.set(wx, 0.27, 0); bike.add(w);
       });
       var bBody = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.2), bodyM2);
       bBody.position.set(0.02, 0.48, 0); bBody.castShadow = true; bike.add(bBody);
       var bSeat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.24), mat(0x2b2b2b));
       bSeat.position.set(-0.12, 0.62, 0); bike.add(bSeat);
-      var bCol = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 6), bodyM2);
+      var bCol = new THREE.Mesh(cylGeo(0.035, 0.035, 0.55, 6), bodyM2);
       bCol.position.set(0.48, 0.72, 0); bCol.rotation.z = -0.35; bike.add(bCol);
       var rider = new THREE.Group();
       var rTorso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.55, 0.24), mat(0x4a6a8c));
@@ -85,9 +85,9 @@ import { ground, mat, road, scene, yard } from './scene';
       var helmet = new THREE.Mesh(new THREE.SphereGeometry(0.165, 10, 6), mat(0xe8a33d));
       helmet.position.set(0.1, 1.02, 0); helmet.scale.y = 0.72; rider.add(helmet);
       [-1, 1].forEach(function (s) {
-        var rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.1), mat(0x3a3a42));
+        var rLeg = new THREE.Mesh(boxGeo(0.42, 0.1, 0.1), mat(0x3a3a42));
         rLeg.position.set(0.08, 0.12, s * 0.13); rLeg.rotation.z = -0.5; rider.add(rLeg);
-        var rArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.09, 0.09), mat(0x4a6a8c));
+        var rArm = new THREE.Mesh(boxGeo(0.4, 0.09, 0.09), mat(0x4a6a8c));
         rArm.position.set(0.28, 0.62, s * 0.13); rArm.rotation.z = -0.95; rider.add(rArm);
       });
       rider.position.set(-0.05, 0.6, 0); bike.add(rider);

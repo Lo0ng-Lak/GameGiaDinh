@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 import { CROPS } from '../core/data';
-import { mat, scene, soilTex, soilTexWet, texMat } from '../world/scene';
+import { mat, scene, soilTex, soilTexWet, texMat, boxGeo, cylGeo, torusGeo } from '../world/scene';
 
     /* ================== VƯỜN RAU — 12 LUỐNG ================== */
     export var soilDry = texMat(soilTex), soilWet = texMat(soilTexWet);
@@ -126,7 +126,7 @@ import { mat, scene, soilTex, soilTexWet, texMat } from '../world/scene';
         tip.name = "drop";
       }
       if (p.state === "mature") {
-        var ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.045, 8, 26),
+        var ring = new THREE.Mesh(torusGeo(1.05, 0.045, 8, 26), // PHASE 4.5: vòng vàng các luống chín dùng chung 1 geometry
           new THREE.MeshBasicMaterial({ color: 0xffd94d }));
         ring.rotation.x = Math.PI / 2; ring.position.y = 0.42; ring.name = "ring";
         p.markGroup.add(ring);
@@ -134,26 +134,35 @@ import { mat, scene, soilTex, soilTexWet, texMat } from '../world/scene';
       p.soil.material = p.watered || p.state === "mature" ? soilWet : soilDry;
       // Khát nước lâu thì cây héo rũ xuống, tưới vào là tươi lại — như rau ngoài vườn thật
       p.cropGroup.scale.y = (p.state === "growing" && !p.watered && p.dryT > 7) ? 0.76 : 1;
+      // PHASE 4.5: rau + dấu hiệu trên luống không đổ bóng nữa — cây nhỏ
+      // trên luống, bóng gần như không nhìn thấy, mà mỗi luống có tới
+      // ~10 mesh đổ bóng (vườn đủ 16 luống là ~150 lượt vẽ thừa trong
+      // lượt vẽ bóng của mặt trời). Cây ăn quả, nhà, sạp, dân làng vẫn
+      // đổ bóng như cũ — chỉ rau trên luống là tắt.
+      p.cropGroup.children.forEach(function (m) { m.castShadow = false; });
+      p.markGroup.children.forEach(function (m) { m.castShadow = false; });
     }
 
     (function buildGarden() {
       // Hàng rào thấp quanh vườn
       var fm = mat(0xb59a5e);
+      var gardenPostGeo = cylGeo(0.04, 0.04, 0.6, 6); // PHASE 4.5: cọc rào vườn + sân trường + chuồng gà cùng cỡ, dùng chung 1 geometry
+      var soilGeo = boxGeo(2.3, 0.32, 2.3), ridgeGeo = boxGeo(2.3, 0.14, 0.3); // PHASE 4.5: 16 luống dùng chung geometry đất + rãnh
       for (var i = 0; i < 14; i++) {
         var px = 2.6 + i * 0.95;
         [0.1, 9.4].forEach(function (pz) {
-          var post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6), fm);
+          var post = new THREE.Mesh(gardenPostGeo, fm);
           post.position.set(px, 0.3, pz); scene.add(post);
         });
       }
       for (var row = 0; row < 3; row++) for (var col = 0; col < 4; col++) {
         var ctr = plotCenter(col, row);
         var g = new THREE.Group(); g.position.set(ctr.x, 0, ctr.z); scene.add(g);
-        var soil = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.32, 2.3), soilDry);
+        var soil = new THREE.Mesh(soilGeo, soilDry);
         soil.position.y = 0.16; soil.receiveShadow = true; soil.castShadow = true; g.add(soil);
         // Rãnh đất
         for (var rI = -1; rI <= 1; rI++) {
-          var ridge = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.14, 0.3), soilDry);
+          var ridge = new THREE.Mesh(ridgeGeo, soilDry);
           ridge.position.set(0, 0.36, rI * 0.7); g.add(ridge);
         }
         var cropGroup = new THREE.Group(); cropGroup.position.y = 0.35; g.add(cropGroup);
@@ -176,16 +185,16 @@ import { mat, scene, soilTex, soilTexWet, texMat } from '../world/scene';
       var fm = mat(0xb59a5e);
       for (var i = 0; i < 14; i++) {
         var px = 2.6 + i * 0.95;
-        var post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 6), fm);
+        var post = new THREE.Mesh(cylGeo(0.04, 0.04, 0.6, 6), fm);
         post.position.set(px, 0.3, -2.7); scene.add(post);
       }
       for (var col = 0; col < 4; col++) {
         var ctr = plotCenter(col, -1);
         var g = new THREE.Group(); g.position.set(ctr.x, 0, ctr.z); scene.add(g);
-        var soil = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.32, 2.3), soilDry);
+        var soil = new THREE.Mesh(boxGeo(2.3, 0.32, 2.3), soilDry);
         soil.position.y = 0.16; soil.receiveShadow = true; soil.castShadow = true; g.add(soil);
         for (var rI = -1; rI <= 1; rI++) {
-          var ridge = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.14, 0.3), soilDry);
+          var ridge = new THREE.Mesh(boxGeo(2.3, 0.14, 0.3), soilDry);
           ridge.position.set(0, 0.36, rI * 0.7); g.add(ridge);
         }
         var cropGroup = new THREE.Group(); cropGroup.position.y = 0.35; g.add(cropGroup);

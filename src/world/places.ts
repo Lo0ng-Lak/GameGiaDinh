@@ -11,7 +11,7 @@
  */
 import * as THREE from 'three';
 import { G } from '../core/state';
-import { block, mat, plasterTex, scene, texMat, woodTex } from './scene';
+import { block, boxGeo, coneGeo, cylGeo, mat, plasterTex, scene, sphGeo, texMat, woodTex } from './scene';
 
 // ---- Chùa nhỏ góc tây-bắc, yên tĩnh ----
 export var TEMPLE_POS = { x: -25.5, z: 15.5 };
@@ -48,19 +48,19 @@ function canvasSign(text, w, color) {
   // Mái ngói hai dốc + tầng mái nhỏ trên nóc (kiểu chùa quê)
   var roofMat = mat(0x8c4a2e);
   [-1, 1].forEach(function (s) {
-    var r = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.14, 2.0), roofMat);
+    var r = new THREE.Mesh(boxGeo(4.2, 0.14, 2.0), roofMat);
     r.position.set(0, 3.0, s * 0.85); r.rotation.x = s * 0.55; r.castShadow = true; g.add(r);
   });
   var tier = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.0, 1.4), texMat(plasterTex));
   tier.position.y = 3.6; tier.castShadow = true; g.add(tier);
   [-1, 1].forEach(function (s) {
-    var r2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.2), roofMat);
+    var r2 = new THREE.Mesh(boxGeo(2.4, 0.12, 1.2), roofMat);
     r2.position.set(0, 4.25, s * 0.45); r2.rotation.x = s * 0.55; r2.castShadow = true; g.add(r2);
   });
   var spire = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 8), mat(0xd6b26a));
   spire.position.y = 4.9; g.add(spire);
   // Cửa gỗ + biển chùa quay về phía làng (đông)
-  var door = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.9, 0.1), mat(0x7a4a21));
+  var door = new THREE.Mesh(boxGeo(1.0, 1.9, 0.1), mat(0x7a4a21));
   door.position.set(0, 1.25, 1.32); g.add(door);
   var sign = canvasSign("CHÙA LÀNG", 2.6, "#8c4a2e");
   sign.position.set(0, 2.5, 1.36); g.add(sign);
@@ -70,9 +70,9 @@ function canvasSign(text, w, color) {
   var incense = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 5), mat(0xd43a2a));
   incense.position.set(0.08, 0.85, 2.0); g.add(incense);
   [-1.9, 1.9].forEach(function (s) {
-    var lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.7, 8), mat(0x9a938a));
+    var lamp = new THREE.Mesh(cylGeo(0.16, 0.22, 0.7, 8), mat(0x9a938a));
     lamp.position.set(s, 0.65, 1.9); lamp.castShadow = true; g.add(lamp);
-    var cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.5), mat(0x7d7468));
+    var cap = new THREE.Mesh(boxGeo(0.5, 0.12, 0.5), mat(0x7d7468));
     cap.position.set(s, 1.05, 1.9); g.add(cap);
   });
   g.position.set(TEMPLE_POS.x, 0, TEMPLE_POS.z);
@@ -98,7 +98,7 @@ function canvasSign(text, w, color) {
       var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, h, 6), poleMat);
       pole.position.set(px, h / 2, pz);
       pole.rotation.z = (Math.random() - 0.5) * 0.08; pole.castShadow = true; scene.add(pole);
-      var top = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6), leafMat);
+      var top = new THREE.Mesh(sphGeo(0.7, 8, 6), leafMat);
       top.position.set(px + (Math.random() - 0.5) * 0.4, h + 0.15, pz + (Math.random() - 0.5) * 0.4);
       top.scale.y = 0.7; scene.add(top);
     }
@@ -108,9 +108,9 @@ function canvasSign(text, w, color) {
   window.__bambooShoots = [];
   GROVE_SHOOTS.forEach(function (s) {
     var sg = new THREE.Group();
-    var body = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 8), mat(0xc9b458));
+    var body = new THREE.Mesh(coneGeo(0.22, 0.75, 8), mat(0xc9b458));
     body.position.y = 0.38; body.castShadow = true; sg.add(body);
-    var tip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 8), mat(0x7d9b4e));
+    var tip = new THREE.Mesh(coneGeo(0.12, 0.3, 8), mat(0x7d9b4e));
     tip.position.y = 0.82; sg.add(tip);
     sg.position.set(s.x, 0, s.z); scene.add(sg);
     window.__bambooShoots.push({ x: s.x, z: s.z, group: sg });
@@ -134,17 +134,17 @@ export function refreshBambooShoots() {
   var top = new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 8), mat(0x7da05e));
   top.position.set(HILL_POS.x, 1.15, HILL_POS.z); top.scale.y = 0.45; scene.add(top);
   // Ghế đá ngồi ngắm ruộng — cùng mẫu ghế đá sân trường trong village.ts
-  var bench = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.45), mat(0x9a938a));
+  var bench = new THREE.Mesh(boxGeo(1.6, 0.12, 0.45), mat(0x9a938a));
   bench.position.set(1.0, 0.45, -17.6); bench.castShadow = true; scene.add(bench);
   [-0.6, 0.6].forEach(function (s) {
-    var leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.4), mat(0x9a938a));
+    var leg = new THREE.Mesh(boxGeo(0.12, 0.45, 0.4), mat(0x9a938a));
     leg.position.set(1.0 + s, 0.22, -17.6); scene.add(leg);
   });
   // Biển gỗ "ĐỒI NGẮM RUỘNG" cắm cạnh ghế
   var sign = canvasSign("ĐỒI NGẮM RUỘNG", 2.8, "#38618c");
   sign.position.set(2.2, 1.15, -16.6); sign.rotation.y = -0.5; scene.add(sign);
   [-0.85, 0.85].forEach(function (s) {
-    var post = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.1, 0.09), mat(0x7a4a21));
+    var post = new THREE.Mesh(boxGeo(0.09, 1.1, 0.09), mat(0x7a4a21));
     post.position.set(2.2 + s * 0.95, 0.55, -16.6 + s * 0.45); scene.add(post);
   });
   block(HILL_POS.x, HILL_POS.z, 2.2);

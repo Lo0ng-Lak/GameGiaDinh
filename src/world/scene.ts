@@ -80,10 +80,57 @@ import * as THREE from 'three';
     }
     export var _sv = new THREE.Vector3();
 
+    // PHASE 4.5: vật liệu trơn dùng chung theo màu — trước đây mỗi lần
+    // gọi mat(màu) lại tạo 1 MeshLambertMaterial mới (đo được 651 vật
+    // liệu khác nhau trong cảnh, riêng màu cọc rào 0xb59a5e đã có hàng
+    // trăm bản sao). Vật liệu trơn chỉ khác nhau ở màu nên dùng chung
+    // 1 bản sao cho mỗi màu — renderer đỡ đổi trạng thái giữa các lần vẽ.
+    // CHỈ cache khi không có opts: vật liệu có opts (trong suốt, map,
+    // DoubleSide...) có thể bị đổi riêng từng cái sau này — ví dụ vòng
+    // sáng cây ăn quả (trees.ts) đổi màu/độ mờ theo trạng thái từng cây
+    // nên vẫn phải tạo riêng. texMat() KHÔNG cache: tường nhà chính bị
+    // sơn lại khi sửa nhà (applyUpgrades đổi màu tường) — dùng chung với
+    // tường trường/tạp hóa/chùa thì sơn nhà sẽ sơn luôn cả làng.
+    var matCache = new Map();
     export function mat(color, opts) {
+      if (!opts) {
+        var hit = matCache.get(color);
+        if (hit) return hit;
+        var m0 = new THREE.MeshLambertMaterial({ color: color });
+        matCache.set(color, m0);
+        return m0;
+      }
       var o = { color: color }; if (opts) for (var k in opts) o[k] = opts[k];
       return new THREE.MeshLambertMaterial(o);
     }
+    export function matCacheSize() { return matCache.size; }
+
+    // PHASE 4.5: hình học dùng chung theo kích thước — box()/cyl()/sph()
+    // trước đây tạo 1 geometry mới cho mỗi mesh (đo được 1.088 geometry
+    // khác nhau, riêng cọc rào cùng kích thước đã có hàng trăm bản sao).
+    // Geometry chỉ là dữ liệu đỉnh nên dùng chung an toàn; đánh dấu shared
+    // để clearGroup() (garden.ts) không dispose nhầm khi vẽ lại luống.
+    var geoCache = new Map();
+    export function geoCacheSize() { return geoCache.size; }
+    function cachedGeo(key, make) {
+      var hit = geoCache.get(key);
+      if (hit) return hit;
+      var gg = make(); gg.userData.shared = true;
+      geoCache.set(key, gg);
+      return gg;
+    }
+    // Hình học dùng chung theo kích thước — các module khác cũng dùng khi
+    // tạo nhiều mesh cùng cỡ trong vòng lặp (cọc rào, dân làng, đồ sạp...).
+    // Cùng kích thước + cùng số đoạn chia thì dùng chung 1 geometry.
+    export function boxGeo(w, h, d) { return cachedGeo("b" + w + "," + h + "," + d, function () { return new THREE.BoxGeometry(w, h, d); }); }
+    export function cylGeo(rt, rb, h, seg) { return cachedGeo("c" + rt + "," + rb + "," + h + "," + (seg || 14), function () { return new THREE.CylinderGeometry(rt, rb, h, seg || 14); }); }
+    export function sphGeo(r, ws, hs) { return cachedGeo("s" + r + "," + (ws || 14) + "," + (hs || 12), function () { return new THREE.SphereGeometry(r, ws || 14, hs || 12); }); }
+    export function coneGeo(r, h, seg) { return cachedGeo("k" + r + "," + h + "," + (seg || 8), function () { return new THREE.ConeGeometry(r, h, seg || 8); }); }
+    export function torusGeo(r, t, rs, ts, arc) { return cachedGeo("t" + r + "," + t + "," + rs + "," + ts + "," + (arc == null ? "" : arc), function () { return new THREE.TorusGeometry(r, t, rs, ts, arc); }); }
+    export function planeGeo(w, h) { return cachedGeo("p" + w + "," + h, function () { return new THREE.PlaneGeometry(w, h); }); }
+    export function planeGeoT(w, h, tx, tz) { return cachedGeo("pt" + w + "," + h + "," + tx + "," + (tz || 0), function () { var gg = new THREE.PlaneGeometry(w, h); gg.translate(tx || 0, 0, tz || 0); return gg; }); }
+    export function circleGeo(r, seg) { return cachedGeo("o" + r + "," + (seg || 20), function () { return new THREE.CircleGeometry(r, seg || 20); }); }
+    export function ringGeo(i, o, seg) { return cachedGeo("r" + i + "," + o + "," + (seg || 20), function () { return new THREE.RingGeometry(i, o, seg || 20); }); }
 
     /* ---- Texture vẽ bằng canvas: cỏ, đất, tường, ngói, gỗ ---- */
     export function canvasTex(size, painter, rx, ry) {
@@ -204,17 +251,17 @@ import * as THREE from 'three';
       return new THREE.MeshLambertMaterial(o);
     }
     export function box(w, h, d, color, x, y, z, opts) {
-      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, opts));
+      var m = new THREE.Mesh(boxGeo(w, h, d), mat(color, opts));
       m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
       scene.add(m); return m;
     }
     export function cyl(rt, rb, h, color, x, y, z, seg) {
-      var m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 14), mat(color));
+      var m = new THREE.Mesh(cylGeo(rt, rb, h, seg), mat(color));
       m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
       scene.add(m); return m;
     }
     export function sph(r, color, x, y, z, sy) {
-      var m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 12), mat(color));
+      var m = new THREE.Mesh(sphGeo(r, 14, 12), mat(color));
       m.position.set(x, y, z); if (sy) m.scale.y = sy;
       m.castShadow = true; m.receiveShadow = true;
       scene.add(m); return m;
@@ -252,6 +299,11 @@ import * as THREE from 'three';
     export var blockers = [];
     export function block(x, z, r) { blockers.push({ x: x, z: z, r: r }); }
 
+    // PHASE 4.5: 2 ô kính cửa sổ nhà chính — giữ sẵn danh sách để
+    // updateSky() (daylight.ts) đổi màu kính lúc chập tối mà không phải
+    // duyệt toàn bộ scene (~1.400 vật) mỗi 0,2s như trước.
+    export var windowGlass = [];
+
     /* ---- Nhà chính ---- */
     (function buildHouse() {
       var g = new THREE.Group();
@@ -261,7 +313,7 @@ import * as THREE from 'three';
       // Mái ngói hai dốc — tấm mái phải dài hơn thân nhà (8m) để phủ kín hai đầu hồi
       var roofMat = texMat(roofTex);
       [-1, 1].forEach(function (s) {
-        var r = new THREE.Mesh(new THREE.BoxGeometry(8.9, 0.18, 3.6), roofMat);
+        var r = new THREE.Mesh(boxGeo(8.9, 0.18, 3.6), roofMat);
         r.position.set(0, 3.95, s * 1.42); r.rotation.x = s * 0.62; r.castShadow = true; g.add(r);
       });
       // Đầu hồi tam giác ở hai đầu nhà
@@ -277,17 +329,17 @@ import * as THREE from 'three';
       var door = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.15, 0.1), mat(0x7a4a21));
       door.position.set(0.6, 1.08, 2.73); g.add(door);
       [-2.4, 2.9].forEach(function (wx) {
-        var win = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.95, 0.08), mat(0x5b4632));
+        var win = new THREE.Mesh(boxGeo(1.05, 0.95, 0.08), mat(0x5b4632));
         win.position.set(wx, 1.8, 2.73); g.add(win);
-        var glass = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.78, 0.09),
+        var glass = new THREE.Mesh(boxGeo(0.88, 0.78, 0.09),
           new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
-        glass.position.set(wx, 1.8, 2.74); glass.name = "window-glass"; g.add(glass);
+        glass.position.set(wx, 1.8, 2.74); glass.name = "window-glass"; windowGlass.push(glass); g.add(glass);
       });
       // Hiên + cột + băng ghế
       var porch = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.18, 1.7), texMat(woodTex));
       porch.position.set(0, 0.09, 3.4); porch.receiveShadow = true; g.add(porch);
       [-3.8, 3.8].forEach(function (px) {
-        var col = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.5, 8), mat(0x7a4a21));
+        var col = new THREE.Mesh(cylGeo(0.09, 0.09, 2.5, 8), mat(0x7a4a21));
         col.position.set(px, 1.3, 4.1); g.add(col);
       });
       var porchRoof = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.12, 2.1), roofMat);
@@ -354,7 +406,7 @@ import * as THREE from 'three';
       var water = new THREE.Mesh(new THREE.CircleGeometry(0.9, 18), new THREE.MeshBasicMaterial({ color: 0x3f7f9e }));
       water.rotation.x = -Math.PI / 2; water.position.set(wellPos.x, 0.55, wellPos.z); scene.add(water);
       [-0.95, 0.95].forEach(function (s) {
-        var post = new THREE.Mesh(new THREE.BoxGeometry(0.13, 2, 0.13), mat(0x7a4a21));
+        var post = new THREE.Mesh(boxGeo(0.13, 2, 0.13), mat(0x7a4a21));
         post.position.set(wellPos.x + s, 1, wellPos.z); post.castShadow = true; scene.add(post);
       });
       var beam = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.1, 8), mat(0x7a4a21));
@@ -369,14 +421,15 @@ import * as THREE from 'three';
     /* ---- Hàng rào tre quanh sân ---- */
     (function buildFence() {
       var fenceMat = mat(0xb59a5e);
+      var fencePostGeo = cylGeo(0.045, 0.045, 1.05, 6); // PHASE 4.5: ~150 cọc rào dùng chung 1 geometry
       function run(x1, z1, x2, z2) {
         var len = Math.hypot(x2 - x1, z2 - z1), n = Math.floor(len / 0.55);
         for (var i = 0; i <= n; i++) {
           var t = i / n, x = x1 + (x2 - x1) * t, z = z1 + (z2 - z1) * t;
-          var p = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.05, 6), fenceMat);
+          var p = new THREE.Mesh(fencePostGeo, fenceMat);
           p.position.set(x, 0.52, z); scene.add(p);
         }
-        var rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.07, 0.07), fenceMat);
+        var rail = new THREE.Mesh(boxGeo(len, 0.07, 0.07), fenceMat);
         rail.position.set((x1 + x2) / 2, 0.78, (z1 + z2) / 2);
         rail.rotation.y = -Math.atan2(z2 - z1, x2 - x1); scene.add(rail);
       }
@@ -404,14 +457,14 @@ import * as THREE from 'three';
       p.rotation.x = -Math.PI / 2; p.position.set(15.5, 0.01, 3); scene.add(p);
       for (var i = 0; i < 6; i++) {
         var a = i * 1.15, lx = 15.5 + Math.cos(a) * (1 + (i % 3)), lz = 3 + Math.sin(a) * (1 + (i % 2));
-        var leaf = new THREE.Mesh(new THREE.CircleGeometry(0.42, 10), mat(0x3e7d32));
+        var leaf = new THREE.Mesh(circleGeo(0.42, 10), mat(0x3e7d32));
         leaf.rotation.x = -Math.PI / 2; leaf.position.set(lx, 0.04, lz); scene.add(leaf);
       }
       sph(0.16, 0xf2a7c3, 14.6, 0.16, 2.2, 0.8);
       // Gợn sóng lan trên mặt ao
       window.__ripples = [];
       for (var ri = 0; ri < 3; ri++) {
-        var rp = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 6, 32),
+        var rp = new THREE.Mesh(torusGeo(1, 0.03, 6, 32),
           new THREE.MeshBasicMaterial({ color: 0xdff4ff, transparent: true, opacity: 0.4 }));
         rp.rotation.x = Math.PI / 2;
         rp.position.set(15.5 + (ri - 1) * 1.1, 0.05, 3 + (ri % 2) * 1.2 - 0.6);
@@ -424,7 +477,7 @@ import * as THREE from 'three';
       dock.position.set(12.8, 0.1, 5.1); dock.rotation.y = 0.5; dock.receiveShadow = true; scene.add(dock);
       window.__fishPos = new THREE.Vector3(12.6, 0, 4.9);
       var bob = new THREE.Group();
-      var bobTop = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xe2483a }));
+      var bobTop = new THREE.Mesh(sphGeo(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xe2483a }));
       bobTop.position.y = 0.03; bob.add(bobTop);
       var bobBot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
       bobBot.position.y = -0.04; bob.add(bobBot);
@@ -491,14 +544,18 @@ import * as THREE from 'three';
         trunk.position.y = 1.2 * s; trunk.rotation.z = 0.07; trunk.castShadow = true; g.add(trunk);
         var leafMatB = new THREE.MeshLambertMaterial({ map: bananaLeafTex, side: THREE.DoubleSide });
         for (var i = 0; i < 6; i++) {
-          var lgeo = new THREE.PlaneGeometry(1.9 * s, 0.5 * s); lgeo.translate(0.95 * s, 0, 0);
+          var lgeo = planeGeoT(1.9 * s, 0.5 * s, 0.95 * s, 0); // PHASE 4.5: 6 tàu lá 1 cây chuối dùng chung 1 geometry
           var leaf = new THREE.Mesh(lgeo, leafMatB);
           leaf.position.y = 2.45 * s;
           leaf.rotation.y = i / 6 * Math.PI * 2 + Math.random() * 0.4;
           leaf.rotation.z = -0.28 - Math.random() * 0.3;
           leaf.castShadow = true; g.add(leaf);
         }
-        var bunchMat = mat(0xf2d13c);
+        // Buồng chuối: vật liệu TẠO RIÊNG cho từng cây (không dùng mat()
+        // dùng chung) — hái xong/hái rồi chuối chín đổi màu từng buồng
+        // riêng (interactions.ts đổi mat.color từng buồng), dùng chung
+        // thì hái 1 buồng sẽ đổi màu cả 4 buồng.
+        var bunchMat = new THREE.MeshLambertMaterial({ color: 0xf2d13c });
         var bunch = new THREE.Mesh(new THREE.SphereGeometry(0.2 * s, 8, 8), bunchMat);
         bunch.position.set(0.18 * s, 2.05 * s, 0); bunch.scale.y = 1.3; bunch.castShadow = true; g.add(bunch);
         g.position.set(x, 0, z); scene.add(g);
@@ -508,12 +565,13 @@ import * as THREE from 'three';
       banana(19.5, 8.5, 1.1); banana(-19.5, -5.5, 1.0); banana(13.5, -9.2, 0.95); banana(-6, 13.8, 1.05);
       // Bụi tre góc sân
       var bg = new THREE.Group();
+      var bambooTopGeo = sphGeo(0.75, 8, 6); // PHASE 4.5: 8 ngọn tre cùng cỡ dùng chung 1 geometry
       for (var bi = 0; bi < 8; bi++) {
         var bh = 4.2 + Math.random() * 2.2;
         var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, bh, 6), mat(0x86a860));
         pole.position.set((Math.random() - 0.5) * 1.1, bh / 2, (Math.random() - 0.5) * 1.1);
         pole.rotation.z = (Math.random() - 0.5) * 0.09; pole.castShadow = true; bg.add(pole);
-        var top = new THREE.Mesh(new THREE.SphereGeometry(0.75, 8, 6), mat(0x639b41));
+        var top = new THREE.Mesh(bambooTopGeo, mat(0x639b41));
         top.position.set(pole.position.x * 2.2, bh + 0.2, pole.position.z * 2.2); top.scale.y = 0.7; bg.add(top);
       }
       bg.position.set(-21.5, 0, 5); scene.add(bg); block(-21.5, 5, 1.1);
@@ -539,12 +597,11 @@ import * as THREE from 'three';
       }
       // Bướm bay trên khóm hoa
       window.__bflies = [];
+      var bfWingL = planeGeoT(0.16, 0.12, -0.08, 0), bfWingR = planeGeoT(0.16, 0.12, 0.08, 0); // PHASE 4.5: 3 con bướm dùng chung 2 geometry cánh
       [[-6.5, -2.2, 0xffd94d], [17.5, 0.2, 0xf2a7c3], [-16.5, 8.6, 0xffffff]].forEach(function (fs, bi2) {
         var bf = new THREE.Group();
         var wmat = new THREE.MeshBasicMaterial({ color: fs[2], side: THREE.DoubleSide });
-        var wgeoL = new THREE.PlaneGeometry(0.16, 0.12); wgeoL.translate(-0.08, 0, 0);
-        var wgeoR = new THREE.PlaneGeometry(0.16, 0.12); wgeoR.translate(0.08, 0, 0);
-        var wl = new THREE.Mesh(wgeoL, wmat), wr = new THREE.Mesh(wgeoR, wmat);
+        var wl = new THREE.Mesh(bfWingL, wmat), wr = new THREE.Mesh(bfWingR, wmat);
         bf.add(wl); bf.add(wr);
         bf.userData = { cx: fs[0], cz: fs[1], r: 1 + bi2 * 0.4, sp: 0.5 + bi2 * 0.17, ph: bi2 * 2.1, wl: wl, wr: wr };
         scene.add(bf); window.__bflies.push(bf);
@@ -568,15 +625,16 @@ import * as THREE from 'three';
       var head = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.6), mat(0x515157));
       head.position.set(1.15, 1.05, 0); buffalo.add(head);
       [-1, 1].forEach(function (s) {
-        var horn = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.5, 6), mat(0xe8e0cc));
+        var horn = new THREE.Mesh(coneGeo(0.07, 0.5, 6), mat(0xe8e0cc));
         horn.position.set(1.1, 1.45, s * 0.38); horn.rotation.x = s * 0.9; buffalo.add(horn);
         [[-0.75], [0.75]].forEach(function (lx) {
-          var leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.75, 0.16), mat(0x4c4c52));
+          var leg = new THREE.Mesh(boxGeo(0.16, 0.75, 0.16), mat(0x4c4c52));
           leg.position.set(lx[0], 0.38, s * 0.3); buffalo.add(leg);
         });
       });
       var tail = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.8, 0.07), mat(0x4c4c52));
       tail.position.set(-1.0, 0.95, 0); tail.rotation.z = 0.3; tail.name = "tail"; buffalo.add(tail);
+      window.__buffaloTail = tail; // PHASE 4.5: main.ts vẫy đuôi không phải getObjectByName() mỗi khung
       buffalo.position.set(-15.5, 0, 7.5); buffalo.rotation.y = 0.7;
       scene.add(buffalo);
       block(-15.5, 7.5, 1.5);
@@ -585,15 +643,18 @@ import * as THREE from 'three';
     /* ---- Đàn gà đi lại trong sân ---- */
     export var chickens = [];
     (function buildChickens() {
+      var chickBodyGeo = sphGeo(0.21, 10, 8), chickHeadGeo = sphGeo(0.11, 8, 8);
+      var chickCombGeo = boxGeo(0.06, 0.08, 0.03), chickTailGeo = coneGeo(0.09, 0.26, 6); // PHASE 4.5: 5 con gà dùng chung geometry
       for (var i = 0; i < 5; i++) {
         var c = new THREE.Group();
-        var b = new THREE.Mesh(new THREE.SphereGeometry(0.21, 10, 8), mat(i === 0 ? 0xb06a35 : 0xf3ede0));
+        var b = new THREE.Mesh(chickBodyGeo, mat(i === 0 ? 0xb06a35 : 0xf3ede0));
         b.scale.set(1.15, 0.9, 0.9); b.position.y = 0.24; b.castShadow = true; c.add(b);
-        var h = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), mat(i === 0 ? 0xb06a35 : 0xf3ede0));
+        var h = new THREE.Mesh(chickHeadGeo, mat(i === 0 ? 0xb06a35 : 0xf3ede0));
         h.position.set(0.2, 0.42, 0); h.name = "head"; c.add(h);
-        var comb = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.03), mat(0xd43a2a));
+        c.userData.head = h; // PHASE 4.5: main.ts gật đầu gà không phải getObjectByName() mỗi khung
+        var comb = new THREE.Mesh(chickCombGeo, mat(0xd43a2a));
         comb.position.set(0.2, 0.54, 0); c.add(comb);
-        var tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.26, 6), mat(i === 0 ? 0x8a4f26 : 0xe0d8c4));
+        var tail = new THREE.Mesh(chickTailGeo, mat(i === 0 ? 0x8a4f26 : 0xe0d8c4));
         tail.position.set(-0.22, 0.36, 0); tail.rotation.z = 0.9; c.add(tail);
         c.position.set(-3 + i * 1.7, 0, 6.5 - (i % 3));
         c.userData = { ang: Math.random() * 6.28, t: Math.random() * 10, speed: 0.5 + Math.random() * 0.4 };
@@ -612,7 +673,7 @@ import * as THREE from 'three';
       var roofC = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.95), mat(0xb4552f));
       roofC.position.y = 0.95; roofC.rotation.x = 0.2; g.add(roofC);
       [-0.8, 0.8].forEach(function (s) {
-        var p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), mat(0x7a4a21));
+        var p = new THREE.Mesh(boxGeo(0.08, 0.95, 0.08), mat(0x7a4a21));
         p.position.set(s, 0.48, -0.3); g.add(p);
       });
       g.position.copy(coopPos); scene.add(g);
@@ -631,14 +692,15 @@ import * as THREE from 'three';
 
     /* ---- Sào phơi áo ---- */
     (function buildClothesline() {
+      var clothPostGeo = boxGeo(0.09, 1.9, 0.09); // PHASE 4.5: 2 cột phơi dùng chung 1 geometry
       [-1.6, 1.6].forEach(function (s) {
-        var p = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.9, 0.09), mat(0x7a4a21));
+        var p = new THREE.Mesh(clothPostGeo, mat(0x7a4a21));
         p.position.set(-8 + s, 0.95, 6.5); p.castShadow = true; scene.add(p);
       });
       var line = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 3.2, 5), mat(0xdddddd));
       line.rotation.z = Math.PI / 2; line.position.set(-8, 1.85, 6.5); scene.add(line);
       [[0xf2f0e6, -1], [0x7fb069, 0], [0xe88ca0, 1]].forEach(function (c) {
-        var cloth = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.95, 0.03), mat(c[0], { side: THREE.DoubleSide }));
+        var cloth = new THREE.Mesh(boxGeo(0.85, 0.95, 0.03), mat(c[0], { side: THREE.DoubleSide }));
         cloth.position.set(-8 + c[1] * 0.95, 1.36, 6.5); cloth.name = "cloth"; cloth.castShadow = true;
         scene.add(cloth); window.__cloths = window.__cloths || []; window.__cloths.push(cloth);
       });

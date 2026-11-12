@@ -14,6 +14,7 @@ node test/npc-pathing.test.mjs     # 177 kiểm tra đường đi + lịch dân 
 node test/weather.test.mjs         # 66 kiểm tra thời tiết + mùa (Phase 4.1)
 node test/festivals.test.mjs       # 110 kiểm tra lễ hội trong năm (Phase 4.2)
 node test/lighting.test.mjs        # 104 kiểm tra ánh sáng, đèn, chuyển động, âm thanh (Phase 4.4)
+node test/perf.test.mjs            # 59 kiểm tra hiệu năng PC: vật liệu/hình học dùng chung, tầng chất lượng, HUD chỉ ghi khi đổi (Phase 4.5)
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
 # OLD_CROPS=1 node test/economy-sim.mjs   # chạy lại với giá rau cũ để so sánh trước/sau
 ```
@@ -147,6 +148,17 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
 - **Lưu ý khi test:** sang ngày 31 thì thành tựu "Một tuần ở quê" cũng
   ghi thêm 1 dòng kỷ niệm — test kỷ niệm Tết chỉ cần dòng Tết có mặt,
   không đếm đúng +1 dòng.
+
+`test/perf.test.mjs` (59 kiểm tra, đều đậu — Phase 4.5):
+- **Số đo cảnh:** traversal thật của scene sau tối ưu: 1.420 vật / 1.215 mesh / 4 PointLight + 1 DirectionalLight + 1 HemisphereLight / 44 vòng chặn / 297 vật đổ bóng (vườn trống) — giống hệt trước tối ưu; vật liệu khác nhau 651 → 248, hình học khác nhau 1.088 → 409 (ngưỡng test: < 300 và < 500).
+- **Dùng chung đúng chỗ:** mỗi màu trơn (cọc rào 0xb59a5e, gỗ 0x7a4a21, nâu đậm 0x5a3a22, nón lá 0xd6b26a) chỉ còn đúng 1 vật liệu Lambert không map; `box()/cyl()/sph()` gọi 2 lần cùng cỡ dùng chung 1 geometry, lần 2 không thêm geometry mới.
+- **Không dùng chung nhầm:** 4 buồng chuối dùng 4 vật liệu riêng (hái xong đổi màu từng buồng), 3 vòng sáng cây ăn quả dùng 3 vật liệu riêng (đổi màu/độ mờ theo trạng thái từng cây), tường nhà chính khác vật liệu tường trường (sơn nhà không sơn luôn trường — lý do `texMat()` không được cache).
+- **Tầng chất lượng:** `shadowSizeForLevel()` đúng ngưỡng (0: 2048, 1: 1536, 5: 768, quá tầng kẹp 768, âm kẹp 2048), bóng nhỏ dần theo tầng; `applyQualityLevel()` ghi đúng `qualityState` (level / bóng / phân giải) và kẹp tầng vượt quá.
+- **Hạt hiệu ứng:** ban đầu `pAlive` = 0; tạo 5 hạt thì sống 5, bay xong chết hết; không hạt sống thì `updateParticles()` không chạm buffer (`needsUpdate` vẫn false); tạo 345 hạt thì kẹp ở PMAX 340 rồi vẫn chết hết đúng số.
+- **HUD:** gọi `updateHUD()` lần 2 không đổi gì thì không ghi thêm text nào (đếm bằng `hudWriteStats()`), đổi tiền thì chỉ ghi đúng 1 ô; thẻ nhiệm vụ ghi 1 lần rồi không ghi lại, thêm 1 nhiệm vụ thì ghi lại đúng 1 lần (`questCardWriteStats()`).
+- **Bóng đổ:** trồng kín 12 luống rau chín (132 mesh) thì không mesh rau nào đổ bóng, đất luống vẫn đổ bóng; cây xoài trưởng thành vẫn đổ bóng, vòng sáng cây có trái chín mờ 0.85 như cũ.
+- **Tra cứu đã cache:** giữ sẵn 2 ô kính cửa sổ; `updateSky()` chạy xong mà `scene.traverse` không bị gọi lần nào (đếm bằng cách bọc traverse); đủ 5 con gà, đầu gà giữ sẵn trong `userData` và khớp `getObjectByName('head')`; đuôi trâu giữ sẵn ở `window.__buffaloTail`.
+- **Cái gì KHÔNG đo được:** FPS thật và số draw call thật — stub renderer là no-op, không có trình duyệt/WebGL ở đây. Test chỉ chứng minh tài nguyên (vật liệu/hình học/bóng) giảm và logic tầng chất lượng + cache đúng; muốn biết game có mượt hơn thật không phải chơi trên PC thật.
 
 ## Lưu ý: test từng rớt lúc đậu lúc rớt (đã sửa)
 

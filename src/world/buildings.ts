@@ -6,14 +6,14 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import * as THREE from 'three';
-import { block, mat, plasterTex, scene, texMat, woodTex } from './scene';
+import { block, boxGeo, mat, plasterTex, scene, sphGeo, texMat, woodTex } from './scene';
 
     /* ================== SẠP BÁN RAU ================== */
     export var stallPos = new THREE.Vector3(9, 0, -11.6);
     (function buildStall() {
       var g = new THREE.Group();
       [[-1.5, -0.9], [1.5, -0.9], [-1.5, 0.9], [1.5, 0.9]].forEach(function (pp) {
-        var post = new THREE.Mesh(new THREE.BoxGeometry(0.11, 2.3, 0.11), mat(0x7a4a21));
+        var post = new THREE.Mesh(boxGeo(0.11, 2.3, 0.11), mat(0x7a4a21));
         post.position.set(pp[0], 1.15, pp[1]); post.castShadow = true; g.add(post);
       });
       // Mái sạp sọc xanh trắng (vẽ bằng canvas)
@@ -28,10 +28,10 @@ import { block, mat, plasterTex, scene, texMat, woodTex } from './scene';
       counter.position.y = 0.55; counter.castShadow = true; g.add(counter);
       // Sọt rau trên sạp
       [[0xe2483a, -1], [0x8fce4f, 0], [0xef8f2e, 1]].forEach(function (cc) {
-        var crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.8), mat(0x8a5a2b));
+        var crate = new THREE.Mesh(boxGeo(0.8, 0.3, 0.8), mat(0x8a5a2b));
         crate.position.set(cc[1] * 1.05, 1.08, 0); g.add(crate);
         for (var j = 0; j < 3; j++) {
-          var v = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), mat(cc[0]));
+          var v = new THREE.Mesh(sphGeo(0.15, 8, 8), mat(cc[0]));
           v.position.set(cc[1] * 1.05 + (j - 1) * 0.22, 1.3, (j % 2) * 0.2 - 0.1); g.add(v);
         }
       });
@@ -58,13 +58,13 @@ import { block, mat, plasterTex, scene, texMat, woodTex } from './scene';
       var walls = new THREE.Mesh(new THREE.BoxGeometry(7.5, 3, 4.6), texMat(plasterTex));
       walls.position.y = 1.5; walls.castShadow = true; walls.receiveShadow = true; g.add(walls);
       [-1, 1].forEach(function (s) {
-        var r = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.16, 3.1), mat(0x38618c));
+        var r = new THREE.Mesh(boxGeo(8.4, 0.16, 3.1), mat(0x38618c));
         r.position.set(0, 3.6, s * 1.25); r.rotation.x = s * 0.6; r.castShadow = true; g.add(r);
       });
       var door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2, 0.1), mat(0x7a4a21));
       door.position.set(0, 1, 2.32); g.add(door);
       [-2.3, 2.3].forEach(function (wx) {
-        var win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 0.08), mat(0xbfd9e8));
+        var win = new THREE.Mesh(boxGeo(1.2, 1, 0.08), mat(0xbfd9e8));
         win.position.set(wx, 1.8, 2.32); g.add(win);
       });
       // Biển trường
@@ -86,7 +86,7 @@ import { block, mat, plasterTex, scene, texMat, woodTex } from './scene';
       block(schoolPos.x, schoolPos.z, 4.4);
       // Cổng trường: hai trụ + vòng đánh dấu nơi đưa bé tới
       [-1.3, 1.3].forEach(function (s) {
-        var post = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.7, 0.28), mat(0x9a938a));
+        var post = new THREE.Mesh(boxGeo(0.28, 1.7, 0.28), mat(0x9a938a));
         post.position.set(gatePos.x + s, 0.85, gatePos.z); post.castShadow = true; scene.add(post);
       });
       var gring = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.06, 8, 30),

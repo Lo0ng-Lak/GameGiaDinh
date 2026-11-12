@@ -20,10 +20,16 @@ import { scene } from './scene';
     pPoints.frustumCulled = false;
     scene.add(pPoints);
     export var pCursor = 0, _pc = new THREE.Color();
+    // PHASE 4.5: đếm hạt đang sống — trước đây updateParticles() quét hết
+    // 340 hạt mỗi khung dù thường không có hạt nào sống (chỉ có hạt khi
+    // vừa tưới/hái/câu cá); giờ không có hạt sống thì bỏ qua luôn cả vòng
+    // quét và cả việc đánh dấu buffer cần cập nhật.
+    export var pAlive = 0;
     export function spawnParticles(x, y, z, n, hex, spread, up, life, grav) {
       _pc.setHex(hex);
       for (var i = 0; i < n; i++) {
         var idx = pCursor; pCursor = (pCursor + 1) % PMAX;
+        if (pLife[idx] <= 0) pAlive++; // ô này đang chết thì có thêm 1 hạt sống (ghi đè hạt đang sống thì số hạt sống không đổi)
         pPos[idx * 3] = x + (Math.random() - 0.5) * 0.25;
         pPos[idx * 3 + 1] = y;
         pPos[idx * 3 + 2] = z + (Math.random() - 0.5) * 0.25;
@@ -38,12 +44,13 @@ import { scene } from './scene';
       pGeo.attributes.color.needsUpdate = true;
     }
     export function updateParticles(dt) {
+      if (pAlive <= 0) return;
       var any = false;
       for (var i = 0; i < PMAX; i++) {
         if (pLife[i] <= 0) continue;
         any = true;
         pLife[i] -= dt;
-        if (pLife[i] <= 0) { pPos[i * 3 + 1] = -60; continue; }
+        if (pLife[i] <= 0) { pPos[i * 3 + 1] = -60; pAlive--; continue; }
         pVel[i * 3 + 1] -= pGrav[i] * dt;
         pPos[i * 3] += pVel[i * 3] * dt;
         pPos[i * 3 + 1] += pVel[i * 3 + 1] * dt;

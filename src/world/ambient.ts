@@ -6,7 +6,7 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import * as THREE from 'three';
-import { scene } from './scene';
+import { planeGeoT, scene, sphGeo } from './scene';
 
     /* ================== ĐỜI SỐNG NỀN: CHIM BAY, LÁ RƠI, SAO ĐÊM, ĐÈN HIÊN ================== */
     (function buildAmbientLife() {
@@ -15,8 +15,8 @@ import { scene } from './scene';
       var birdMat = new THREE.MeshBasicMaterial({ color: 0x2e3a2a, side: THREE.DoubleSide });
       for (var bi = 0; bi < 6; bi++) {
         var b = new THREE.Group();
-        var wgeoL = new THREE.PlaneGeometry(0.75, 0.22); wgeoL.translate(-0.37, 0, 0);
-        var wgeoR = new THREE.PlaneGeometry(0.75, 0.22); wgeoR.translate(0.37, 0, 0);
+        var wgeoL = planeGeoT(0.75, 0.22, -0.37, 0);
+        var wgeoR = planeGeoT(0.75, 0.22, 0.37, 0);
         var wl = new THREE.Mesh(wgeoL, birdMat), wr = new THREE.Mesh(wgeoR, birdMat);
         wl.rotation.x = -Math.PI / 2; wr.rotation.x = -Math.PI / 2;
         b.add(wl); b.add(wr);
@@ -52,7 +52,7 @@ import { scene } from './scene';
       var lamp = new THREE.PointLight(0xffb45e, 0, 11, 1.6);
       lamp.position.set(-9.4, 2.3, -2.4); scene.add(lamp);
       window.__porchLight = lamp;
-      var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
+      var bulb = new THREE.Mesh(sphGeo(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
       bulb.position.copy(lamp.position); scene.add(bulb);
       window.__porchBulb = bulb;
       // Mưa rào: hạt mưa rơi quanh người chơi, chỉ hiện khi trời đổ mưa

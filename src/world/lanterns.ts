@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { G } from '../core/state';
 import { lanternLevel } from './daylight';
-import { mat, scene } from './scene';
+import { cylGeo, mat, scene, sphGeo } from './scene';
 
 // Sạp giữa chợ (chị Lan) làm điểm treo đèn chung cho cả dãy sạp.
 export var STALL_LANTERN_POS = { x: -2, y: 2.0, z: -10.6 };
@@ -39,11 +39,11 @@ export var stallBulbMat = null, templeBulbMats = [];
 
 (function buildLanterns() {
   // ---- Đèn lồng sạp chợ: dây treo + lồng đèn giấy đỏ + bóng sáng ----
-  var str = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.35, 5), mat(0x5a3a22));
+  var str = new THREE.Mesh(cylGeo(0.012, 0.012, 0.35, 5), mat(0x5a3a22));
   str.position.set(STALL_LANTERN_POS.x, STALL_LANTERN_POS.y + 0.3, STALL_LANTERN_POS.z);
   scene.add(str);
   stallBulbMat = new THREE.MeshBasicMaterial({ color: 0xd4573a });
-  var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), stallBulbMat);
+  var bulb = new THREE.Mesh(sphGeo(0.17, 10, 8), stallBulbMat);
   bulb.scale.y = 0.82;
   bulb.position.set(STALL_LANTERN_POS.x, STALL_LANTERN_POS.y, STALL_LANTERN_POS.z);
   scene.add(bulb);
@@ -57,7 +57,7 @@ export var stallBulbMat = null, templeBulbMats = [];
   // ---- Đèn đá chùa: 2 bóng sáng trên đầu đèn đá + 1 PointLight chung ----
   TEMPLE_LAMP_POS.forEach(function (p) {
     var bm = new THREE.MeshBasicMaterial({ color: 0x8a8378 });
-    var b = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), bm);
+    var b = new THREE.Mesh(sphGeo(0.11, 8, 8), bm);
     b.position.set(p.x, p.y, p.z);
     scene.add(b);
     templeBulbMats.push(bm);

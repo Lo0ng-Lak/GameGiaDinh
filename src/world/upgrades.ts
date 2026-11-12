@@ -12,7 +12,7 @@
  */
 import * as THREE from 'three';
 import { G } from '../core/state';
-import { scene, mat, box, cyl, block } from '../world/scene';
+import { scene, mat, box, cyl, block, boxGeo, sphGeo, torusGeo } from '../world/scene';
 import { GEO, addMesh } from '../farming/garden';
 
 // Tọa độ trong hệ nhà (nhà ở (-11,-6), xoay 0.5) — cùng công thức với details.ts
@@ -53,7 +53,7 @@ export var coopBlockAdded = false;
   var bk = new THREE.Group();
   bk.position.set(-5.8, 0, -3.6); bk.rotation.y = -1.2;
   var wheelM = mat(0x1a1a1a), bodyM = mat(0xc0392b), chromeM = mat(0xb8b8b8);
-  var wheelGeo = new THREE.TorusGeometry(0.32, 0.07, 8, 16);
+  var wheelGeo = torusGeo(0.32, 0.07, 8, 16);
   [-0.55, 0.55].forEach(function (wx) {
     var w = new THREE.Mesh(wheelGeo, wheelM);
     w.position.set(wx, 0.32, 0); w.castShadow = true; bk.add(w);
@@ -78,7 +78,7 @@ export var coopBlockAdded = false;
   var ceRoof = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.07, 0.95), mat(0xb4552f));
   ceRoof.position.y = 0.95; ceRoof.rotation.x = 0.2; ce.add(ceRoof);
   [-0.55, 0.55].forEach(function (s) {
-    var pp = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), mat(0x7a4a21));
+    var pp = new THREE.Mesh(boxGeo(0.08, 0.95, 0.08), mat(0x7a4a21));
     pp.position.set(s, 0.48, -0.3); ce.add(pp);
   });
   // 3 trứng mới trong ổ mở rộng — gộp vào danh sách trứng để refreshEggs() hiện đúng
@@ -94,7 +94,7 @@ export var coopBlockAdded = false;
   var rp = new THREE.Group();
   [-0.6, 2.75].forEach(function (lx) {
     var p = houseLocal(lx, 2.3, 2.85);
-    var lan = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(0xd4573a));
+    var lan = new THREE.Mesh(sphGeo(0.16, 10, 8), mat(0xd4573a));
     lan.position.copy(p); lan.scale.y = 1.2; rp.add(lan);
   });
   var mat2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.6), mat(0xb03a2e));

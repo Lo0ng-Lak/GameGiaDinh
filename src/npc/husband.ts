@@ -6,7 +6,7 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import * as THREE from 'three';
-import { mat, scene } from '../world/scene';
+import { mat, scene, boxGeo, sphGeo, coneGeo } from '../world/scene';
 
     /* ================== ANH CHỒNG — CHIỀU ĐI LÀM THUÊ VỀ ================== */
     export var husband, husbandParts = {};
@@ -17,25 +17,25 @@ import { mat, scene } from '../world/scene';
     (function buildHusband() {
       husband = new THREE.Group();
       [-0.11, 0.11].forEach(function (s, idx) {
-        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.14), mat(0x4a4a52));
+        var leg = new THREE.Mesh(boxGeo(0.14, 0.62, 0.14), mat(0x4a4a52));
         leg.position.y = -0.31;
         var piv = new THREE.Group(); piv.position.set(s, 0.78, 0); piv.add(leg); husband.add(piv);
         husbandParts[idx === 0 ? "legL" : "legR"] = piv;
       });
-      var torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.66, 0.27), mat(0x7a6a4f));
+      var torso = new THREE.Mesh(boxGeo(0.5, 0.66, 0.27), mat(0x7a6a4f));
       torso.position.y = 1.11; torso.castShadow = true; husband.add(torso);
       [-1, 1].forEach(function (s) {
         var piv = new THREE.Group(); piv.position.set(s * 0.31, 1.38, 0);
-        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.58, 0.11), mat(0xe8b48c));
+        var arm = new THREE.Mesh(boxGeo(0.11, 0.58, 0.11), mat(0xe8b48c));
         arm.position.y = -0.26; piv.add(arm); husband.add(piv);
         husbandParts[s < 0 ? "armL" : "armR"] = piv;
       });
-      var head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat(0xd9a878));
+      var head = new THREE.Mesh(sphGeo(0.2, 12, 10), mat(0xd9a878));
       head.position.y = 1.68; head.castShadow = true; husband.add(head);
-      var hat = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.17, 12), mat(0xd6b26a));
+      var hat = new THREE.Mesh(coneGeo(0.36, 0.17, 12), mat(0xd6b26a));
       hat.position.y = 1.84; husband.add(hat);
       // Bọc đồ nghề vác trên vai
-      var bundle = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.3), mat(0x38618c));
+      var bundle = new THREE.Mesh(boxGeo(0.42, 0.3, 0.3), mat(0x38618c));
       bundle.position.set(0.3, 1.32, -0.24); husband.add(bundle);
       husband.position.copy(husbandPath[0]);
       husband.visible = false;

@@ -7,7 +7,7 @@
 // tiếp (main chạy animate khi nạp) — nhưng sound.ts import clockT từ main,
 // nên main vẫn nằm trong bundle; requestAnimationFrame được stub là no-op
 // nên animate chỉ chạy đúng 1 khung.
-export { clockT, startRain } from '../src/main';
+export { clockT, startRain, PR_STEPS, SHADOW_SIZES, shadowSizeForLevel, applyQualityLevel, qualityState } from '../src/main';
 export { seasonOf, seasonName, weatherName, weatherIcon, weatherLabel, rollWeather, weatherSummaryText, SEASON_CYCLE, SEASON_RAINY_DAYS, WEATHERS, WEATHER_ODDS } from '../src/world/weather';
 export { G, fmt, fmtTime, produceTotal, produceValue, sellPriceOf, SCHOOL_BELL } from '../src/core/state';
 export { CROPS, CROP_KEYS, GOODS, GOOD_KEYS, FRUIT_TREES, LIVESTOCK, UPGRADES, HOUSE_REPAIR_SAVINGS } from '../src/core/data';
@@ -18,14 +18,17 @@ export { rollPrices, renderShop, openShop } from '../src/economy/shop';
 export { waterTree, harvestTree, overnightTrees, drawTree } from '../src/farming/trees';
 export { feedDucks, collectDuckEggs, feedPigs, sellGrownPig, refreshPigs, refreshDuckEggs } from '../src/farming/livestock';
 export { plots, drawCrop, ensureExtraPlots } from '../src/farming/garden';
+export { treeGroups } from '../src/farming/trees';
 export { checkQuestsAchievements, rollQuests, QUEST_DEFS, ACHIEVEMENTS } from '../src/events/quests';
 export { YEAR_CYCLE, FESTIVALS, FESTIVAL_ITEMS, FESTIVAL_GOODS, dayOfYear, eventForDay, eventById, festivalHudSuffix, festivalSummaryText, applyFestivalQuest, checkFestivalToday, isFestivalGood, festivalItemAvailable, availableFestivalItems } from '../src/events/festivals';
 export { showFestivalDecor, festivalDecorState } from '../src/world/festivalDecor';
 export { buyFestivalItem } from '../src/economy/shop';
-export { updateHUD } from '../src/ui/hud';
+export { updateHUD, hudWriteStats } from '../src/ui/hud';
+export { questCardWriteStats } from '../src/events/quests';
 export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes, villagerParts } from '../src/npc/villagers';
 export { VENDORS, GROCERY, marketPriceOf, sellToVendor, buyGrocery, vendorBuyableCount, openVendorPanel, openGroceryPanel } from '../src/economy/market';
-export { blockers, sun, hemi } from '../src/world/scene';
+export { blockers, sun, hemi, scene, mat, matCacheSize, geoCacheSize, box, cyl, sph, windowGlass, chickens } from '../src/world/scene';
+export { pAlive, pGeo, spawnParticles, updateParticles } from '../src/world/particles';
 export { MARKET_STALLS, GROCERY_POS, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, SCHOOL_YARD_SPOT, SCHOOL_PLAY_SPOT, FIELD_SPOT, POND_SPOT, stallFront } from '../src/world/village';
 export { TEMPLE_POS, TEMPLE_PRAY_SPOT, TEMPLE_SPOT, GROVE_CENTER, GROVE_CLUSTERS, GROVE_SHOOTS, GROVE_REST_SPOT, HILL_POS, HILL_REST_SPOT, refreshBambooShoots } from '../src/world/places';
 export { gotoTargets } from '../src/ui/goto';
