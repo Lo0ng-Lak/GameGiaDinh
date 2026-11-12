@@ -207,6 +207,29 @@
       #start-panel { text-align: left; }
       #start-panel h1 { font-size: 24px; margin: 0 0 6px; line-height: 1.25; }
       .howto { font-size: 13.5px; line-height: 1.65; opacity: .95; margin: 10px 0 0; padding-left: 18px; }
+
+      /* Thẻ nhiệm vụ hôm nay (góc trái, dưới đồng hồ) */
+      #quest-card {
+        position: fixed; left: 10px; top: calc(128px + env(safe-area-inset-top)); z-index: 10;
+        padding: 9px 12px; width: min(270px, 62vw); pointer-events: none;
+      }
+      #quest-card .q-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; }
+      #quest-card .q-head span { font-size: 12px; font-weight: 800; color: #ffd97a; letter-spacing: .02em; }
+      #btn-quests {
+        pointer-events: auto; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+        color: #3a2403; background: #e8a33d; border: none; border-radius: 999px; padding: 4px 10px; min-height: 26px;
+      }
+      .q-row { font-size: 12px; line-height: 1.5; opacity: .92; display: flex; justify-content: space-between; gap: 8px; }
+      .q-row .pr { color: #ffe9a8; font-weight: 700; white-space: nowrap; }
+      .q-row.done { opacity: .55; text-decoration: line-through; }
+      .q-row.tu { color: #ffc9a8; }
+      /* Bảng nhiệm vụ & kỷ niệm */
+      .panel h3 { font-size: 14px; color: #ffd97a; margin: 16px 0 4px; }
+      .ach-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(253,246,227,.1); font-size: 13px; }
+      .ach-row.locked { opacity: .45; }
+      .ach-row b { color: #ffe9a8; white-space: nowrap; }
+      .mem-row { font-size: 13px; line-height: 1.55; padding: 5px 0; border-top: 1px solid rgba(253,246,227,.08); opacity: .92; }
+      #save-info { font-size: 13px; color: #ffe9a8; margin-top: 10px; line-height: 1.5; }
       .howto li { margin-bottom: 4px; }
 
       #hint-keys {
@@ -230,6 +253,8 @@
         #lock-hint { white-space: normal; width: 92vw; top: 54%; font-size: 12.5px; }
         #clock-card .phase { display: none; }
         #objective { top: calc(66px + env(safe-area-inset-top)); font-size: 12.5px; }
+        #quest-card { top: auto; bottom: calc(224px + env(safe-area-inset-bottom)); left: 8px; width: min(215px, 54vw); padding: 7px 9px; }
+        #quest-card .q-row { font-size: 11px; }
         #prompt { bottom: 218px; font-size: 13px; max-width: 92vw; white-space: normal; text-align: center; }
         #toasts { bottom: 300px; }
         #toolbar { gap: 5px; padding: 6px; }
@@ -267,6 +292,11 @@
     </div>
 
     <div class="card" id="objective">Đang tải vườn quê…</div>
+
+    <div class="card" id="quest-card">
+      <div class="q-head"><span>Nhiệm vụ hôm nay</span><button id="btn-quests" type="button">Mục tiêu &amp; kỷ niệm</button></div>
+      <div id="quest-list"><div class="q-row">Đang lên việc cho ngày mới…</div></div>
+    </div>
     <div id="prompt"><span class="key">E</span><span id="prompt-text">Tương tác</span></div>
     <div id="lock-hint">Bấm vào cảnh để <b>nhìn quanh bằng chuột</b> — di chuột tự do, không cần giữ</div>
 
@@ -319,6 +349,23 @@
       </div>
     </div>
 
+    <!-- Nhiệm vụ, mục tiêu, thành tựu, kỷ niệm -->
+    <div class="overlay" id="quest-overlay">
+      <div class="panel">
+        <h2>Việc nhà &amp; kỷ niệm</h2>
+        <p class="sub">Mỗi sáng có 3 việc ngắn để lo cho nhà mình — làm xong được thưởng tiền với sao vui vẻ. Sao đổi được túi quà ở sạp cô Tư, tiền dư gửi vào Quỹ sửa nhà.</p>
+        <h3>Nhiệm vụ hôm nay</h3>
+        <div id="quest-full"></div>
+        <h3>Mục tiêu gia đình</h3>
+        <div id="goal-rows"></div>
+        <h3>Thành tựu</h3>
+        <div id="ach-list"></div>
+        <h3>Kỷ niệm của nhà mình</h3>
+        <div id="mem-list"></div>
+        <button class="ghost-btn" id="quest-close" type="button">Đóng, về làm việc</button>
+      </div>
+    </div>
+
     <!-- Mở đầu -->
     <div class="overlay show" id="start-overlay">
       <div class="panel" id="start-panel">
@@ -334,13 +381,19 @@
           <li><b>Nấu cơm:</b> ghé bếp củi nấu bữa cơm nhà — có cá hay trứng trong giỏ thì dùng luôn, không thì tốn 8.000đ đồ ăn. Nấu xong cả nhà vui, được +1 sao.</li>
           <li><b>Hái chuối:</b> buồng chuối chín vàng ở các cây chuối quanh sân thì hái mang bán; hái xong cây ra buồng mới.</li>
           <li><b>Chiều về:</b> khoảng 17:00 anh đi làm thuê về tới hiên, mang theo tiền công ngày — hôm được hôm ít, như đi làm thật.</li>
-          <li><b>Coi chừng trộm:</b> có hôm một gã lạ lẻn vào sân hốt trứng với rau — nghe chó mực sủa ầm thì chạy lại gần bấm <b>E</b> đuổi nó ra trước khi nó vác bao chạy thoát. Đuổi kịp thì giữ nguyên của cải.</li>
+          <li><b>Coi chừng trộm:</b> có hôm một gã lạ lẻn vào sân hốt trứng với rau, giờ giấc không biết trước được, có hôm chẳng có ai — nghe chó mực sủa ầm thì chạy lại gần bấm <b>E</b> đuổi nó ra trước khi nó vác bao chạy thoát. Đuổi kịp thì giữ nguyên của cải.</li>
+          <li><b>Nhiệm vụ mỗi ngày:</b> mỗi sáng nhà có 3 việc ngắn ghi ở góc trái (thu hoạch, câu cá, nấu cơm…) — làm xong được thưởng tiền với sao. Bấm nút <b>Mục tiêu &amp; kỷ niệm</b> để xem cả mục tiêu dài hạn, thành tựu với những kỷ niệm của nhà mình.</li>
+          <li><b>Tiền với sao có chỗ dùng:</b> ở sạp cô Tư, gửi tiền dư vào <b>Quỹ sửa nhà</b> (mục tiêu 300.000đ), đổi <b>3 sao vui vẻ lấy túi quà quê</b>. Mỗi tối nhà trừ ít chi tiêu sinh hoạt, nên phải tính toán chi tiêu như nhà thật.</li>
+          <li><b>Nhà mình tự sống:</b> bé An tan học tự đi bộ về, chạy chơi quanh sân, ngắm gà, chơi với chó mực, tối về hiên học bài — bé vui hay buồn tùy ngày hôm đó. Anh đi làm về giờ giấc với tiền công mỗi ngày một khác, có hôm mất việc; về tới nhà nghỉ một lát là anh tự đi tưới luống khô hay chẻ củi phụ vợ. Bà Tư qua chơi có hôm biếu hạt, có hôm <b>nhờ mua hộ đồ</b> trả giá hậu.</li>
+          <li><b>Game tự lưu:</b> tiền, hạt, giỏ đồ, luống rau, quỹ nhà, thành tựu với kỷ niệm được lưu ngay trong trình duyệt — tắt trang đi, mở lại là sống tiếp đúng ngày đang dở.</li>
           <li><b>Chuyện bất ngờ khác:</b> có hôm mưa rào đổ xuống tưới rau miễn phí, có hôm bà Tư hàng xóm qua chơi biếu hạt giống — để ý mục tiêu ở góc trái nhé.</li>
           <li><b>Sống như thật:</b> tảng sáng có gà trống gáy, 7:30 chuông trường điểm, chim hót ban ngày, chập tối dế kêu với ếch nhái ngoài ao; lâu lâu có xe máy chạy qua đường làng. Mưa xong đất còn ướt sẫm, có vũng nước đọng và cầu vồng ở phía bắc — nghe tiếng gió, tiếng mưa bằng nút <b>Âm thanh</b> ở thanh dưới.</li>
           <li><b>Rau cũng biết khát:</b> để luống khô lâu quá cây sẽ héo rũ xuống, tưới vào là tươi lại. Lại gần quá thì đàn gà giật mình chạy tản ra, như gà thật ngoài sân.</li>
           <li>Đi bằng <b>WASD</b>, làm việc bằng <b>E</b>. Nhìn quanh: <b>bấm một lần vào cảnh rồi di chuột tự do</b> — không cần giữ chuột; bấm <b>Esc</b> khi muốn thả chuột ra. Trên điện thoại: cần điều khiển để đi, vuốt để nhìn, nút <b>Chạm</b> để làm việc.</li>
         </ul>
+        <p id="save-info" style="display:none"></p>
         <button class="big-btn" id="btn-start" type="button">Ra sân, bắt đầu ngày mới</button>
+        <button class="ghost-btn" id="btn-new-game" type="button" style="display:none">Chơi lại từ đầu (xóa nhà đang lưu)</button>
       </div>
     </div>
 
@@ -385,7 +438,8 @@
       husband: { state: "notyet", wage: 0, wp: 0, talked: false },  // notyet | walking | home
       // Sự kiện bất ngờ trong ngày: trộm lẻn vào sân, mưa rào, bà Tư qua chơi
       thief: { state: "none", wp: 0, t: 0, loot: 0, lootKind: "", lootTxt: "", lootItems: null, lootType: "", result: "" },  // none | in | steal | out | flee | done
-      thiefAt: 630 + Math.random() * 180,       // khoảng 10:30–13:30 trộm lẻn vào
+      thiefDay: Math.random() < 0.65,           // có hôm có trộm, có hôm yên ổn hẳn
+      thiefAt: 480 + Math.random() * 570,       // trộm lẻn vào bất kỳ lúc nào 8:00–17:30, không theo khung giờ cố định
       raining: false, rainT: 0, rainedToday: false,
       rainAt: 780 + Math.random() * 150,        // khoảng 13:00–15:30 có mưa rào
       visit: { state: "none", wp: 0, t: 0, talked: false },  // none | walking | here | leaving | done
@@ -393,7 +447,21 @@
       // Lớp chân thật: âm thanh tự nhiên, gió, mặt đất ướt sau mưa, cầu vồng, xe máy chạy qua đường
       soundOn: true, roosterDone: false, bellDone: false,
       wind: 0.6, wet: 0, rainbowT: 0, dipT: 0,
-      bike: { state: "idle", t: 18 + Math.random() * 30, x: -36, dir: 1, z: -15.4 }
+      bike: { state: "idle", t: 18 + Math.random() * 30, x: -36, dir: 1, z: -15.4 },
+      /* ===== GIAI ĐOẠN 1: nhiệm vụ, tiết kiệm, thành tựu, kỷ niệm, AI gia đình ===== */
+      wateredToday: 0, bananaToday: 0, livingCost: 0,
+      totalEarned: 0, totalHarvest: 0, thiefChased: 0, questsDoneTotal: 0,
+      quests: [],                                // 3 nhiệm vụ ngắn của hôm nay
+      savings: 0,                                // Quỹ sửa nhà — gửi ở sạp cô Tư, mục tiêu 300.000đ
+      savingsGoalDone: false,
+      achievements: {},                          // id -> ngày đạt được
+      memories: [],                              // dòng kỷ niệm "Ngày X — ..."
+      tuQuest: null,                             // việc bà Tư nhờ: {key, name, n, reward}
+      husbandAt: 990 + Math.random() * 105,      // anh về lúc nào cũng khác: 16:30–18:15
+      noWorkToday: Math.random() < 0.12,         // có hôm chủ không có việc, anh về tay không
+      husbandMode: "rest", husbandT: 25, husbandTx: 0, husbandTz: 0, husbandPlot: null,
+      childPlay: { wp: 0, spot: -1, pauseT: 4, lineT: 30, mood: "vui", playedToday: false },
+      childBack: false
     };
     var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     var DAY_END = 19 * 60;                     // 19:00
@@ -407,6 +475,155 @@
     function produceValue() {
       var v = 0; for (var k in G.produce) v += G.produce[k] * priceOf(k); return v;
     }
+    function goodName(k) { return CROPS[k] ? CROPS[k].name : (GOODS[k] ? GOODS[k].name : k); }
+
+    /* ================== GIAI ĐOẠN 1 — NHIỆM VỤ, THÀNH TỰU, LƯU GAME ================== */
+    var QUEST_DEFS = [
+      { id: "harvest", targets: [3, 5, 7],    txt: function (n) { return "Thu hoạch " + n + " món nông sản"; },        get: function () { return G.harvestedToday; }, reward: { money: 12000, stars: 1 } },
+      { id: "plant",   targets: [3, 4, 6],    txt: function (n) { return "Gieo trồng " + n + " luống rau"; },          get: function () { return G.plantedToday; },   reward: { money: 9000, stars: 0 } },
+      { id: "water",   targets: [4, 6, 8],    txt: function (n) { return "Tưới nước " + n + " lượt luống"; },          get: function () { return G.wateredToday; },   reward: { money: 8000, stars: 0 } },
+      { id: "sell",    targets: [30000, 50000, 80000], txt: function (n) { return "Bán nông sản được " + fmt(n); },   get: function () { return G.earnedToday; },    reward: { money: 0, stars: 1 } },
+      { id: "eggs",    targets: [3, 5],       txt: function (n) { return "Nhặt " + n + " trứng gà"; },                 get: function () { return G.eggsToday; },      reward: { money: 6000, stars: 0 } },
+      { id: "fish",    targets: [1, 2],       txt: function (n) { return "Câu " + n + " con cá rô ở ao"; },            get: function () { return G.fishToday; },      reward: { money: 10000, stars: 0 } },
+      { id: "banana",  targets: [1, 2],       txt: function (n) { return "Hái " + n + " nải chuối chín"; },            get: function () { return G.bananaToday; },   reward: { money: 7000, stars: 0 } },
+      { id: "cook",    targets: [1],          txt: function () { return "Nấu bữa cơm nhà ở bếp củi"; },                get: function () { return G.cookedToday ? 1 : 0; }, reward: { money: 0, stars: 1 } },
+      { id: "school",  targets: [1],          txt: function () { return "Đưa bé An tới trường đúng giờ"; },            get: function () { return G.schoolOnTime === true ? 1 : 0; }, reward: { money: 0, stars: 1 } }
+    ];
+    function rollQuests() {
+      var pool = QUEST_DEFS.slice();
+      // Việc đưa con đi học chỉ có ý nghĩa buổi sáng — luôn ưu tiên có mặt, thêm 2 việc ngẫu nhiên
+      var picked = [pool.splice(8, 1)[0]];
+      while (picked.length < 3 && pool.length) {
+        picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      }
+      G.quests = picked.map(function (d) {
+        var tg = d.targets[Math.floor(Math.random() * d.targets.length)];
+        return { id: d.id, target: tg, text: d.txt(tg), reward: d.reward, done: false };
+      });
+    }
+    function questDef(id) { for (var i = 0; i < QUEST_DEFS.length; i++) if (QUEST_DEFS[i].id === id) return QUEST_DEFS[i]; return null; }
+    function questProgress(q) { var d = questDef(q.id); return d ? Math.min(d.get(), q.target) : 0; }
+
+    var ACHIEVEMENTS = [
+      { id: "first-harvest", name: "Vụ rau đầu tiên", desc: "Thu hoạch món nông sản đầu tiên", test: function () { return G.totalHarvest >= 1; } },
+      { id: "earner", name: "Biết làm ăn", desc: "Tổng thu nhập của nhà đạt 200.000đ", test: function () { return G.totalEarned >= 200000; } },
+      { id: "week", name: "Một tuần ở quê", desc: "Sống tới ngày 7", test: function () { return G.day >= 7; } },
+      { id: "stars10", name: "Nhà mình vui vẻ", desc: "Đạt 10 sao vui vẻ", test: function () { return G.stars >= 10; } },
+      { id: "guard", name: "Canh nhà giỏi", desc: "Đuổi kịp trộm 2 lần", test: function () { return G.thiefChased >= 2; } },
+      { id: "worker", name: "Siêng năng đảm đang", desc: "Hoàn thành 5 nhiệm vụ hằng ngày", test: function () { return G.questsDoneTotal >= 5; } },
+      { id: "saver", name: "Có của để dành", desc: "Quỹ sửa nhà đạt 300.000đ", test: function () { return G.savingsGoalDone; } }
+    ];
+    function addMemory(txt) {
+      G.memories.push("Ngày " + G.day + " — " + txt);
+      if (G.memories.length > 40) G.memories.shift();
+    }
+    function checkQuestsAchievements() {
+      G.quests.forEach(function (q) {
+        if (q.done) return;
+        var d = questDef(q.id);
+        if (d && d.get() >= q.target) {
+          q.done = true; G.questsDoneTotal++;
+          if (q.reward.money) { G.money += q.reward.money; G.totalEarned += q.reward.money; }
+          if (q.reward.stars) G.stars += q.reward.stars;
+          sndCoin();
+          toast("Xong việc: " + q.text + " — thưởng " +
+            (q.reward.money ? fmt(q.reward.money) : "") + (q.reward.money && q.reward.stars ? " + " : "") +
+            (q.reward.stars ? q.reward.stars + " sao vui vẻ" : "") + "!", true);
+          addMemory("Làm xong việc \"" + q.text + "\".");
+          saveGame();
+        }
+      });
+      ACHIEVEMENTS.forEach(function (a) {
+        if (G.achievements[a.id]) return;
+        if (a.test()) {
+          G.achievements[a.id] = G.day;
+          toast("Thành tựu mới: " + a.name + " — " + a.desc, true);
+          addMemory("Đạt thành tựu \"" + a.name + "\".");
+          saveGame();
+        }
+      });
+      if (!G.savingsGoalDone && G.savings >= 300000) {
+        G.savingsGoalDone = true; G.stars += 3;
+        toast("Quỹ sửa nhà đủ 300.000đ rồi! Cả nhà mừng rỡ +3 sao vui vẻ", true);
+        addMemory("Để dành đủ 300.000đ vào Quỹ sửa nhà.");
+        saveGame();
+      }
+    }
+    function renderQuestCard() {
+      var box = el("quest-list"); if (!box) return;
+      var html = "";
+      G.quests.forEach(function (q) {
+        html += '<div class="q-row' + (q.done ? " done" : "") + '"><span>' + q.text + '</span><span class="pr">' +
+          (q.done ? "Xong" : questProgress(q) + "/" + q.target) + '</span></div>';
+      });
+      if (G.tuQuest) {
+        html += '<div class="q-row tu"><span>Bà Tư nhờ: mang ' + G.tuQuest.n + " " + G.tuQuest.name + ' cho bà</span><span class="pr">' +
+          Math.min(G.produce[G.tuQuest.key] || 0, G.tuQuest.n) + "/" + G.tuQuest.n + '</span></div>';
+      }
+      box.innerHTML = html || '<div class="q-row">Hôm nay chưa có việc nào.</div>';
+    }
+    function renderQuestPanel() {
+      var full = "";
+      G.quests.forEach(function (q) {
+        full += '<div class="ach-row' + (q.done ? "" : "") + '"><span>' + q.text + (q.done ? " — đã xong" : "") + '</span><b>' +
+          (q.done ? "Đã nhận thưởng" : questProgress(q) + "/" + q.target) + '</b></div>';
+      });
+      if (G.tuQuest) full += '<div class="ach-row"><span>Việc bà Tư nhờ: mang ' + G.tuQuest.n + " " + G.tuQuest.name + ' qua nhà bà</span><b>Thưởng ' + fmt(G.tuQuest.reward) + '</b></div>';
+      el("quest-full").innerHTML = full || '<div class="mem-row">Chưa có nhiệm vụ nào.</div>';
+      el("goal-rows").innerHTML =
+        '<div class="ach-row"><span>Quỹ sửa nhà (gửi ở sạp cô Tư, 10.000đ mỗi lần)</span><b>' + fmt(G.savings) + " / 300.000đ" + (G.savingsGoalDone ? " — Đủ rồi!" : "") + '</b></div>' +
+        '<div class="ach-row"><span>Tổng thu nhập từ ngày về quê</span><b>' + fmt(G.totalEarned) + '</b></div>' +
+        '<div class="ach-row"><span>Nhiệm vụ đã hoàn thành</span><b>' + G.questsDoneTotal + ' việc</b></div>';
+      var ach = "";
+      ACHIEVEMENTS.forEach(function (a) {
+        var got = G.achievements[a.id];
+        ach += '<div class="ach-row' + (got ? "" : " locked") + '"><span><b style="color:#ffd97a">' + a.name + '</b> — ' + a.desc + '</span><b>' + (got ? "Ngày " + got : "Chưa đạt") + '</b></div>';
+      });
+      el("ach-list").innerHTML = ach;
+      el("mem-list").innerHTML = G.memories.length
+        ? G.memories.slice().reverse().map(function (m) { return '<div class="mem-row">' + m + '</div>'; }).join("")
+        : '<div class="mem-row">Chưa có kỷ niệm nào — cứ sống từng ngày, chuyện vui sẽ tự ghi lại.</div>';
+    }
+
+    /* ---- Lưu game vào trình duyệt: tiền, sao, hạt, giỏ, luống rau, quỹ, thành tựu, kỷ niệm ---- */
+    var SAVE_KEY = "gia-dinh-que-save-v1";
+    var pendingSave = null;
+    function saveGame() {
+      if (!G.started || typeof plots === "undefined") return;
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          v: 1, day: G.day, money: G.money, stars: G.stars, seeds: G.seeds, produce: G.produce,
+          can: G.can, selSeed: G.selSeed, savings: G.savings, savingsGoalDone: G.savingsGoalDone, tuQuest: G.tuQuest,
+          totalEarned: G.totalEarned, totalHarvest: G.totalHarvest, thiefChased: G.thiefChased,
+          questsDoneTotal: G.questsDoneTotal, achievements: G.achievements, memories: G.memories.slice(-40),
+          plots: plots.map(function (p) {
+            return { state: p.state, type: p.type, progress: p.progress, watered: p.watered, waterings: p.waterings };
+          })
+        }));
+      } catch (e) { /* trình duyệt chặn lưu thì bỏ qua, game vẫn chơi tiếp */ }
+    }
+    function readSave() {
+      try { var s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+    }
+    function applySave(d) {
+      if (!d) return;
+      G.day = d.day || 1; G.money = d.money != null ? d.money : 60000; G.stars = d.stars || 0;
+      if (d.seeds) for (var k in G.seeds) if (d.seeds[k] != null) G.seeds[k] = d.seeds[k];
+      if (d.produce) for (var k2 in G.produce) if (d.produce[k2] != null) G.produce[k2] = d.produce[k2];
+      G.can = d.can != null ? d.can : 5; G.selSeed = d.selSeed || "cai";
+      G.savings = d.savings || 0; G.savingsGoalDone = !!d.savingsGoalDone;
+      G.totalEarned = d.totalEarned || 0; G.totalHarvest = d.totalHarvest || 0;
+      G.thiefChased = d.thiefChased || 0; G.questsDoneTotal = d.questsDoneTotal || 0;
+      G.achievements = d.achievements || {}; G.memories = d.memories || [];
+      G.tuQuest = d.tuQuest || null;
+      if (d.plots) d.plots.forEach(function (sp, i) {
+        var p = plots[i]; if (!p) return;
+        p.state = sp.state || "empty"; p.type = sp.type || null;
+        p.progress = sp.progress || 0; p.watered = !!sp.watered; p.waterings = sp.waterings || 0;
+        p.dryT = 0; p._wilted = false; drawCrop(p);
+      });
+    }
+    rollQuests();
 
     /* ================== ÂM THANH NHẸ (tổng hợp) ================== */
     var AC = null;
@@ -2332,7 +2549,12 @@
       document.querySelectorAll(".seed-btn").forEach(function (b) {
         b.classList.toggle("sel", b.dataset.seed === G.selSeed);
       });
+      if (G.started && !G.dayOver) { checkQuestsAchievements(); renderQuestCard(); }
     }
+    el("btn-quests").addEventListener("click", function () {
+      exitLock(); renderQuestPanel(); el("quest-overlay").classList.add("show");
+    });
+    el("quest-close").addEventListener("click", function () { el("quest-overlay").classList.remove("show"); });
     function selectSeed(k) { G.selSeed = k; updateHUD(); }
     document.querySelectorAll(".seed-btn").forEach(function (b) {
       b.addEventListener("click", function () { selectSeed(b.dataset.seed); });
@@ -2347,6 +2569,8 @@
     function objectiveText() {
       if (G.thief.state === "in" || G.thief.state === "steal" || G.thief.state === "out")
         return "<b>Có trộm lẻn vào sân!</b> — chạy lại gần nó bấm <b>E</b> để đuổi ra, đừng để nó mang đồ chạy thoát.";
+      if (G.tuQuest)
+        return "Bà Tư nhờ mua hộ <b>" + G.tuQuest.n + " " + G.tuQuest.name + "</b> — có đủ trong giỏ thì ra hiên <b>nói chuyện với bà</b> để giao, bà trả " + fmt(G.tuQuest.reward) + ".";
       if (G.visit.state === "here" && !G.visit.talked)
         return "Bà Tư hàng xóm đang ở hiên — ra <b>nói chuyện với bà</b> một lát.";
       if (G.childState === "home" && G.minutes < SCHOOL_BELL + 90)
@@ -2392,6 +2616,7 @@
         consider("thief", thief.position.x, thief.position.z, 2.5);
       if (G.visit.state === "here") consider("visitor", visitor.position.x, visitor.position.z, 2.4);
       if (G.childState === "home") consider("child", child.position.x, child.position.z, 2.4);
+      if (G.childState === "play") consider("childplay", child.position.x, child.position.z, 2.4);
       if (!best) return null;
       // Nhãn theo ngữ cảnh
       if (best.kind === "plot") {
@@ -2404,6 +2629,7 @@
       else if (best.kind === "stall") best.label = "Tới sạp cô Tư — bán rau, mua hạt";
       else if (best.kind === "door") best.label = "Vào nhà nghỉ — kết thúc ngày";
       else if (best.kind === "child") best.label = "Nắm tay bé An, đưa đi học";
+      else if (best.kind === "childplay") best.label = G.childPlay.mood === "vui" ? "Chơi với bé An một lát" : "Dỗ bé An — bé đang buồn";
       else if (best.kind === "coop") {
         if (G.chicken.ready > 0) best.label = "Nhặt " + G.chicken.ready + " trứng gà trong ổ";
         else if (G.chicken.fed) best.label = "Gà đang ăn cám… sắp đẻ trứng";
@@ -2423,7 +2649,7 @@
       else if (best.kind === "banana") best.label = best.banana.ripe ? "Hái nải chuối chín vàng" : "Buồng chuối còn xanh…";
       else if (best.kind === "husband") best.label = "Nói chuyện với anh";
       else if (best.kind === "thief") best.label = "Đuổi trộm ra khỏi sân!";
-      else if (best.kind === "visitor") best.label = G.visit.talked ? "Chào bà Tư hàng xóm" : "Nói chuyện với bà Tư hàng xóm";
+      else if (best.kind === "visitor") best.label = G.tuQuest ? "Nói chuyện với bà Tư (bà đang nhờ mua hộ đồ)" : G.visit.talked ? "Chào bà Tư hàng xóm" : "Nói chuyện với bà Tư hàng xóm";
       return best;
     }
 
@@ -2489,13 +2715,13 @@
           toast("Đã gieo " + CROPS[p.type].name + ". Tưới nước cho cây lớn nhé.");
         } else if (p.state === "growing" && !p.watered) {
           if (G.can <= 0) { toast("Bình hết nước — ra giếng múc đầy bình trước."); return; }
-          G.can--; p.watered = true; p.waterings++; p.dryT = 0;
+          G.can--; p.watered = true; p.waterings++; p.dryT = 0; G.wateredToday++;
           drawCrop(p); sndWater(); sndPour();
           spawnParticles(p.x, 1.15, p.z, 20, 0x6ec3e8, 1.5, 0.4, 0.6, 6);
           toast("Đã tưới. " + (CROPS[p.type].waters > p.waterings ? "Cây này cần tưới " + CROPS[p.type].waters + " lần mới chín." : "Đất ẩm rồi, cây đang lớn."));
         } else if (p.state === "mature") {
           var y = CROPS[p.type].yield;
-          G.produce[p.type] += y; G.harvestedToday += y;
+          G.produce[p.type] += y; G.harvestedToday += y; G.totalHarvest += y;
           toast("Thu hoạch " + CROPS[p.type].name + " +" + y + " vào giỏ.", true);
           spawnParticles(p.x, 1.0, p.z, 16, CROPS[p.type].fruit, 1.7, 1.7, 0.7, 4); G.dipT = 0.32;
           p.state = "empty"; p.type = null; p.progress = 0; p.watered = false; p.waterings = 0;
@@ -2515,6 +2741,23 @@
       } else if (t.kind === "child") {
         G.childState = "follow"; sndBell();
         toast("Bé An: \"Đi học thôi mẹ!\" — dẫn bé tới cổng trường nhé.");
+      } else if (t.kind === "childplay") {
+        var cp2 = G.childPlay;
+        if (cp2.mood === "buon") {
+          cp2.mood = "vui";
+          toast("Mẹ ôm bé một cái, kể chuyện con gà mái mơ — bé An cười lại rồi. Bé vui là nhà vui.", true);
+        } else if (!cp2.playedToday) {
+          cp2.playedToday = true; G.stars++;
+          toast("Hai mẹ con chơi đuổi bắt quanh sân một vòng. Bé An cười khanh khách. +1 sao vui vẻ", true);
+          addMemory("Chơi đuổi bắt với bé An quanh sân.");
+        } else {
+          var alines = [
+            "Bé An: \"Mẹ ơi, hôm nay con được điểm mười môn đọc!\"",
+            "Bé An: \"Mai mẹ cho con phụ tưới rau với nhé.\"",
+            "Bé An: \"Con thương mẹ nhất nhà!\""
+          ];
+          toast(alines[Math.floor(Math.random() * alines.length)]);
+        }
       } else if (t.kind === "coop") {
         if (G.chicken.ready > 0) {
           var nEgg = G.chicken.ready;
@@ -2556,7 +2799,7 @@
         if (bn.ripe) {
           bn.ripe = false; bn.timer = 80;
           bn.mat.color.setHex(0xa8c256); bn.bunch.scale.set(0.55, 0.75, 0.55);
-          G.produce.chuoi++; sndHarvest();
+          G.produce.chuoi++; G.bananaToday++; sndHarvest();
           toast("Hái được 1 nải chuối chín vào giỏ.", true);
         } else toast("Buồng chuối này còn xanh, chờ chín vàng đã.");
       } else if (t.kind === "husband") {
@@ -2575,19 +2818,50 @@
         } else {
           toast("Đuổi kịp trộm trước khi nó lấy được gì! Nó bỏ chạy rồi. +1 sao vui vẻ", true);
         }
-        G.stars++;
+        G.stars++; G.thiefChased++;
+        addMemory("Đuổi kịp tên trộm lẻn vào sân, giữ nguyên của cải.");
         th2.result = "Đuổi kịp, giữ nguyên của cải";
         th2.state = "flee";
         sndBark();
+        saveGame();
       } else if (t.kind === "visitor") {
-        if (!G.visit.talked) {
+        if (G.tuQuest) {
+          // Bà Tư đang chờ món bà nhờ mua hộ — có đủ trong giỏ thì giao luôn, bà trả hậu hĩnh
+          var tq = G.tuQuest;
+          if ((G.produce[tq.key] || 0) >= tq.n) {
+            G.produce[tq.key] -= tq.n;
+            G.money += tq.reward; G.totalEarned += tq.reward; G.stars++;
+            sndCoin();
+            toast("Bà Tư: \"Đúng món bà cần! Gửi chị " + fmt(tq.reward) + " — có qua có lại mới toại lòng nhau.\" +1 sao vui vẻ", true);
+            addMemory("Giúp bà Tư mua hộ " + tq.n + " " + tq.name + ".");
+            G.tuQuest = null; G.visit.talked = true;
+            saveGame();
+          } else {
+            toast("Bà Tư: \"Bà cần " + tq.n + " " + tq.name + " — trong giỏ chị mới có " + (G.produce[tq.key] || 0) + ". Khi nào có đủ thì mang qua cho bà nhé.\"");
+          }
+        } else if (!G.visit.talked) {
           G.visit.talked = true;
-          var giftKey = CROP_KEYS[Math.floor(Math.random() * CROP_KEYS.length)];
-          G.seeds[giftKey] += 2; G.stars++;
-          sndCoin();
-          toast("Bà Tư: \"Qua thăm mẹ con chị. Biếu 2 hạt " + CROPS[giftKey].name + " nhà trồng, mai gieo thử nhé!\" +1 sao vui vẻ", true);
+          if (Math.random() < 0.55) {
+            // Bà Tư nhờ mua hộ một món — đây là việc riêng, thưởng cao hơn giá sạp
+            var allKeys = CROP_KEYS.concat(GOOD_KEYS);
+            var qk = allKeys[Math.floor(Math.random() * allKeys.length)];
+            var qn = 2 + Math.floor(Math.random() * 2);
+            G.tuQuest = { key: qk, name: goodName(qk), n: qn, reward: Math.round(priceOf(qk) * qn * 1.5 / 1000) * 1000 };
+            sndCoin();
+            toast("Bà Tư: \"Chị ơi, mai nhà bà có giỗ, nhờ chị để dành cho bà " + G.tuQuest.n + " " + G.tuQuest.name + ". Có đủ thì nói chuyện với bà, bà gửi " + fmt(G.tuQuest.reward) + ".\"", true);
+          } else {
+            var giftKey = CROP_KEYS[Math.floor(Math.random() * CROP_KEYS.length)];
+            G.seeds[giftKey] += 2; G.stars++;
+            sndCoin();
+            toast("Bà Tư: \"Qua thăm mẹ con chị. Biếu 2 hạt " + CROPS[giftKey].name + " nhà trồng, mai gieo thử nhé!\" +1 sao vui vẻ", true);
+          }
         } else {
-          toast("Bà Tư: \"Vườn rau nhà chị xanh tốt quá, khéo tay thật đấy.\"");
+          var vlines = [
+            "Bà Tư: \"Vườn rau nhà chị xanh tốt quá, khéo tay thật đấy.\"",
+            "Bà Tư: \"Bé An dạo này lớn nhanh, lại lễ phép, ai cũng khen.\"",
+            "Bà Tư: \"Chồng chị chịu khó, vợ chị đảm đang — nhà này có phúc.\""
+          ];
+          toast(vlines[Math.floor(Math.random() * vlines.length)]);
         }
       }
       updateHUD();
@@ -2604,10 +2878,10 @@
         b.textContent = "Bán hết nông sản trong giỏ — nhận " + fmt(produceValue());
         b.addEventListener("click", function () {
           var v = produceValue();
-          G.money += v; G.earnedToday += v;
+          G.money += v; G.earnedToday += v; G.totalEarned += v;
           for (var kk in G.produce) G.produce[kk] = 0;
           sndCoin(); toast("Cô Tư: \"Rau tươi quá!\" Đã bán được " + fmt(v) + ".", true);
-          renderShop(); updateHUD();
+          renderShop(); updateHUD(); saveGame();
         });
         sellBox.appendChild(b);
       } else {
@@ -2631,6 +2905,43 @@
         });
         row.appendChild(info); row.appendChild(btn); rows.appendChild(row);
       });
+      // Quỹ sửa nhà: tiền dư gửi vào đây, đủ 300.000đ là mục tiêu lớn của cả nhà
+      var srow = document.createElement("div"); srow.className = "shop-row";
+      var sinfo = document.createElement("div"); sinfo.className = "info";
+      sinfo.innerHTML = '<div class="nm">Quỹ sửa nhà</div><div class="pr">Đã để dành ' + fmt(G.savings) +
+        ' / 300.000đ' + (G.savingsGoalDone ? ' · Đủ rồi, cả nhà mừng lắm!' : ' · Gửi 10.000đ mỗi lần') + '</div>';
+      var sbtn = document.createElement("button");
+      sbtn.className = "buy-btn"; sbtn.type = "button"; sbtn.textContent = "Gửi 10.000đ";
+      sbtn.disabled = G.money < 10000 || G.savingsGoalDone;
+      sbtn.addEventListener("click", function () {
+        if (G.money < 10000) return;
+        G.money -= 10000; G.savings += 10000; sndCoin();
+        toast("Đã gửi 10.000đ vào Quỹ sửa nhà. Giờ quỹ có " + fmt(G.savings) + ".");
+        renderShop(); updateHUD(); saveGame();
+      });
+      srow.appendChild(sinfo); srow.appendChild(sbtn); rows.appendChild(srow);
+      // Sao vui vẻ đổi được túi quà — sao không còn là con số để ngắm nữa
+      var grow2 = document.createElement("div"); grow2.className = "shop-row";
+      var ginfo = document.createElement("div"); ginfo.className = "info";
+      ginfo.innerHTML = '<div class="nm">Túi quà quê (đổi bằng sao)</div><div class="pr">3 sao vui vẻ đổi 1 túi — trong túi có hạt giống hoặc ít tiền lẻ cô Tư lì xì. Đang có ' + G.stars + ' sao</div>';
+      var gbtn = document.createElement("button");
+      gbtn.className = "buy-btn"; gbtn.type = "button"; gbtn.textContent = "Đổi 3 sao";
+      gbtn.disabled = G.stars < 3;
+      gbtn.addEventListener("click", function () {
+        if (G.stars < 3) return;
+        G.stars -= 3; sndCoin();
+        if (Math.random() < 0.5) {
+          var gk = CROP_KEYS[Math.floor(Math.random() * CROP_KEYS.length)];
+          G.seeds[gk] += 3;
+          toast("Mở túi quà: được 3 hạt " + CROPS[gk].name + "! Cô Tư chu đáo quá.", true);
+        } else {
+          var gm = 12000 + Math.floor(Math.random() * 5) * 2000;
+          G.money += gm; G.totalEarned += gm;
+          toast("Mở túi quà: cô Tư lì xì " + fmt(gm) + " trong túi!", true);
+        }
+        renderShop(); updateHUD(); saveGame();
+      });
+      grow2.appendChild(ginfo); grow2.appendChild(gbtn); rows.appendChild(grow2);
     }
     function openShop() { exitLock(); renderShop(); shopOverlay.classList.add("show"); }
     el("shop-close").addEventListener("click", function () { shopOverlay.classList.remove("show"); });
@@ -2639,12 +2950,13 @@
     function deliverChild() {
       var onTime = G.minutes <= SCHOOL_BELL;
       G.schoolOnTime = onTime; G.childState = "school";
+      G.childPlay.mood = onTime ? "vui" : "buon";   // tới trễ là bé buồn cả buổi chiều
       sndBell();
       if (onTime) {
         G.stars++;
         toast("Bé An vào lớp đúng giờ. Cô giáo khen bé ngoan! +1 sao vui vẻ", true);
       } else {
-        toast("Bé An tới trường hơi trễ. Mai mình đi sớm hơn nhé.");
+        toast("Bé An tới trường hơi trễ, bé cúi mặt buồn. Mai mình đi sớm hơn nhé.");
       }
       updateHUD();
     }
@@ -2655,15 +2967,23 @@
       if (G.dayOver) return;
       G.dayOver = true;
       exitLock();
+      saveGame();
       el("sum-title").textContent = "Hết ngày " + G.day;
       el("sum-line").textContent = G.childState === "school"
         ? "Bé An đã về nhà, cả nhà ăn cơm tối rồi nghỉ sớm."
         : "Một ngày nữa trôi qua ở quê mình.";
       var schoolTxt = G.schoolOnTime === true ? "Đúng giờ, bé được khen"
         : G.schoolOnTime === false ? "Hơi trễ một chút" : "Bà Tư hàng xóm đưa hộ";
+      // Chi tiêu sinh hoạt mỗi ngày: gạo mắm, điện nước, đồ dùng — tiền có chỗ ra rõ ràng
+      G.livingCost = Math.min(G.money, 12000 + Math.floor(Math.random() * 5) * 1000);
+      G.money -= G.livingCost;
+      var questsDoneTxt = G.quests.filter(function (q) { return q.done; }).length + "/3 việc";
       el("sum-rows").innerHTML =
         '<div class="sum-row"><span>Tiền bán nông sản hôm nay</span><b>' + fmt(G.earnedToday) + '</b></div>' +
-        '<div class="sum-row"><span>Tiền công anh đi làm thuê</span><b>' + (G.husband.wage > 0 ? fmt(G.husband.wage) : "Anh về trễ, chưa kịp") + '</b></div>' +
+        '<div class="sum-row"><span>Tiền công anh đi làm thuê</span><b>' + (G.noWorkToday ? "Hôm nay không có việc" : G.husband.wage > 0 ? fmt(G.husband.wage) : "Anh về trễ, chưa kịp") + '</b></div>' +
+        '<div class="sum-row"><span>Chi tiêu sinh hoạt (gạo mắm, điện nước)</span><b>-' + fmt(G.livingCost) + '</b></div>' +
+        '<div class="sum-row"><span>Nhiệm vụ hôm nay</span><b>' + questsDoneTxt + '</b></div>' +
+        '<div class="sum-row"><span>Quỹ sửa nhà đã để dành</span><b>' + fmt(G.savings) + ' / 300.000đ</b></div>' +
         '<div class="sum-row"><span>Số rau đã thu hoạch</span><b>' + G.harvestedToday + ' món</b></div>' +
         '<div class="sum-row"><span>Trứng nhặt được · Cá câu được</span><b>' + G.eggsToday + ' trứng · ' + G.fishToday + ' cá</b></div>' +
         '<div class="sum-row"><span>Số luống đã trồng</span><b>' + G.plantedToday + ' luống</b></div>' +
@@ -2679,7 +2999,13 @@
       dayOverlay.classList.remove("show");
       G.day++; G.minutes = 5 * 60 + 30; G.dayOver = false;
       G.earnedToday = 0; G.harvestedToday = 0; G.plantedToday = 0;
-      G.eggsToday = 0; G.fishToday = 0;
+      G.eggsToday = 0; G.fishToday = 0; G.wateredToday = 0; G.bananaToday = 0; G.livingCost = 0;
+      rollQuests();   // ngày mới, việc mới
+      G.husbandAt = 990 + Math.random() * 105;
+      G.noWorkToday = Math.random() < 0.12;
+      G.husbandMode = "rest"; G.husbandPlot = null;
+      G.childPlay.spot = -1; G.childPlay.pauseT = 4; G.childPlay.lineT = 30;
+      G.childPlay.mood = "vui"; G.childPlay.playedToday = false;
       G.cookedToday = false; G.smokeBoost = 0;
       G.chicken.fed = false; G.chicken.ready = 0; G.chicken.timer = 0; refreshEggs();
       G.fish.state = "idle"; if (window.__bobber) window.__bobber.visible = false;
@@ -2687,7 +3013,8 @@
       husband.visible = false; husband.position.copy(husbandPath[0]);
       // Ngày mới: sự kiện bất ngờ lên lịch lại ngẫu nhiên
       G.thief.state = "none"; G.thief.wp = 0; G.thief.t = 0; G.thief.loot = 0; G.thief.lootKind = ""; G.thief.lootTxt = ""; G.thief.lootItems = null; G.thief.result = "";
-      G.thiefAt = 630 + Math.random() * 180;
+      G.thiefDay = Math.random() < 0.65;              // có hôm trộm tới, có hôm không
+      G.thiefAt = 480 + Math.random() * 570;          // giờ nào cũng có thể, 8:00–17:30
       thief.visible = false; thief.position.copy(thiefPath[0]); thief.position.y = 0;
       if (thiefParts.sack) thiefParts.sack.scale.set(1, 1.15, 0.8);
       G.raining = false; G.rainT = 0; G.rainedToday = false; G.rainAt = 780 + Math.random() * 150;
@@ -2714,6 +3041,7 @@
       });
       toast("Ngày mới bắt đầu. Bé An đang chờ ở hiên nhà.");
       updateHUD();
+      saveGame();
     });
 
     /* ================== NÚT ĐI TỚI ================== */
@@ -2731,8 +3059,27 @@
     });
 
     /* ================== BẮT ĐẦU ================== */
+    // Có nhà đang lưu trong trình duyệt thì cho chơi tiếp đúng ngày đó
+    pendingSave = readSave();
+    if (pendingSave && pendingSave.day) {
+      el("save-info").style.display = "block";
+      el("save-info").textContent = "Nhà mình đang sống tới ngày " + pendingSave.day +
+        " — tiền " + fmt(pendingSave.money || 0) + ", " + (pendingSave.stars || 0) +
+        " sao vui vẻ, quỹ sửa nhà " + fmt(pendingSave.savings || 0) + ". Bấm nút dưới để sống tiếp ngày đó.";
+      el("btn-start").textContent = "Tiếp tục ngày " + pendingSave.day + " của nhà mình";
+      el("btn-new-game").style.display = "block";
+    }
+    el("btn-new-game").addEventListener("click", function () {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      pendingSave = null;
+      el("save-info").style.display = "none";
+      el("btn-new-game").style.display = "none";
+      el("btn-start").textContent = "Ra sân, bắt đầu ngày mới";
+      toast("Đã xóa nhà cũ. Bấm nút bắt đầu để lập nhà mới từ ngày 1.");
+    });
     el("btn-start").addEventListener("click", function () {
       el("start-overlay").classList.remove("show");
+      if (pendingSave) { applySave(pendingSave); pendingSave = null; rollQuests(); }
       G.started = true;
       tryLock();
       try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
@@ -2845,7 +3192,7 @@
 
       /* --- Di chuyển --- */
       var fwd = 0, strafe = 0;
-      if (G.started && !G.dayOver && !shopOverlay.classList.contains("show")) {
+      if (G.started && !G.dayOver && !shopOverlay.classList.contains("show") && !el("quest-overlay").classList.contains("show")) {
         if (keys.KeyW || keys.ArrowUp) fwd += 1;
         if (keys.KeyS || keys.ArrowDown) fwd -= 1;
         if (keys.KeyA || keys.ArrowLeft) strafe -= 1;
@@ -2887,6 +3234,12 @@
       camera.rotation.z = (player.moving ? Math.sin(player.bobT) * 0.006 : 0) + Math.sin(tNow * 0.9) * 0.0016;
 
       /* --- Bé An --- */
+      // Tan học lúc 16:40: bé tự đi bộ từ cổng trường về nhà, không đứng chờ ai đón
+      if (G.started && !G.dayOver && G.childState === "school" && !child.visible && G.minutes >= 1000) {
+        G.childState = "return"; G.childPlay.wp = 0;
+        child.position.copy(gatePos); child.visible = true;
+        toast("Bé An tan học rồi — bé đang tự đi bộ về nhà.");
+      }
       if (child.visible) {
         if (G.childState === "follow") {
           var dx = player.x - child.position.x, dz = player.z - child.position.z;
@@ -2915,6 +3268,75 @@
             childParts.legL.rotation.x = sw2; childParts.legR.rotation.x = -sw2;
             childParts.armR.rotation.x = Math.PI + Math.sin(tNow * 6) * 0.3; // vẫy tay
           } else child.visible = false;
+        } else if (G.childState === "return") {
+          // Bé tự đi bộ về theo đường làng, tới hiên thì chuyển sang chơi quanh sân
+          var rPath = [[16, -13.4], [4, -9.5], [-3, -5], [-7.6, -2.2]];
+          var rp = rPath[G.childPlay.wp];
+          if (rp) {
+            var rdx = rp[0] - child.position.x, rdz = rp[1] - child.position.z;
+            var rdd = Math.hypot(rdx, rdz);
+            if (rdd < 0.35) {
+              G.childPlay.wp++;
+              if (G.childPlay.wp >= rPath.length) {
+                G.childState = "play"; G.childPlay.spot = -1; G.childPlay.pauseT = 1;
+                toast("Bé An về tới nhà rồi: \"Con chào mẹ! Con tự đi bộ về được rồi nè.\"");
+              }
+            } else {
+              child.position.x += rdx / rdd * dt * 2.3; child.position.z += rdz / rdd * dt * 2.3;
+              child.rotation.y = Math.atan2(rdx, rdz);
+              var rsw = Math.sin(tNow * 9) * 0.5;
+              childParts.legL.rotation.x = rsw; childParts.legR.rotation.x = -rsw;
+              childParts.armL.rotation.x = -rsw * 0.7; childParts.armR.rotation.x = rsw * 0.7;
+            }
+          }
+        } else if (G.childState === "play") {
+          // Bé có đời sống riêng: chạy chơi quanh sân, ngắm gà, ngồi với chó mực, tối thì về hiên học bài
+          var cp = G.childPlay;
+          if (G.cookedToday && cp.mood === "buon") cp.mood = "vui";   // có cơm ngon mẹ nấu là hết buồn
+          var spots = [
+            { x: childHome.x, z: childHome.z },                                        // hiên nhà
+            { x: window.__dogHome.x + 0.9, z: window.__dogHome.z + 0.4 },             // chơi với chó mực
+            { x: 5.5, z: 5.5 },                                                        // đầu vườn rau
+            { x: 11.5, z: 4.0 },                                                       // bờ ao ngắm cá
+            { x: -1.2, z: 4.2 }                                                        // gần chuồng gà xem gà
+          ];
+          if (window.__bananas && window.__bananas[0]) spots.push({ x: window.__bananas[0].x + 1, z: window.__bananas[0].z + 1 });
+          var homework = G.minutes >= 1110;   // 18:30 trở đi: về hiên ngồi học bài
+          if (cp.spot < 0 || cp.pauseT <= 0) {
+            if (homework) cp.spot = 0;
+            else { var ns = Math.floor(Math.random() * spots.length); cp.spot = ns === cp.spot ? (ns + 1) % spots.length : ns; }
+            cp.pauseT = homework ? 999 : 5 + Math.random() * 7;
+          }
+          var sp = spots[cp.spot];
+          var sdx = sp.x - child.position.x, sdz = sp.z - child.position.z;
+          var sdd = Math.hypot(sdx, sdz);
+          if (sdd > 0.3) {
+            child.position.x += sdx / sdd * dt * 2.5; child.position.z += sdz / sdd * dt * 2.5;
+            child.rotation.y = Math.atan2(sdx, sdz);
+            var psw = Math.sin(tNow * 10) * 0.55;
+            childParts.legL.rotation.x = psw; childParts.legR.rotation.x = -psw;
+            childParts.armL.rotation.x = -psw * 0.7; childParts.armR.rotation.x = psw * 0.7;
+            child.position.y = Math.abs(Math.sin(tNow * 5)) * 0.03;
+          } else {
+            cp.pauseT -= dt;
+            childParts.legL.rotation.x *= 0.8; childParts.legR.rotation.x *= 0.8;
+            childParts.armL.rotation.x *= 0.85;
+            // Đứng chơi: lúc vẫy tay, lúc nhảy nhót; buồn thì tay buông thõng, ít nhúc nhích
+            childParts.armR.rotation.x = cp.mood === "vui" ? Math.sin(tNow * 2.2) * 0.35 - 0.15 : 0.12;
+            child.position.y = cp.mood === "vui" && !homework ? Math.abs(Math.sin(tNow * 3.1)) * 0.035 : 0;
+            cp.lineT -= dt;
+            if (cp.lineT <= 0) {
+              cp.lineT = 38 + Math.random() * 25;
+              if (Math.hypot(player.x - child.position.x, player.z - child.position.z) < 7.5) {
+                var lines = homework
+                  ? ["Bé An: \"Mẹ ơi, bài toán này khó quá, mai mẹ giảng con nhé.\"", "Bé An đang chăm chú viết bài, thỉnh thoảng ngẩng lên cười với mẹ."]
+                  : cp.mood === "vui"
+                    ? ["Bé An: \"Hôm nay cô khen con đọc chữ to rõ nhất lớp!\"", "Bé An: \"Mẹ ơi, con gà mái mơ đẻ trứng to ơi là to!\"", "Bé An: \"Chút nữa ăn cơm, con phụ mẹ dọn bát nhé.\"", "Bé An hát líu lo một bài cô mới dạy ở lớp."]
+                    : ["Bé An: \"Sáng nay con tới lớp trễ, cô nhắc… con buồn.\"", "Bé An ngồi ôm cặp, hôm nay bé ít nói hơn mọi ngày."];
+                toast(lines[Math.floor(Math.random() * lines.length)]);
+              }
+            }
+          }
         } else if (G.childState === "home") {
           // Đứng chờ ở hiên, thỉnh thoảng vẫy tay gọi mẹ
           childParts.armR.rotation.x = Math.PI * 0.85 + Math.sin(tNow * 5) * 0.25;
@@ -2996,7 +3418,7 @@
         });
         /* --- Sự kiện bất ngờ 1: trộm lẻn vào sân hốt đồ --- */
         var thE = G.thief;
-        if (thE.state === "none" && G.minutes >= G.thiefAt) {
+        if (thE.state === "none" && G.thiefDay && G.minutes >= G.thiefAt) {
           thE.state = "in"; thE.wp = 1;
           thief.visible = true; thief.position.copy(thiefPath[0]);
           sndBark();
@@ -3120,11 +3542,13 @@
             toast("Mưa tạnh rồi. Nhìn về phía bắc xem — có cầu vồng sau mưa kìa!");
           }
         }
-        // 17:00 anh đi làm thuê về
-        if (G.husband.state === "notyet" && G.minutes >= 1020) {
+        // Anh đi làm thuê về — mỗi ngày một giờ khác nhau, có hôm sớm có hôm tối mịt
+        if (G.husband.state === "notyet" && G.minutes >= G.husbandAt) {
           G.husband.state = "walking"; G.husband.wp = 1;
           husband.visible = true;
-          toast("Anh đi làm về rồi — đang đi bộ từ đầu đường về nhà.");
+          toast(G.noWorkToday
+            ? "Anh về sớm hơn mọi hôm — hình như hôm nay không có việc làm."
+            : "Anh đi làm về rồi — đang đi bộ từ đầu đường về nhà.");
         }
       }
       if (husband.visible && G.husband.state === "walking") {
@@ -3134,12 +3558,24 @@
         if (hd < 0.25) {
           G.husband.wp++;
           if (G.husband.wp >= husbandPath.length) {
-            G.husband.state = "home";
+            G.husband.state = "home"; G.husbandMode = "rest"; G.husbandT = 20 + Math.random() * 20;
             husband.rotation.y = 2.3;
-            G.husband.wage = Math.round((40000 + Math.random() * 30000) / 1000) * 1000;
-            G.money += G.husband.wage; sndCoin();
-            toast("Anh về tới nhà, đưa vợ tiền công hôm nay: " + fmt(G.husband.wage) + ".", true);
-            updateHUD();
+            // Tiền công không ngày nào giống ngày nào: hôm việc nặng được thưởng, hôm nửa buổi, hôm mất việc
+            if (G.noWorkToday) {
+              G.husband.wage = 0;
+              toast("Anh: \"Hôm nay chủ cho nghỉ, không có việc… mai anh ra đồng sớm kiếm việc khác.\" Nhà mình thắt lưng buộc bụng một bữa vậy.", true);
+              addMemory("Một ngày anh mất việc làm thuê, cả nhà đạm bạc mà vẫn vui.");
+            } else {
+              var wr = Math.random();
+              if (wr < 0.15) G.husband.wage = Math.round((85000 + Math.random() * 30000) / 1000) * 1000;       // việc nặng, chủ thưởng thêm
+              else if (wr < 0.32) G.husband.wage = Math.round((20000 + Math.random() * 12000) / 1000) * 1000;  // làm nửa buổi
+              else G.husband.wage = Math.round((38000 + Math.random() * 34000) / 1000) * 1000;                  // ngày thường
+              G.money += G.husband.wage; G.totalEarned += G.husband.wage; sndCoin();
+              toast(wr < 0.15
+                ? "Anh về tới nhà, mặt mày hớn hở: việc nặng mà chủ thưởng hậu — tiền công hôm nay " + fmt(G.husband.wage) + "!"
+                : "Anh về tới nhà, đưa vợ tiền công hôm nay: " + fmt(G.husband.wage) + ".", true);
+            }
+            updateHUD(); saveGame();
           }
         } else {
           husband.position.x += hx / hd * dt * 2.3;
@@ -3150,9 +3586,61 @@
           husbandParts.armL.rotation.x = -hsw * 0.6; husbandParts.armR.rotation.x = hsw * 0.6;
         }
       } else if (husband.visible && G.husband.state === "home") {
-        husbandParts.legL.rotation.x *= 0.8; husbandParts.legR.rotation.x *= 0.8;
-        husbandParts.armL.rotation.x *= 0.8;
-        husbandParts.armR.rotation.x = Math.sin(tNow * 1.4) * 0.08;
+        // Anh không đứng yên chờ ai: nghỉ một lát rồi tự kiếm việc phụ vợ — tưới luống khô, chẻ củi ở bếp
+        var hHome = husbandPath[husbandPath.length - 1];
+        var hMoving = false;
+        function husbandWalk(tx, tz, spd) {
+          var dx = tx - husband.position.x, dz = tz - husband.position.z;
+          var dd = Math.hypot(dx, dz);
+          if (dd < 0.3) return true;
+          husband.position.x += dx / dd * dt * spd;
+          husband.position.z += dz / dd * dt * spd;
+          husband.rotation.y = Math.atan2(dx, dz);
+          hMoving = true;
+          return false;
+        }
+        if (G.husbandMode === "rest") {
+          G.husbandT -= dt;
+          if (G.husbandT <= 0) {
+            var dryPlot = null;
+            plots.forEach(function (p) { if (!dryPlot && p.state === "growing" && !p.watered) dryPlot = p; });
+            if (dryPlot) {
+              G.husbandMode = "go"; G.husbandPlot = dryPlot;
+              G.husbandTx = dryPlot.x + 1.4; G.husbandTz = dryPlot.z;
+            } else {
+              G.husbandMode = "go"; G.husbandPlot = null;
+              G.husbandTx = window.__stovePos.x + 1.6; G.husbandTz = window.__stovePos.z + 0.6;
+            }
+          }
+        } else if (G.husbandMode === "go") {
+          if (husbandWalk(G.husbandTx, G.husbandTz, 2.1)) { G.husbandMode = "work"; G.husbandT = G.husbandPlot ? 2.2 : 6; }
+        } else if (G.husbandMode === "work") {
+          G.husbandT -= dt;
+          husbandParts.armR.rotation.x = G.husbandPlot ? Math.sin(tNow * 3) * 0.3 - 0.5 : Math.sin(tNow * 7) * 0.7 - 0.4;
+          if (G.husbandT <= 0) {
+            if (G.husbandPlot && G.husbandPlot.state === "growing" && !G.husbandPlot.watered) {
+              var hp = G.husbandPlot;
+              hp.watered = true; hp.waterings++; hp.dryT = 0; hp._wilted = false; drawCrop(hp);
+              sndPour();
+              if (Math.hypot(player.x - hp.x, player.z - hp.z) < 10) toast("Anh tưới giúp luống " + CROPS[hp.type].name + " đang khô nước.");
+            }
+            G.husbandMode = "back";
+          }
+        } else if (G.husbandMode === "back") {
+          if (husbandWalk(hHome.x, hHome.z, 2.1)) {
+            G.husbandMode = "rest"; G.husbandT = 25 + Math.random() * 30;
+            husband.rotation.y = 2.3;
+          }
+        }
+        if (hMoving) {
+          var hsw2 = Math.sin(tNow * 8) * 0.45;
+          husbandParts.legL.rotation.x = hsw2; husbandParts.legR.rotation.x = -hsw2;
+          husbandParts.armL.rotation.x = -hsw2 * 0.6; husbandParts.armR.rotation.x = hsw2 * 0.6;
+        } else if (G.husbandMode !== "work") {
+          husbandParts.legL.rotation.x *= 0.8; husbandParts.legR.rotation.x *= 0.8;
+          husbandParts.armL.rotation.x *= 0.8;
+          husbandParts.armR.rotation.x = Math.sin(tNow * 1.4) * 0.08;
+        }
       }
       // Khói bếp bốc lên (nấu cơm thì bốc mạnh)
       if (window.__smoke) {
@@ -3195,7 +3683,12 @@
         } else promptEl.classList.remove("show");
         var lh = el("lock-hint");
         if (lh) lh.classList.toggle("show", !!(G.started && !G.dayOver && !mouseLocked && finePointer && !overlayOpen()));
-        if (G.started) { objEl.innerHTML = objectiveText(); updateHUD(); }
+        if (G.started) {
+          objEl.innerHTML = objectiveText(); updateHUD();
+          // Tự lưu nhà mỗi ~5 giây để tắt trang mở lại vẫn sống tiếp được
+          G._saveT = (G._saveT || 0) + 0.2;
+          if (G._saveT >= 5) { G._saveT = 0; saveGame(); }
+        }
         updateSky();
         // Đang mưa rào: nắng dịu lại, sương mù dày hơn
         if (G.raining) { sun.intensity *= 0.5; hemi.intensity *= 0.75; scene.fog.near = 20; scene.fog.far = 58; }
