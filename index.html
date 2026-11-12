@@ -289,6 +289,7 @@
       <div class="tool-chip"><span class="t">Bình tưới</span><span class="v" id="can-text">5/5</span><div id="can-fill"><i style="width:100%"></i></div></div>
       <div class="tool-chip"><span class="t">Giỏ nông sản</span><span class="v" id="basket-text">Trống</span></div>
       <div class="tool-chip"><span class="t">Bữa cơm nhà</span><span class="v" id="meal-text">Chưa nấu</span></div>
+      <button class="tool-chip" id="btn-sound" type="button" style="cursor:pointer;color:inherit;font-family:inherit;text-align:left;border:none"><span class="t">Âm thanh tự nhiên</span><span class="v" id="sound-state">Đang bật</span></button>
     </div>
 
     <div class="card" id="hint-keys">Đi: <b>W A S D</b> · Nhìn: <b>di chuột tự do</b> (bấm vào cảnh để khóa chuột, <b>Esc</b> để thả)<br />Làm việc: <b>E</b> hoặc <b>bấm chuột</b> · Đổi hạt: <b>1 2 3 4</b></div>
@@ -335,6 +336,8 @@
           <li><b>Chiều về:</b> khoảng 17:00 anh đi làm thuê về tới hiên, mang theo tiền công ngày — hôm được hôm ít, như đi làm thật.</li>
           <li><b>Coi chừng trộm:</b> có hôm một gã lạ lẻn vào sân hốt trứng với rau — nghe chó mực sủa ầm thì chạy lại gần bấm <b>E</b> đuổi nó ra trước khi nó vác bao chạy thoát. Đuổi kịp thì giữ nguyên của cải.</li>
           <li><b>Chuyện bất ngờ khác:</b> có hôm mưa rào đổ xuống tưới rau miễn phí, có hôm bà Tư hàng xóm qua chơi biếu hạt giống — để ý mục tiêu ở góc trái nhé.</li>
+          <li><b>Sống như thật:</b> tảng sáng có gà trống gáy, 7:30 chuông trường điểm, chim hót ban ngày, chập tối dế kêu với ếch nhái ngoài ao; lâu lâu có xe máy chạy qua đường làng. Mưa xong đất còn ướt sẫm, có vũng nước đọng và cầu vồng ở phía bắc — nghe tiếng gió, tiếng mưa bằng nút <b>Âm thanh</b> ở thanh dưới.</li>
+          <li><b>Rau cũng biết khát:</b> để luống khô lâu quá cây sẽ héo rũ xuống, tưới vào là tươi lại. Lại gần quá thì đàn gà giật mình chạy tản ra, như gà thật ngoài sân.</li>
           <li>Đi bằng <b>WASD</b>, làm việc bằng <b>E</b>. Nhìn quanh: <b>bấm một lần vào cảnh rồi di chuột tự do</b> — không cần giữ chuột; bấm <b>Esc</b> khi muốn thả chuột ra. Trên điện thoại: cần điều khiển để đi, vuốt để nhìn, nút <b>Chạm</b> để làm việc.</li>
         </ul>
         <button class="big-btn" id="btn-start" type="button">Ra sân, bắt đầu ngày mới</button>
@@ -386,7 +389,11 @@
       raining: false, rainT: 0, rainedToday: false,
       rainAt: 780 + Math.random() * 150,        // khoảng 13:00–15:30 có mưa rào
       visit: { state: "none", wp: 0, t: 0, talked: false },  // none | walking | here | leaving | done
-      visitAt: 900 + Math.random() * 60         // khoảng 15:00–16:00 bà Tư qua chơi
+      visitAt: 900 + Math.random() * 60,        // khoảng 15:00–16:00 bà Tư qua chơi
+      // Lớp chân thật: âm thanh tự nhiên, gió, mặt đất ướt sau mưa, cầu vồng, xe máy chạy qua đường
+      soundOn: true, roosterDone: false, bellDone: false,
+      wind: 0.6, wet: 0, rainbowT: 0, dipT: 0,
+      bike: { state: "idle", t: 18 + Math.random() * 30, x: -36, dir: 1, z: -15.4 }
     };
     var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     var DAY_END = 19 * 60;                     // 19:00
@@ -404,7 +411,7 @@
     /* ================== ÂM THANH NHẸ (tổng hợp) ================== */
     var AC = null;
     function beep(freq, dur, type, vol, when) {
-      if (!AC) return;
+      if (!AC || !G.soundOn) return;
       var t = AC.currentTime + (when || 0);
       var o = AC.createOscillator(), g = AC.createGain();
       o.type = type || "sine"; o.frequency.setValueAtTime(freq, t);
@@ -422,6 +429,103 @@
     function sndSplash() { beep(340, 0.16, "sine", 0.1); beep(620, 0.22, "sine", 0.07, 0.07); beep(950, 0.14, "sine", 0.05, 0.15); }
     function sndCook() { beep(180, 0.3, "sine", 0.07); beep(240, 0.3, "sine", 0.06, 0.18); beep(150, 0.4, "sine", 0.06, 0.4); }
     function sndBark() { beep(210, 0.09, "square", 0.1); beep(250, 0.09, "square", 0.1, 0.14); beep(210, 0.09, "square", 0.09, 0.3); beep(270, 0.08, "square", 0.08, 0.44); }
+    // Gà trống gáy sáng: ò ó o kéo dài, nghe là biết trời sắp sáng ở quê
+    function sndRooster() {
+      if (!AC || !G.soundOn) return;
+      beep(880, 0.14, "sawtooth", 0.05); beep(1180, 0.16, "sawtooth", 0.055, 0.16);
+      beep(990, 0.14, "sawtooth", 0.05, 0.36); beep(1320, 0.42, "sawtooth", 0.06, 0.54);
+      beep(880, 0.2, "sawtooth", 0.04, 1.0);
+    }
+
+    /* ---- Âm thanh tự nhiên nền: gió thổi, mưa rơi (tiếng ồn lọc), chim hót, dế kêu ----
+       Tất cả tổng hợp bằng WebAudio, không cần file nhạc. Bật khi bấm bắt đầu ngày. */
+    var AMB = { ready: false, chirpT: 3, cricketT: 1 };
+    function noiseBuffer() {
+      var len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      return buf;
+    }
+    function noiseLoop(freq, type, gain0) {
+      var src = AC.createBufferSource(); src.buffer = AMB.buf; src.loop = true;
+      var f = AC.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+      var g = AC.createGain(); g.gain.value = gain0;
+      src.connect(f); f.connect(g); g.connect(AMB.master); src.start();
+      return { src: src, filter: f, gain: g };
+    }
+    function initAmbient() {
+      if (!AC || AMB.ready) return;
+      AMB.ready = true;
+      AMB.buf = noiseBuffer();
+      AMB.master = AC.createGain(); AMB.master.gain.value = G.soundOn ? 1 : 0;
+      AMB.master.connect(AC.destination);
+      AMB.wind = noiseLoop(320, "lowpass", 0.012);          // gió rì rào qua lá
+      AMB.rain = noiseLoop(1800, "bandpass", 0);            // mưa rào, chỉ kêu khi mưa
+      AMB.rain.filter.Q.value = 0.6;
+    }
+    // Tiếng ồn ngắn một lần: bước chân trên đất, nước dội, đất xới — nghe "thật" hơn tiếng bíp
+    function noiseHit(dur, freq, vol, type) {
+      if (!AC || !G.soundOn || !AMB.ready) return;
+      var src = AC.createBufferSource(); src.buffer = AMB.buf;
+      src.playbackRate.value = 0.7 + Math.random() * 0.6;
+      var f = AC.createBiquadFilter(); f.type = type || "lowpass"; f.frequency.value = freq;
+      var g = AC.createGain(), t = AC.currentTime;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(f); f.connect(g); g.connect(AC.destination);
+      src.start(t, Math.random() * 1.2, dur + 0.05);
+    }
+    function sndStepReal() { noiseHit(0.07, 500 + Math.random() * 250, 0.05); }
+    function sndPour() { noiseHit(0.5, 2400, 0.05, "bandpass"); noiseHit(0.35, 900, 0.04, "bandpass"); }
+    function sndDig() { noiseHit(0.16, 380, 0.09); }
+    // Chim hót ngẫu nhiên ban ngày: vài tiếng luyến láy lên xuống như chim thật
+    function sndChirp() {
+      if (!AC || !G.soundOn) return;
+      var f0 = 2100 + Math.random() * 1300, n = 2 + Math.floor(Math.random() * 3);
+      for (var i = 0; i < n; i++) {
+        beep(f0 + Math.random() * 500, 0.09, "sine", 0.028, i * 0.14);
+        beep(f0 * 0.82, 0.07, "sine", 0.022, i * 0.14 + 0.07);
+      }
+    }
+    function sndCricket() { for (var i = 0; i < 3; i++) beep(4300, 0.05, "sine", 0.012, i * 0.09); }
+    function sndFrog() { beep(160, 0.12, "square", 0.02); beep(140, 0.14, "square", 0.018, 0.2); }
+    // Cập nhật lớp âm thanh nền theo giờ giấc + thời tiết, gọi trong vòng lặp chính
+    function updateAmbient(dt) {
+      if (!AMB.ready) return;
+      AMB.wind.gain.gain.value = 0.008 + G.wind * 0.012;
+      var rainTarget = G.raining ? 0.11 : 0;
+      AMB.rain.gain.gain.value += (rainTarget - AMB.rain.gain.gain.value) * Math.min(1, dt * 2);
+      AMB.chirpT -= dt; AMB.cricketT -= dt;
+      if (AMB.chirpT <= 0) {
+        AMB.chirpT = 2.5 + Math.random() * 6;
+        if (!G.raining && G.minutes > 345 && G.minutes < 1060 && Math.random() < 0.75) sndChirp();
+      }
+      if (AMB.cricketT <= 0) {
+        AMB.cricketT = 0.7 + Math.random() * 1.6;
+        if (G.minutes > 1050 || G.minutes < 345) sndCricket();                 // dế kêu lúc chập tối
+        else if (G.minutes > 960 && Math.random() < 0.4) sndFrog();           // ếch kêu ngoài ao buổi chiều tối
+      }
+    }
+    // Tiếng máy xe Honda chạy qua đường: nổ máy xa, lớn dần khi tới gần rồi nhỏ dần
+    var BIKE = { osc: null, gain: null };
+    function startBikeSound() {
+      if (!AC || BIKE.osc) return;
+      BIKE.osc = AC.createOscillator(); BIKE.osc.type = "sawtooth"; BIKE.osc.frequency.value = 75;
+      var f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
+      BIKE.gain = AC.createGain(); BIKE.gain.gain.value = 0;
+      BIKE.osc.connect(f); f.connect(BIKE.gain); BIKE.gain.connect(AC.destination);
+      BIKE.osc.start();
+    }
+    function updateBikeSound() {
+      if (!BIKE.osc) return;
+      var d = Math.hypot(player.x - G.bike.x, player.z - G.bike.z);
+      BIKE.gain.gain.value = G.soundOn ? Math.max(0, 0.055 * (1 - d / 36)) : 0;
+      BIKE.osc.frequency.value = 82 + Math.sin(clockT.elapsedTime * 27) * 5;
+    }
+    function stopBikeSound() {
+      if (!BIKE.osc) return;
+      try { BIKE.osc.stop(); } catch (e) {}
+      BIKE.osc.disconnect(); BIKE.osc = null; BIKE.gain = null;
+    }
 
     /* ================== THREE — DỰNG CẢNH QUÊ ================== */
     var container = document.getElementById("scene");
@@ -1067,6 +1171,93 @@
     })();
 
 
+    /* ================== LỚP CHÂN THẬT: cột điện, bóng mây, vũng nước, cầu vồng, xe máy ================== */
+    (function buildRealism() {
+      // Mặt đất để làm tối khi mưa ướt
+      window.__groundMats = [ground.material, yard.material, road.material];
+      // Vũng nước đọng sau mưa: mặt phẳng bóng loáng, hiện dần khi đất ướt
+      window.__puddles = [];
+      var pudMat = new THREE.MeshPhongMaterial({ color: 0x9fc6d8, shininess: 120, specular: 0xeaf7ff, transparent: true, opacity: 0, depthWrite: false });
+      [[2, -6.4, 1.5], [-4.4, 5.9, 1.1], [8.8, -9.9, 1.3], [-13.2, 3.2, 1.0], [0.6, 0.8, 1.7], [-8.8, 1.8, 0.9]].forEach(function (ps) {
+        var pm = new THREE.Mesh(new THREE.CircleGeometry(ps[2], 20), pudMat);
+        pm.rotation.x = -Math.PI / 2; pm.position.set(ps[0], 0.02, ps[1]);
+        pm.scale.set(1, 0.72, 1); pm.renderOrder = 1;
+        scene.add(pm); window.__puddles.push(pm);
+      });
+      window.__puddleMat = pudMat;
+      // Bóng mây trôi chầm chậm trên mặt đất — trời có mây là mặt đất có chỗ râm chỗ nắng
+      window.__cloudShadows = [];
+      var csMat = new THREE.MeshBasicMaterial({ color: 0x1c2b12, transparent: true, opacity: 0.10, depthWrite: false });
+      for (var csi = 0; csi < 3; csi++) {
+        var cs = new THREE.Mesh(new THREE.CircleGeometry(9 + csi * 3.5, 22), csMat);
+        cs.rotation.x = -Math.PI / 2;
+        cs.position.set(-50 + csi * 38, 0.025, -14 + csi * 13);
+        cs.scale.set(1.5, 0.8, 1); cs.renderOrder = 1;
+        scene.add(cs); window.__cloudShadows.push(cs);
+      }
+      // Cột điện bê tông + dây điện võng dọc đường làng
+      var poleMat = mat(0x9a958c), wireMat = new THREE.LineBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.75 });
+      var poleTops = [];
+      [-26, -10, 6, 22].forEach(function (px) {
+        var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 6.8, 8), poleMat);
+        pole.position.set(px, 3.4, -17.6); pole.castShadow = true; scene.add(pole);
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.7), poleMat);
+        arm.position.set(px, 6.15, -17.6); scene.add(arm);
+        poleTops.push(px);
+      });
+      function wire(x1, x2, zOff) {
+        var pts = [];
+        for (var i = 0; i <= 16; i++) {
+          var t = i / 16;
+          pts.push(new THREE.Vector3(x1 + (x2 - x1) * t, 6.15 - Math.sin(t * Math.PI) * 0.55, -17.6 + zOff));
+        }
+        var wg = new THREE.BufferGeometry().setFromPoints(pts);
+        scene.add(new THREE.Line(wg, wireMat));
+      }
+      for (var wi = 0; wi < poleTops.length - 1; wi++) { wire(poleTops[wi], poleTops[wi + 1], -0.75); wire(poleTops[wi], poleTops[wi + 1], 0.75); }
+      // Cầu vồng sau cơn mưa rào: vài vòng cung mờ ở phía bắc, hiện một lúc rồi tan
+      var rb = new THREE.Group();
+      var rbCols = [0xe2483a, 0xef8f2e, 0xf2d13c, 0x6fae4e, 0x3e7dc2];
+      window.__rainbowMats = [];
+      rbCols.forEach(function (rc, ri) {
+        var rm = new THREE.MeshBasicMaterial({ color: rc, transparent: true, opacity: 0, fog: false, depthWrite: false, side: THREE.DoubleSide });
+        var arc = new THREE.Mesh(new THREE.TorusGeometry(58 - ri * 1.6, 0.75, 5, 42, Math.PI), rm);
+        rb.add(arc); window.__rainbowMats.push(rm);
+      });
+      rb.position.set(-4, 0, -88); rb.renderOrder = -8; rb.frustumCulled = false;
+      scene.add(rb);
+      // Xe máy chạy qua đường làng: khung xe, hai bánh, người lái đội mũ bảo hiểm
+      var bike = new THREE.Group();
+      var tireM2 = mat(0x232326), bodyM2 = mat(0xb03030);
+      [-0.42, 0.42].forEach(function (wx) {
+        var w = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.05, 8, 16), tireM2);
+        w.position.set(wx, 0.27, 0); bike.add(w);
+      });
+      var bBody = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.2), bodyM2);
+      bBody.position.set(0.02, 0.48, 0); bBody.castShadow = true; bike.add(bBody);
+      var bSeat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.24), mat(0x2b2b2b));
+      bSeat.position.set(-0.12, 0.62, 0); bike.add(bSeat);
+      var bCol = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 6), bodyM2);
+      bCol.position.set(0.48, 0.72, 0); bCol.rotation.z = -0.35; bike.add(bCol);
+      var rider = new THREE.Group();
+      var rTorso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.55, 0.24), mat(0x4a6a8c));
+      rTorso.position.y = 0.55; rTorso.rotation.z = -0.18; rider.add(rTorso);
+      var rHead = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), mat(0xe0aa7e));
+      rHead.position.set(0.1, 0.98, 0); rider.add(rHead);
+      var helmet = new THREE.Mesh(new THREE.SphereGeometry(0.165, 10, 6), mat(0xe8a33d));
+      helmet.position.set(0.1, 1.02, 0); helmet.scale.y = 0.72; rider.add(helmet);
+      [-1, 1].forEach(function (s) {
+        var rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.1), mat(0x3a3a42));
+        rLeg.position.set(0.08, 0.12, s * 0.13); rLeg.rotation.z = -0.5; rider.add(rLeg);
+        var rArm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.09, 0.09), mat(0x4a6a8c));
+        rArm.position.set(0.28, 0.62, s * 0.13); rArm.rotation.z = -0.95; rider.add(rArm);
+      });
+      rider.position.set(-0.05, 0.6, 0); bike.add(rider);
+      bike.position.set(-36, 0, -15.4); bike.visible = false;
+      scene.add(bike);
+      window.__bike = bike;
+    })();
+
     /* ================== VƯỜN RAU — 12 LUỐNG ================== */
     var soilDry = texMat(soilTex), soilWet = texMat(soilTexWet);
     var leafMat = mat(0x4e7d33), leafLight = mat(0x6fae4e), sproutMat = mat(0x86c65c);
@@ -1190,6 +1381,8 @@
         p.markGroup.add(ring);
       }
       p.soil.material = p.watered || p.state === "mature" ? soilWet : soilDry;
+      // Khát nước lâu thì cây héo rũ xuống, tưới vào là tươi lại — như rau ngoài vườn thật
+      p.cropGroup.scale.y = (p.state === "growing" && !p.watered && p.dryT > 7) ? 0.76 : 1;
     }
 
     (function buildGarden() {
@@ -1217,7 +1410,7 @@
         var p = {
           col: col, row: row, x: ctr.x, z: ctr.z, group: g, soil: soil,
           cropGroup: cropGroup, markGroup: markGroup,
-          state: "empty", type: null, progress: 0, watered: false, waterings: 0
+          state: "empty", type: null, progress: 0, watered: false, waterings: 0, dryT: 0
         };
         plots.push(p);
       }
@@ -1968,8 +2161,53 @@
       window.__moonG = moonG;
     })();
 
+    /* ================== HẠT HIỆU ỨNG: nước tưới tóe, đất xới, lá bay, cá quẫy ================== */
+    var PMAX = 340;
+    var pPos = new Float32Array(PMAX * 3), pCol = new Float32Array(PMAX * 3);
+    var pVel = new Float32Array(PMAX * 3), pLife = new Float32Array(PMAX), pGrav = new Float32Array(PMAX);
+    for (var pInit = 0; pInit < PMAX; pInit++) { pPos[pInit * 3 + 1] = -60; }
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+    pGeo.setAttribute("color", new THREE.BufferAttribute(pCol, 3));
+    var pPoints = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.085, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false }));
+    pPoints.frustumCulled = false;
+    scene.add(pPoints);
+    var pCursor = 0, _pc = new THREE.Color();
+    function spawnParticles(x, y, z, n, hex, spread, up, life, grav) {
+      _pc.setHex(hex);
+      for (var i = 0; i < n; i++) {
+        var idx = pCursor; pCursor = (pCursor + 1) % PMAX;
+        pPos[idx * 3] = x + (Math.random() - 0.5) * 0.25;
+        pPos[idx * 3 + 1] = y;
+        pPos[idx * 3 + 2] = z + (Math.random() - 0.5) * 0.25;
+        pVel[idx * 3] = (Math.random() - 0.5) * spread;
+        pVel[idx * 3 + 1] = up * (0.55 + Math.random() * 0.8);
+        pVel[idx * 3 + 2] = (Math.random() - 0.5) * spread;
+        var shade = 0.8 + Math.random() * 0.35;
+        pCol[idx * 3] = _pc.r * shade; pCol[idx * 3 + 1] = _pc.g * shade; pCol[idx * 3 + 2] = _pc.b * shade;
+        pLife[idx] = life * (0.6 + Math.random() * 0.7);
+        pGrav[idx] = grav;
+      }
+      pGeo.attributes.color.needsUpdate = true;
+    }
+    function updateParticles(dt) {
+      var any = false;
+      for (var i = 0; i < PMAX; i++) {
+        if (pLife[i] <= 0) continue;
+        any = true;
+        pLife[i] -= dt;
+        if (pLife[i] <= 0) { pPos[i * 3 + 1] = -60; continue; }
+        pVel[i * 3 + 1] -= pGrav[i] * dt;
+        pPos[i * 3] += pVel[i * 3] * dt;
+        pPos[i * 3 + 1] += pVel[i * 3 + 1] * dt;
+        pPos[i * 3 + 2] += pVel[i * 3 + 2] * dt;
+        if (pPos[i * 3 + 1] < 0.03) { pPos[i * 3 + 1] = 0.03; pVel[i * 3 + 1] = 0; pVel[i * 3] *= 0.7; pVel[i * 3 + 2] *= 0.7; }
+      }
+      if (any) pGeo.attributes.position.needsUpdate = true;
+    }
+
     /* ================== NGƯỜI CHƠI (POV) ================== */
-    var player = { x: 13.5, z: 12.5, yaw: 0.85, pitch: -0.04, bobT: 0, moving: false };
+    var player = { x: 13.5, z: 12.5, yaw: 0.85, pitch: -0.04, yawT: 0.85, pitchT: -0.04, vx: 0, vz: 0, bobT: 0, moving: false, speed: 0 };
     var keys = {};
     document.addEventListener("keydown", function (e) {
       keys[e.code] = true;
@@ -2022,15 +2260,15 @@
         return;
       }
       if (mouseLocked) {
-        player.yaw -= (e.movementX || 0) * 0.0023;
-        player.pitch -= (e.movementY || 0) * 0.0021;
-        player.pitch = Math.max(-1.1, Math.min(1.1, player.pitch));
+        player.yawT -= (e.movementX || 0) * 0.0023;
+        player.pitchT -= (e.movementY || 0) * 0.0021;
+        player.pitchT = Math.max(-1.1, Math.min(1.1, player.pitchT));
         return;
       }
       if (!dragging) return;
-      player.yaw -= (e.clientX - lastPX) * 0.0042;
-      player.pitch -= (e.clientY - lastPY) * 0.0035;
-      player.pitch = Math.max(-1.1, Math.min(1.1, player.pitch));
+      player.yawT -= (e.clientX - lastPX) * 0.0042;
+      player.pitchT -= (e.clientY - lastPY) * 0.0035;
+      player.pitchT = Math.max(-1.1, Math.min(1.1, player.pitchT));
       lastPX = e.clientX; lastPY = e.clientY;
     });
     window.addEventListener("pointerup", function () { dragging = false; });
@@ -2098,6 +2336,12 @@
     function selectSeed(k) { G.selSeed = k; updateHUD(); }
     document.querySelectorAll(".seed-btn").forEach(function (b) {
       b.addEventListener("click", function () { selectSeed(b.dataset.seed); });
+    });
+    el("btn-sound").addEventListener("click", function () {
+      G.soundOn = !G.soundOn;
+      if (AMB.master) AMB.master.gain.value = G.soundOn ? 1 : 0;
+      el("sound-state").textContent = G.soundOn ? "Đang bật" : "Đang tắt";
+      if (G.soundOn) sndCoin();
     });
 
     function objectiveText() {
@@ -2238,19 +2482,22 @@
         if (p.state === "empty") {
           if (G.seeds[G.selSeed] <= 0) { toast("Hết hạt " + CROPS[G.selSeed].name + " rồi — ra sạp cô Tư mua thêm."); return; }
           G.seeds[G.selSeed]--;
-          p.state = "growing"; p.type = G.selSeed; p.progress = 0; p.watered = false; p.waterings = 0;
+          p.state = "growing"; p.type = G.selSeed; p.progress = 0; p.watered = false; p.waterings = 0; p.dryT = 0;
           G.plantedToday++;
-          drawCrop(p); sndPlant();
+          drawCrop(p); sndPlant(); sndDig(); G.dipT = 0.32;
+          spawnParticles(p.x, 0.55, p.z, 12, 0x8a6642, 1.3, 1.3, 0.55, 5);
           toast("Đã gieo " + CROPS[p.type].name + ". Tưới nước cho cây lớn nhé.");
         } else if (p.state === "growing" && !p.watered) {
           if (G.can <= 0) { toast("Bình hết nước — ra giếng múc đầy bình trước."); return; }
-          G.can--; p.watered = true; p.waterings++;
-          drawCrop(p); sndWater();
+          G.can--; p.watered = true; p.waterings++; p.dryT = 0;
+          drawCrop(p); sndWater(); sndPour();
+          spawnParticles(p.x, 1.15, p.z, 20, 0x6ec3e8, 1.5, 0.4, 0.6, 6);
           toast("Đã tưới. " + (CROPS[p.type].waters > p.waterings ? "Cây này cần tưới " + CROPS[p.type].waters + " lần mới chín." : "Đất ẩm rồi, cây đang lớn."));
         } else if (p.state === "mature") {
           var y = CROPS[p.type].yield;
           G.produce[p.type] += y; G.harvestedToday += y;
           toast("Thu hoạch " + CROPS[p.type].name + " +" + y + " vào giỏ.", true);
+          spawnParticles(p.x, 1.0, p.z, 16, CROPS[p.type].fruit, 1.7, 1.7, 0.7, 4); G.dipT = 0.32;
           p.state = "empty"; p.type = null; p.progress = 0; p.watered = false; p.waterings = 0;
           drawCrop(p); sndHarvest();
         } else {
@@ -2258,7 +2505,8 @@
         }
       } else if (t.kind === "well") {
         if (G.can >= G.canMax) { toast("Bình đang đầy nước rồi."); return; }
-        G.can = G.canMax; sndWater();
+        G.can = G.canMax; sndWater(); sndPour();
+        spawnParticles(wellPos.x, 1.0, wellPos.z, 14, 0x6ec3e8, 1.1, 1.4, 0.55, 6);
         toast("Đã múc đầy bình nước ở giếng.");
       } else if (t.kind === "stall") {
         openShop();
@@ -2294,6 +2542,7 @@
           G.fish.state = "idle"; window.__bobber.visible = false;
           G.produce.ca++; G.fishToday++;
           sndSplash(); sndCoin();
+          spawnParticles(14.6, 0.18, 3.4, 22, 0xbfe6ff, 1.8, 2.0, 0.6, 6);
           toast("Câu được 1 con cá rô! Cho vào giỏ mang bán hoặc nấu cơm.", true);
         }
       } else if (t.kind === "stove") {
@@ -2449,6 +2698,11 @@
       (window.__bananas || []).forEach(function (b) {
         if (!b.ripe && b.timer > 30) b.timer = 30;   // qua đêm chuối chín nhanh hơn
       });
+      G.roosterDone = false; G.bellDone = false; G.wet = 0; G.rainbowT = 0; G.dipT = 0;
+      G.bike.state = "idle"; G.bike.t = 20 + Math.random() * 40;
+      if (window.__bike) window.__bike.visible = false;
+      stopBikeSound();
+      player.vx = 0; player.vz = 0;
       G.schoolOnTime = null; G.childState = "home";
       child.position.copy(childHome); child.rotation.y = 2.4; child.visible = true;
       // Qua đêm: luống đã tưới thì lớn thêm một đoạn, đất khô lại
@@ -2471,8 +2725,8 @@
     document.querySelectorAll("[data-goto]").forEach(function (b) {
       b.addEventListener("click", function () {
         var t = gotoTargets[b.dataset.goto]; if (!t) return;
-        var c = collide(t.x, t.z); player.x = c.x; player.z = c.z;
-        if (typeof t.yaw === "number") { player.yaw = t.yaw; player.pitch = -0.03; }
+        var c = collide(t.x, t.z); player.x = c.x; player.z = c.z; player.vx = 0; player.vz = 0;
+        if (typeof t.yaw === "number") { player.yaw = t.yaw; player.yawT = t.yaw; player.pitch = -0.03; player.pitchT = -0.03; }
       });
     });
 
@@ -2482,6 +2736,7 @@
       G.started = true;
       tryLock();
       try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
+      initAmbient();
       toast("Chào buổi sáng! Bé An đang chờ ở hiên nhà để đi học.");
       updateHUD();
     });
@@ -2511,6 +2766,7 @@
       sun.position.set(player.x + sx, sy, player.z - 28);
       sun.target.position.set(player.x, 0, player.z);
       sun.intensity = intensity;
+      renderer.toneMappingExposure = 1.0 + 0.09 * Math.sin(sunAng * Math.PI);
       sun.color.setHSL(0.09 + 0.03 * Math.sin(sunAng * Math.PI), 0.65, 0.72);
       hemi.intensity = 0.45 + 0.4 * Math.sin(sunAng * Math.PI);
       fireflies.material.opacity = m > 1080 ? Math.min(0.9, (m - 1080) / 60) : 0;
@@ -2550,6 +2806,12 @@
           G.childState = "away"; child.visible = false;
           toast("Bà Tư hàng xóm thấy trễ nên đưa bé An đi học hộ rồi.");
         }
+        // Gà trống gáy lúc tảng sáng + chuông trường điểm đúng 7:30 — âm thanh quen thuộc của buổi sáng quê
+        if (!G.roosterDone && G.minutes >= 332) { G.roosterDone = true; sndRooster(); }
+        if (!G.bellDone && G.minutes >= SCHOOL_BELL) {
+          G.bellDone = true; sndBell();
+          if (G.childState === "home" || G.childState === "follow") toast("Chuông trường điểm 7:30 rồi — nhanh chân đưa bé An tới lớp kẻo trễ!");
+        }
         // Cây lớn
         plots.forEach(function (p) {
           if (p.state === "growing" && p.watered) {
@@ -2568,6 +2830,11 @@
               if (p._lastStage % 7 === 0) drawCrop(p);
             }
           }
+          // Để khô lâu thì cây héo dần — đếm thời gian khát nước của từng luống
+          if (p.state === "growing" && !p.watered) {
+            p.dryT += dt;
+            if (p.dryT > 7 && !p._wilted) { p._wilted = true; drawCrop(p); }
+          } else if (p._wilted) { p._wilted = false; }
           // Dấu hiệu nhấp nhô
           p.markGroup.children.forEach(function (mk) {
             if (mk.name === "drop") mk.position.y += Math.sin(tNow * 3 + p.x) * 0.0009;
@@ -2586,25 +2853,38 @@
         fwd += -joyVec.y; strafe += joyVec.x;
       }
       var mag = Math.hypot(fwd, strafe);
-      player.moving = mag > 0.12;
-      if (player.moving) {
-        if (mag > 1) { fwd /= mag; strafe /= mag; }
-        var sp = 4.4 * dt;
-        var sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
-        var mx = (-sin * fwd + cos * strafe) * sp;
-        var mz = (-cos * fwd - sin * strafe) * sp;
-        var nc = collide(player.x + mx, player.z + mz);
+      if (mag > 1) { fwd /= mag; strafe /= mag; }
+      // Đi bộ có quán tính như người thật: tăng tốc dần, dừng cũng trượt một chút, không giật cục
+      var sin = Math.sin(player.yaw), cos = Math.cos(player.yaw);
+      var tvx = (-sin * fwd + cos * strafe) * 4.4;
+      var tvz = (-cos * fwd - sin * strafe) * 4.4;
+      var acc = 1 - Math.exp(-dt * 9);
+      player.vx += (tvx - player.vx) * acc;
+      player.vz += (tvz - player.vz) * acc;
+      player.speed = Math.hypot(player.vx, player.vz);
+      player.moving = player.speed > 0.35;
+      if (player.speed > 0.02) {
+        var nc = collide(player.x + player.vx * dt, player.z + player.vz * dt);
+        if (nc.x === player.x + player.vx * dt) {} else player.vx *= 0.4;
+        if (nc.z === player.z + player.vz * dt) {} else player.vz *= 0.4;
         player.x = nc.x; player.z = nc.z;
-        player.bobT += dt * 8.5;
+        player.bobT += dt * (4.5 + player.speed * 1.15);
         stepSndT += dt;
-        if (stepSndT > 0.36) { stepSndT = 0; sndStep(); }
+        if (stepSndT > 1.9 / Math.max(1.6, player.speed)) { stepSndT = 0; sndStepReal(); }
       }
-      var bobY = player.moving ? Math.abs(Math.sin(player.bobT)) * 0.055 : Math.sin(tNow * 1.6) * 0.012;
-      camera.position.set(player.x, 1.6 + bobY, player.z);
+      // Nhìn quanh cũng có quán tính: đầu quay êm theo chuột chứ không giật theo từng pixel
+      var lookAcc = 1 - Math.exp(-dt * 20);
+      player.yaw += (player.yawT - player.yaw) * lookAcc;
+      player.pitch += (player.pitchT - player.pitch) * lookAcc;
+      // Cúi người xuống khi gieo hạt / thu hoạch / làm việc nặng
+      var dipY = 0;
+      if (G.dipT > 0) { G.dipT -= dt; dipY = -0.085 * Math.sin(Math.max(0, G.dipT) / 0.32 * Math.PI); }
+      var bobY = player.moving ? Math.abs(Math.sin(player.bobT)) * 0.05 * Math.min(1, player.speed / 3) : Math.sin(tNow * 1.6) * 0.012;
+      camera.position.set(player.x, 1.6 + bobY + dipY, player.z);
       camera.rotation.order = "YXZ";
       camera.rotation.y = player.yaw;
-      camera.rotation.x = player.pitch + (player.moving ? Math.sin(player.bobT * 2) * 0.004 : 0);
-      camera.rotation.z = player.moving ? Math.sin(player.bobT) * 0.006 : 0;
+      camera.rotation.x = player.pitch + (player.moving ? Math.sin(player.bobT * 2) * 0.004 : 0) + dipY * 0.55;
+      camera.rotation.z = (player.moving ? Math.sin(player.bobT) * 0.006 : 0) + Math.sin(tNow * 0.9) * 0.0016;
 
       /* --- Bé An --- */
       if (child.visible) {
@@ -2644,7 +2924,7 @@
       }
       if (window.__gateRing) window.__gateRing.material.opacity = G.childState === "follow" ? 0.65 + Math.sin(tNow * 4) * 0.3 : 0.3;
       if (window.__flag) window.__flag.rotation.y = Math.sin(tNow * 3) * 0.25;
-      if (window.__cloths) window.__cloths.forEach(function (c, i) { c.rotation.x = Math.sin(tNow * 1.8 + i * 1.3) * 0.13; });
+      if (window.__cloths) window.__cloths.forEach(function (c, i) { c.rotation.x = Math.sin(tNow * (1.1 + G.wind * 1.5) + i * 1.3) * (0.05 + G.wind * 0.17); });
       if (buffalo) { var tl = buffalo.getObjectByName("tail"); if (tl) tl.rotation.x = Math.sin(tNow * 1.7) * 0.4; }
       if (wellBucket) wellBucket.position.y = 1.55 + Math.sin(tNow * 1.3) * 0.05;
 
@@ -2652,8 +2932,17 @@
       chickens.forEach(function (c, i) {
         var u = c.userData; u.t += dt;
         if (u.t > 3 + i) { u.t = 0; u.ang = Math.random() * Math.PI * 2; }
-        var nx = c.position.x + Math.sin(u.ang) * u.speed * dt;
-        var nz = c.position.z + Math.cos(u.ang) * u.speed * dt;
+        // Người tới gần quá thì gà giật mình chạy tản ra, y như gà thật ngoài sân
+        var cdx = c.position.x - player.x, cdz = c.position.z - player.z;
+        var cdist = Math.hypot(cdx, cdz);
+        if (cdist < 1.3 && cdist > 0.01) {
+          u.ang = Math.atan2(cdx, cdz); u.flee = 2.4;
+          if (Math.random() < dt * 0.8) sndCluck();
+        }
+        var cSpd = u.speed * (u.flee || 1);
+        if (u.flee) u.flee = Math.max(1, u.flee - dt * 2.2);
+        var nx = c.position.x + Math.sin(u.ang) * cSpd * dt;
+        var nz = c.position.z + Math.cos(u.ang) * cSpd * dt;
         if (nx < -14 || nx > 10 || nz < -6 || nz > 11) { u.ang += Math.PI; }
         else { c.position.x = nx; c.position.z = nz; }
         c.rotation.y = u.ang;
@@ -2827,7 +3116,8 @@
           if (G.rainT <= 0) {
             G.raining = false;
             if (window.__rain) window.__rain.visible = false;
-            toast("Mưa tạnh rồi, trời lại trong xanh.");
+            G.rainbowT = 45;
+            toast("Mưa tạnh rồi. Nhìn về phía bắc xem — có cầu vồng sau mưa kìa!");
           }
         }
         // 17:00 anh đi làm thuê về
@@ -2869,7 +3159,7 @@
         var sBoost = G.cookedToday || G.smokeBoost > 0 ? 1.5 : 0.55;
         window.__smoke.forEach(function (sp2) {
           var sph = (tNow * 0.13 * sBoost + sp2.userData.ph) % 1;
-          sp2.position.set(-17.4 + sph * 0.8 + Math.sin(tNow * 0.8 + sp2.userData.ph * 9) * 0.13, 2.75 + sph * 2.4, -1.4 + sph * 0.35);
+          sp2.position.set(-17.4 + sph * (0.4 + G.wind * 1.3) + Math.sin(tNow * 0.8 + sp2.userData.ph * 9) * 0.13, 2.75 + sph * 2.4, -1.4 + sph * 0.35);
           var ssc = 0.7 + sph * 2; sp2.scale.set(ssc, ssc, 1);
           sp2.material.opacity = 0.32 * (1 - sph) * (G.smokeBoost > 0 ? 1.3 : 1);
         });
@@ -2959,6 +3249,52 @@
         if (window.__coalMat) window.__coalMat.color.setHSL(0.05, 0.95, 0.45 + Math.random() * 0.14);
       }
       if (window.__scarecrow) window.__scarecrow.rotation.z = Math.sin(tNow * 0.9) * 0.03;
+      /* --- Lớp chân thật: gió, đất ướt + vũng nước sau mưa, cầu vồng, bóng mây, xe máy qua đường --- */
+      G.wind = Math.max(0.12, Math.min(1, 0.55 + 0.5 * Math.sin(tNow * 0.11) * Math.sin(tNow * 0.043 + 1.7)));
+      var wetTgt = G.raining ? 1 : 0;
+      G.wet += (wetTgt - G.wet) * Math.min(1, dt * (G.raining ? 0.22 : 0.025));
+      if (window.__groundMats) {
+        var gshade = 1 - 0.32 * G.wet;
+        window.__groundMats.forEach(function (gm) { gm.color.setRGB(gshade, gshade, gshade); });
+      }
+      if (window.__puddleMat) window.__puddleMat.opacity = Math.max(0, G.wet - 0.3) * 0.8;
+      if (G.rainbowT > 0) G.rainbowT -= dt;
+      if (window.__rainbowMats) {
+        var rbO = 0;
+        if (G.rainbowT > 0) rbO = 0.36 * Math.min(1, (45 - G.rainbowT) / 4 + 0.1) * Math.min(1, G.rainbowT / 7);
+        window.__rainbowMats.forEach(function (rm) { rm.opacity = rbO; });
+      }
+      if (window.__cloudShadows) window.__cloudShadows.forEach(function (cs, csi2) {
+        cs.position.x += dt * (1.0 + G.wind * 1.8 + csi2 * 0.3);
+        if (cs.position.x > 75) cs.position.x = -75;
+      });
+      var bk = G.bike;
+      if (window.__bike) {
+        if (bk.state === "idle" && G.started && !G.dayOver) {
+          bk.t -= dt;
+          if (bk.t <= 0) {
+            bk.state = "run";
+            bk.dir = Math.random() < 0.5 ? 1 : -1;
+            bk.z = bk.dir > 0 ? -15.5 : -13.2;
+            bk.x = bk.dir > 0 ? -37 : 39;
+            window.__bike.visible = true;
+            window.__bike.position.set(bk.x, 0, bk.z);
+            window.__bike.rotation.y = bk.dir > 0 ? 0 : Math.PI;
+            startBikeSound();
+          }
+        } else if (bk.state === "run") {
+          bk.x += bk.dir * 9.5 * dt;
+          window.__bike.position.x = bk.x;
+          window.__bike.position.y = Math.abs(Math.sin(tNow * 22)) * 0.015;
+          updateBikeSound();
+          if ((bk.dir > 0 && bk.x > 41) || (bk.dir < 0 && bk.x < -39)) {
+            bk.state = "idle"; bk.t = 25 + Math.random() * 45;
+            window.__bike.visible = false; stopBikeSound();
+          }
+        }
+      }
+      updateParticles(dt);
+      if (G.started) updateAmbient(dt);
       /* --- Tự chỉnh độ nét theo sức máy: máy yếu hạ phân giải cho mượt, máy khỏe nâng lên đẹp --- */
       if (dt > 0.0001) fpsEMA = fpsEMA * 0.95 + (1 / dt) * 0.05;
       prTimer += dt;
