@@ -29,7 +29,15 @@ import { sndCoin } from '../world/sound';
       { id: "buy",     targets: [1],          txt: function () { return "Mua 1 món ở sạp cô Tư (hạt giống, đồ nhà, vật nuôi)"; }, get: function () { return G.boughtToday; }, reward: { money: 5000, stars: 0 } },
       { id: "duckeggs", targets: [2, 3],      txt: function (n) { return "Nhặt " + n + " trứng vịt ở bờ ao"; },           get: function () { return G.duckEggsToday; }, reward: { money: 6000, stars: 0 } },
       { id: "fruit",   targets: [2, 3],      txt: function (n) { return "Hái " + n + " trái cây chín trong sân"; },       get: function () { return G.fruitToday; },   reward: { money: 8000, stars: 0 } },
-      { id: "pig",     targets: [1],          txt: function () { return "Bán 1 con lợn đã lớn"; },                       get: function () { return G.pigsSoldToday; }, reward: { money: 0, stars: 1 } }
+      { id: "pig",     targets: [1],          txt: function () { return "Bán 1 con lợn đã lớn"; },                       get: function () { return G.pigsSoldToday; }, reward: { money: 0, stars: 1 } },
+      // PHASE 4.2: việc lễ hội — CHỈ giao trong ngày lễ (xem
+      // applyFestivalQuest trong events/festivals.ts), rollQuests() thường
+      // không bao giờ bốc trúng (bộ lọc dưới loại id "fest-*"). Đếm bằng
+      // G.festivalProgress (số món lễ hội đã mua hôm nay) hoặc số liệu
+      // ngày sẵn có (chào hàng xóm).
+      { id: "fest-banhchung", targets: [2], txt: function () { return "Gói 2 bánh chưng cho ngày Tết (mua ở sạp cô Tư)"; }, get: function () { return G.festivalProgress; }, reward: { money: 10000, stars: 1 } },
+      { id: "fest-greet", targets: [3],     txt: function () { return "Chúc Tết 3 người hàng xóm"; },                       get: function () { return G.greetedToday; },      reward: { money: 0, stars: 1 } },
+      { id: "fest-lantern", targets: [1],   txt: function () { return "Mua 1 lồng đèn cho bé An (sạp cô Tư dịp Trung thu)"; }, get: function () { return G.festivalProgress; }, reward: { money: 5000, stars: 1 } }
     ];
     export function rollQuests() {
       var pool = QUEST_DEFS.slice();
@@ -39,7 +47,10 @@ import { sndCoin } from '../world/sound';
       for (var i = 0; i < pool.length; i++) if (pool[i].id === "school") { si = i; break; }
       var picked = si >= 0 ? [pool.splice(si, 1)[0]] : [];
       // PHASE 2: việc chăn nuôi / cây ăn quả chỉ giao khi nhà đã có vật nuôi, cây trồng đó
+      // PHASE 4.2: việc lễ hội (id "fest-*") chỉ giao trong ngày lễ, không
+      // bốc ngẫu nhiên — ngày thường không mua được đồ lễ nên không xong được.
       pool = pool.filter(function (d) {
+        if (d.id.indexOf("fest-") === 0) return false;
         if (d.id === "duckeggs" && !G.ducks.owned) return false;
         if (d.id === "pig" && G.pigs.count === 0) return false;
         if (d.id === "fruit" && !G.trees.some(function (t) { return t.type; })) return false;

@@ -72,13 +72,13 @@ GameGiaDinh/
 │   ├── core/           # dữ liệu (data), trạng thái (state), lưu game (save), kết ngày (day)
 │   ├── world/          # cảnh (scene), nhà/chợ/trường (buildings), chi tiết (details),
 │   │                   # sinh vật nền (ambient), thời tiết (weather), ánh sáng ngày (daylight),
-│   │                   # âm thanh (sound), hạt (particles)
+│   │                   # âm thanh (sound), hạt (particles), trang trí lễ hội (festivalDecor)
 │   ├── player/         # di chuyển, chuột/joystick, va chạm
 │   ├── npc/            # bé An (child), chồng (husband), trộm (thief), bà Tư (visitor)
 │   ├── farming/        # vườn, luống rau (garden); cây ăn quả (trees); vịt, lợn (livestock)
 │   ├── activities/     # tương tác (interactions), đưa con đi học (school)
 │   ├── economy/        # chợ, bán hàng (shop); mua đồ nhà, vật nuôi (upgrades)
-│   ├── events/         # nhiệm vụ, thành tựu (quests)
+│   ├── events/         # nhiệm vụ, thành tựu (quests); lễ hội trong năm (festivals)
 │   └── ui/             # HUD, nút đi tới (goto), bảng cấu trúc code (structure)
 └── README.md
 ```
@@ -128,6 +128,26 @@ Kết quả mô phỏng 30 ngày (chạy `node test/economy-sim.mjs`, dùng code
 - **Hiện ở game:** HUD (`#hud-wx`), dòng "Thời tiết" trong bảng tổng kết cuối ngày (có nhắc cả mùa và thiệt hại giông nếu có), toast sáng báo thời tiết hôm nay.
 - **Lưu game:** thời tiết hôm nay đã bốc (`weather`, `rainToday`, `rainAt`, `rainLen`) lưu vào save nên tắt trang mở lại giữa ngày vẫn giữ đúng thời tiết hôm đó; mùa suy ra từ số ngày nên không cần lưu riêng. **Save cũ** (trước Phase 4.1, không có các trường này) vẫn đọc được: mặc định nắng, không mưa.
 - **Cân bằng:** mưa miễn phí chỉ tiết kiệm *thời gian* tưới (nước giếng vốn không tốn tiền), không thêm tiền — mô phỏng 30 ngày (`node test/economy-sim.mjs`) sau Phase 4.1 vẫn cho kết quả tương đương trước: người chăm chỉ ~4,72 triệu (trước 4,25 triệu — chênh do thứ tự bốc số ngẫu nhiên thay đổi khi thêm lượt bốc thời tiết mỗi ngày, không do mưa làm giàu), cây ăn quả 388.800đ/30 ngày, chênh rau tối đa 1,4 lần. Không đổi giá rau.
+
+## Giai đoạn 4.2 — Lễ hội trong năm: Tết, Trung thu, sinh nhật, sum họp
+
+- **Lịch lễ:** một "năm" trong game dài **360 ngày** = 6 chu kỳ mùa 60 ngày (`dayOfYear()` trong `src/events/festivals.ts`). Ngày trong năm = `((ngày − 1) % 360) + 1`. Mỗi năm có **13 ngày lễ**:
+  | Ngày trong năm | Lễ | Mùa lúc đó |
+  |---|---|---|
+  | 31–33 | Tết — Mùng 1, 2, 3 (đèn lồng đỏ + băng rôn) | đầu mùa khô |
+  | 45 | Sinh nhật bé An | mùa khô |
+  | 75, 165, 255, 345 | Họ hàng sum họp (bàn tiệc ngoài sân) | rải đều 2 mùa |
+  | 135 | Sinh nhật anh (chồng) | mùa mưa |
+  | 180 | Kỷ niệm ngày cưới | mùa khô |
+  | 225 | Sinh nhật vợ (người chơi) | mùa khô |
+  | 270 | Tết Trung thu (đèn lồng đủ màu + trăng to) | ngày cuối đợt mùa mưa 241–270 |
+  | 315 | Sinh nhật bà Tư | mùa mưa |
+- **Quà sáng ngày lễ (chỉ 1 lần/ngày lễ):** Tết Mùng 1 lì xì 20.000đ + 2 sao, Mùng 2 10.000đ + 1 sao, Mùng 3 5.000đ + 1 sao; Trung thu 10.000đ + 1 sao; sinh nhật vợ 20.000đ + 2 sao; sinh nhật anh 15.000đ + 1 sao; kỷ niệm ngày cưới 15.000đ + 2 sao; sum họp 8.000đ + 1 sao mỗi lần; sinh nhật bé An 2 hạt cải + 1 sao; sinh nhật bà Tư 2 hạt cà chua + 1 sao. Quà ghi theo số ngày tuyệt đối (`G.festivalClaimed`) nên tải lại giữa ngày không tặng lại, chơi lại từ save cũ cũng chỉ nhận 1 lần.
+- **Nhiệm vụ lễ hội** thay 1 trong 3 việc hằng ngày (vẫn đủ 3 việc): "Gói 2 bánh chưng" (Tết Mùng 1), "Chúc Tết 3 người hàng xóm" (Mùng 2), "Nấu bữa cơm đầu năm / kỷ niệm ngày cưới" (Mùng 3, ngày cưới), "Nhặt 3 trứng gà nấu bữa sinh nhật bé An", "Câu 1 con cá rô nấu bữa sinh nhật anh", "Thu hoạch 3 món mừng sinh nhật vợ", "Nhặt 2 trứng gà biếu bà Tư", "Mua 1 lồng đèn cho bé An" (Trung thu), "Bán nông sản được 30.000đ đãi họ hàng" (sum họp). Việc lễ (`fest-*`) không bao giờ bốc trúng trong ngày thường.
+- **Đồ lễ hội** — chỉ bán ở sạp cô Tư trong vài ngày quanh lễ (giá cố định, không quay giá ngày để không lệch dòng số ngẫu nhiên của game): **Bánh chưng** 12.000đ (bán lại 10.000đ, ngày 28–36), **Bánh trung thu** 15.000đ (bán lại 12.000đ, ngày 265–274), **Lồng đèn giấy** 8.000đ (bán lại 5.000đ, ngày 42–48 dịp sinh nhật bé An và ngày 265–274 dịp Trung thu). Mua về làm nhiệm vụ lễ hội hoặc đãi khách; bán lại thì lỗ một ít nên không phải đường làm giàu. Bán lại được ở chợ: chị Lan lấy bánh trung thu (+10%), anh Đức lấy mọi món lễ hội (+5%).
+- **Hiện ở game:** tên lễ hiện ở HUD ngay sau thời tiết + mùa (`🧧 Tết Mùng 1`), toast sáng báo lễ + quà, dòng "Lễ hội hôm nay" trong bảng tổng kết cuối ngày, kỷ niệm ghi "Ngày X — Tết...". Trang trí 3D chỉ hiện trong ngày lễ, hôm sau tự dọn: Tết treo đèn lồng đỏ + băng rôn trước hiên; Trung thu đèn lồng đủ màu quanh sân + trăng đêm to ~1,9 lần; sinh nhật/kỷ niệm ngày cưới có bàn tiệc + bánh + bóng bay (bánh hồng sinh nhật, đỏ kỷ niệm); sum họp chỉ có bàn tiệc. Trang trí không thêm vòng chặn va chạm để không kẹt đường dân làng.
+- **Lưu game:** `festivalClaimed` + `festivalToday` lưu vào save; **save cũ** không có các trường này vẫn đọc được (mặc định chưa nhận quà lễ nào, hôm nay chưa rõ là lễ gì — mở game ngày lễ thì quà vẫn tặng đúng 1 lần). Mở game đã lưu đúng ngày lễ thì tính lại lễ hôm nay, nhiệm vụ lễ hội và trang trí hiện lại, quà không tặng trùng.
+- **Cân bằng:** quà lễ cả năm cộng lại ~90.000đ tiền + ~15 sao + 4 hạt giống — không đáng kể so với thu nhập 30 ngày (~5 triệu). Mô phỏng 30 ngày (`node test/economy-sim.mjs`) vẫn cho kết quả tương đương trước: người chăm chỉ 4.742.710đ (trước 4.722.710đ — chênh đúng 20.000đ lì xì Tết Mùng 1 vì lần qua đêm cuối của mô phỏng rơi vào ngày 31), cây ăn quả 388.800đ/30 ngày, chênh rau tối đa 1,4 lần. Đồ lễ hội giá cố định (không quay giá ngày) để dòng số ngẫu nhiên của game không đổi.
 
 ## Ghi chú về bản chuyển đổi này
 

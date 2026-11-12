@@ -12,6 +12,7 @@ import { plots } from '../farming/garden';
 import { exitLock } from '../player/player';
 import { AMB, sndCoin } from '../world/sound';
 import { weatherLabel } from '../world/weather';
+import { festivalHudSuffix } from '../events/festivals';
 
     /* ================== TOAST + HUD ================== */
     export var toastBox = document.getElementById("toasts");
@@ -27,7 +28,8 @@ import { weatherLabel } from '../world/weather';
     export function updateHUD() {
       el("hud-day").textContent = "Ngày " + G.day;
       // PHASE 4.1: thời tiết hôm nay + mùa hiện tại, hiện ngay dưới số ngày
-      el("hud-wx").textContent = weatherLabel(G.weather, G.season);
+      // PHASE 4.2: ngày lễ thì thêm tên lễ ngay sau đó ("· 🧧 Tết Mùng 1")
+      el("hud-wx").textContent = weatherLabel(G.weather, G.season) + festivalHudSuffix();
       el("hud-time").textContent = fmtTime(G.minutes);
       var ph = G.minutes < 420 ? "Bình minh" : G.minutes < 660 ? "Buổi sáng" : G.minutes < 840 ? "Buổi trưa" :
                G.minutes < 1020 ? "Buổi chiều" : "Hoàng hôn";

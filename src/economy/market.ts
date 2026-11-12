@@ -21,7 +21,9 @@ export var VENDORS = {
   },
   lan: {
     name: "Sạp trái cây chị Lan", bonus: 0.10,
-    keys: ["xoai", "oi", "trung", "trungvit", "chuoi"],
+    // PHASE 4.2: chị Lan lấy thêm bánh trung thu dịp lễ (bánh chưng, lồng
+    // đèn thì anh Đức lấy vì sạp đồ khô lấy mọi món trong GOOD_KEYS).
+    keys: ["xoai", "oi", "trung", "trungvit", "chuoi", "banhtrungthu"],
     note: "Chị Lan lấy xoài, ổi, trứng, chuối — giá chợ cao hơn 10%."
   },
   duc: {

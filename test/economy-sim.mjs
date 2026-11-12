@@ -67,7 +67,9 @@ function husbandWage() {
   return Math.round((38000 + Math.random() * 34000) / 1000) * 1000;
 }
 // Thưởng nhiệm vụ trung bình: 2 việc/ngày × thưởng trung bình của QUEST_DEFS thật
-const avgQuestReward = g.QUEST_DEFS.reduce((s, d) => s + (d.reward.money || 0), 0) / g.QUEST_DEFS.length;
+// (chỉ tính việc thường — việc lễ hội "fest-*" chỉ giao ngày lễ, không bốc
+// ngẫu nhiên nên không tính vào trung bình; xem Phase 4.2).
+const avgQuestReward = g.QUEST_DEFS.filter((d) => d.id.indexOf('fest-') !== 0).reduce((s, d) => s + (d.reward.money || 0), 0) / g.QUEST_DEFS.filter((d) => d.id.indexOf('fest-') !== 0).length;
 const QUEST_PER_DAY = 2;
 
 // ---- một kịch bản 30 ngày ----
@@ -159,6 +161,9 @@ function runScenario(opts) {
     G.money += quest; income += quest; tot.quests += quest;
     if (Math.random() < 0.65) { const loss = 6000; G.money = Math.max(0, G.money - loss); costs += loss; note += 'trộm ghé (-6k); '; }
     // --- hết ngày: sinh hoạt (code thật) + qua đêm (code thật) ---
+    // Lưu ý Phase 4.2: lần qua đêm cuối (ngày 30 -> 31) rơi đúng Tết Mùng 1
+    // nên số dư cuối +20.000đ lì xì Tết và "sinh hoạt" ngày 30 in ra thấp
+    // hơn thực 20.000đ — đó là quà lễ thật của game, không phải lỗi mô phỏng.
     const livingBefore = G.money;
     nextDay();
     const living = livingBefore - G.money; // endDay trừ sinh hoạt (rollover không trừ tiền)

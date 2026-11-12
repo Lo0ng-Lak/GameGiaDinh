@@ -15,14 +15,19 @@ import { exitLock } from '../player/player';
 import { el, toast, updateHUD } from '../ui/hud';
 import { sndCoin } from '../world/sound';
 import { buyUpgrade, repairHouse, buySapling, buyDuckFlock, buyPiglet, sellPigFromShop } from './upgrades';
+import { FESTIVAL_ITEMS, availableFestivalItems, festivalItemAvailable, isFestivalGood } from '../events/festivals';
 
     /* ================== SẠP BÁN ================== */
     export var shopOverlay = el("shop-overlay");
 
     // PHASE 2: giá bán lên xuống mỗi ngày — 25% giảm, 50% giữ, 25% tăng (±10%)
+    // PHASE 4.2: đồ lễ hội KHÔNG quay giá — giá lễ cố định theo bảng, và
+    // việc quay thêm 3 món lễ hội mỗi sáng sẽ làm lệch cả dòng số ngẫu
+    // nhiên của game (giá ngày, trộm, tiền công chồng...), khiến mô phỏng
+    // kinh tế 30 ngày đổi số mà không do cân bằng thay đổi.
     export function rollPrices() {
       var day = {};
-      CROP_KEYS.concat(GOOD_KEYS).forEach(function (k) {
+      CROP_KEYS.concat(GOOD_KEYS).filter(function (k) { return !isFestivalGood(k); }).forEach(function (k) {
         var r = Math.random();
         day[k] = r < 0.25 ? 0.9 : (r < 0.75 ? 1.0 : 1.1);
       });
@@ -45,11 +50,30 @@ import { buyUpgrade, repairHouse, buySapling, buyDuckFlock, buyPiglet, sellPigFr
       return btn;
     }
 
+    // PHASE 4.2: đồ lễ hội không phải lúc nào cũng bày giá — chỉ hiện
+    // giá món lễ hội vào đúng dịp nó được bán.
+    export function buyFestivalItem(id) {
+      var item = null;
+      FESTIVAL_ITEMS.forEach(function (it) { if (it.id === id) item = it; });
+      if (!item) return false;
+      if (!festivalItemAvailable(id)) { toast("Món này chỉ bán dịp lễ thôi — xem lịch lễ trong README nhé."); return false; }
+      if (G.money < item.buy) { toast("Chưa đủ tiền mua " + item.name + " (" + fmt(item.buy) + ")."); return false; }
+      G.money -= item.buy; G.spentToday += item.buy;
+      G.produce[id] = (G.produce[id] || 0) + 1;
+      G.boughtToday++; G.festivalProgress++;
+      sndCoin();
+      toast("Đã mua 1 " + item.name + " (" + fmt(item.buy) + ") — để dành đãi khách ngày lễ nhé.");
+      saveGame(); updateHUD();
+      return true;
+    }
+
     export function renderShop() {
       var sellBox = el("shop-sell");
       // Bảng giá hôm nay — giá nông sản lên xuống theo ngày
       var priceLine = "";
-      CROP_KEYS.concat(GOOD_KEYS).forEach(function (k) {
+      CROP_KEYS.concat(GOOD_KEYS).filter(function (k) {
+        return !isFestivalGood(k) || festivalItemAvailable(k);
+      }).forEach(function (k) {
         var base = priceOf(k), today = sellPriceOf(k);
         var arrow = today > base ? " ▲" : (today < base ? " ▼" : "");
         priceLine += (priceLine ? " · " : "") + (CROPS[k] ? CROPS[k].name : GOODS[k].name) + " " + fmt(today) + arrow;
@@ -88,6 +112,18 @@ import { buyUpgrade, repairHouse, buySapling, buyDuckFlock, buyPiglet, sellPigFr
             renderShop(); updateHUD(); saveGame();
           });
       });
+      /* ---- Đồ lễ hội (PHASE 4.2) — chỉ bán vài ngày quanh lễ ---- */
+      var festItems = availableFestivalItems();
+      if (festItems.length > 0) {
+        shopSection(rows, "🎉 Đồ lễ hội — chỉ bán dịp lễ");
+        festItems.forEach(function (it) {
+          shopRow(rows, it.name,
+            "Giá " + fmt(it.buy) + " · " + it.desc + " · Đang có " + (G.produce[it.id] || 0) + " cái trong giỏ",
+            "Mua 1 cái", G.money < it.buy, function () {
+              if (buyFestivalItem(it.id)) { sndCoin(); renderShop(); }
+            });
+        });
+      }
       /* ---- Cây ăn quả (PHASE 2) ---- */
       shopSection(rows, "🌳 Cây ăn quả — trồng ở 3 mô đất trống trong sân");
       Object.keys(FRUIT_TREES).forEach(function (k) {

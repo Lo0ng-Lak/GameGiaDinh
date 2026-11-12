@@ -31,9 +31,15 @@
       chuoi: { name: "Nải chuối", sell: 15000 },
       trungvit: { name: "Trứng vịt", sell: 5000 },
       xoai: { name: "Xoài chín", sell: 12000 },
-      oi:   { name: "Ổi chín", sell: 8000 }
+      oi:   { name: "Ổi chín", sell: 8000 },
+      // PHASE 4.2: đồ lễ hội — chỉ mua được vài ngày quanh lễ ở sạp cô Tư
+      // (xem FESTIVAL_ITEMS trong events/festivals.ts); mua về đãi khách
+      // hoặc làm nhiệm vụ lễ hội, bán lại thì lỗ một ít.
+      banhchung:    { name: "Bánh chưng", sell: 10000 },
+      banhtrungthu: { name: "Bánh trung thu", sell: 12000 },
+      longden:      { name: "Lồng đèn giấy", sell: 5000 }
     };
-    export var GOOD_KEYS = ["trung", "ca", "chuoi", "trungvit", "xoai", "oi"];
+    export var GOOD_KEYS = ["trung", "ca", "chuoi", "trungvit", "xoai", "oi", "banhchung", "banhtrungthu", "longden"];
     export function priceOf(k) { return CROPS[k] ? CROPS[k].sell : GOODS[k].sell; }
 
     // — PHASE 2 (cân bằng lại, sau review 12/11): cây ăn quả lớn THEO NGÀY, không phải

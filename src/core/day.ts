@@ -22,6 +22,7 @@ import { exitLock, player } from '../player/player';
 import { el, toast, updateHUD } from '../ui/hud';
 import { stopBikeSound } from '../world/sound';
 import { rollWeather, weatherLabel, weatherSummaryText } from '../world/weather';
+import { checkFestivalToday, festivalSummaryText } from '../events/festivals';
 
     /* ================== KẾT THÚC NGÀY ================== */
     export var dayOverlay = el("day-overlay");
@@ -63,6 +64,7 @@ import { rollWeather, weatherLabel, weatherSummaryText } from '../world/weather'
         '<div class="sum-row"><span>Khách qua nhà</span><b>' + (G.visit.talked ? "Bà Tư ghé chơi, biếu hạt giống" : "Không có ai ghé") + '</b></div>' +
         '<div class="sum-row"><span>Làng xóm &amp; chợ</span><b>' + (G.greetedToday > 0 ? "Chào " + G.greetedToday + " người" : "Chưa chào ai") + ' · Bán chợ ' + fmt(G.marketSoldToday) + (G.teacherEggsToday > 0 ? ' · Đưa cô giáo ' + G.teacherEggsToday + ' trứng' : '') + '</b></div>' +
         '<div class="sum-row"><span>Thời tiết</span><b>' + weatherSummaryText() + '</b></div>' +
+        '<div class="sum-row"><span>Lễ hội hôm nay</span><b>' + festivalSummaryText() + '</b></div>' +
         '<div class="sum-row"><span>Tiền hiện có</span><b>' + fmt(G.money) + '</b></div>';
       dayOverlay.classList.add("show");
     }
@@ -75,10 +77,17 @@ import { rollWeather, weatherLabel, weatherSummaryText } from '../world/weather'
       G.boughtToday = 0; G.duckEggsToday = 0; G.fruitToday = 0; G.pigsSoldToday = 0; G.spentToday = 0;
       // PHASE 3: reset số liệu làng — chào hỏi, bán chợ, trứng cho cô giáo, đồ tạp hóa
       G.greetedToday = 0; G.greetedIds = {}; G.marketSoldToday = 0; G.teacherEggsToday = 0; G.groceryToday = {};
+      // PHASE 4.2: reset số liệu lễ hội hôm nay (số món lễ hội đã mua, quà
+      // lễ đã nhận hôm nay) — ngày lễ đã nhận quà thì vẫn giữ trong
+      // G.festivalClaimed để không tặng lại.
+      G.festivalProgress = 0; G.festivalGiftTxt = "";
       rollPrices();
       G.ducks.fed = false; G.ducks.ready = 0; G.ducks.timer = 0; refreshDuckEggs();
       G.pigs.fedToday = false; refreshPigs();
       rollQuests();   // ngày mới, việc mới
+      // PHASE 4.2: hôm nay có lễ không? Có thì tặng quà (1 lần/ngày lễ),
+      // giao nhiệm vụ lễ hội thay 1 việc, hiện trang trí, báo toast.
+      checkFestivalToday();
       G.husbandAt = 990 + Math.random() * 105;
       G.noWorkToday = Math.random() < 0.12;
       G.husbandMode = "rest"; G.husbandPlot = null;

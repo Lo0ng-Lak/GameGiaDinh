@@ -19,6 +19,9 @@ export { waterTree, harvestTree, overnightTrees, drawTree } from '../src/farming
 export { feedDucks, collectDuckEggs, feedPigs, sellGrownPig, refreshPigs, refreshDuckEggs } from '../src/farming/livestock';
 export { plots, drawCrop, ensureExtraPlots } from '../src/farming/garden';
 export { checkQuestsAchievements, rollQuests, QUEST_DEFS, ACHIEVEMENTS } from '../src/events/quests';
+export { YEAR_CYCLE, FESTIVALS, FESTIVAL_ITEMS, FESTIVAL_GOODS, dayOfYear, eventForDay, eventById, festivalHudSuffix, festivalSummaryText, applyFestivalQuest, checkFestivalToday, isFestivalGood, festivalItemAvailable, availableFestivalItems } from '../src/events/festivals';
+export { showFestivalDecor, festivalDecorState } from '../src/world/festivalDecor';
+export { buyFestivalItem } from '../src/economy/shop';
 export { updateHUD } from '../src/ui/hud';
 export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes } from '../src/npc/villagers';
 export { VENDORS, GROCERY, marketPriceOf, sellToVendor, buyGrocery, vendorBuyableCount, openVendorPanel, openGroceryPanel } from '../src/economy/market';

@@ -22,6 +22,7 @@ import { DAY_END, G, SCHOOL_BELL, fmt } from './core/state';
 import { rollPrices, shopOverlay } from './economy/shop';
 import { applyUpgrades } from './world/upgrades';
 import { addMemory, rollQuests } from './events/quests';
+import { checkFestivalToday } from './events/festivals';
 import { drawCrop, plots } from './farming/garden';
 import { drawTree } from './farming/trees';
 import { rollWeather } from './world/weather';
@@ -67,6 +68,10 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       if (!G.priceDay || Object.keys(G.priceDay).length === 0) rollPrices();
       applyUpgrades();
       G.started = true;
+      // PHASE 4.2: mở game đã lưu đúng ngày lễ thì tính lại lễ hôm nay —
+      // quà chỉ tặng 1 lần/ngày nên tải lại giữa ngày không tặng trùng,
+      // nhiệm vụ lễ hội và trang trí thì giao/hiện lại cho đúng ngày.
+      checkFestivalToday();
       tryLock();
       try { setAC(new (window.AudioContext || window.webkitAudioContext)()); } catch (e) { setAC(null); }
       initAmbient();

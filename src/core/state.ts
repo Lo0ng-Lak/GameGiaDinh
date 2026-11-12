@@ -13,7 +13,7 @@ import { CROPS, GOODS, priceOf } from './data';
       day: 1, minutes: 5 * 60 + 30,           // 05:30
       money: 60000, stars: 0,
       seeds: { cai: 4, cachua: 2, bido: 1, ngo: 2 },
-      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0, trungvit: 0, xoai: 0, oi: 0 },
+      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0, trungvit: 0, xoai: 0, oi: 0, banhchung: 0, banhtrungthu: 0, longden: 0 },
       selSeed: "cai",
       can: 5, canMax: 5,
       childState: "home",                      // home | follow | school | away
@@ -76,6 +76,16 @@ import { CROPS, GOODS, priceOf } from './data';
       pigs: { count: 0, grown: 0, fedToday: false, days: [] },
       priceDay: {},
       boughtToday: 0, duckEggsToday: 0, fruitToday: 0, pigsSoldToday: 0, spentToday: 0,
+      /* ===== GIAI ĐOẠN 4.2: lễ hội trong năm (xem events/festivals.ts) =====
+       * festivalClaimed: số ngày tuyệt đối đã nhận quà lễ (day -> true) —
+       * quà mỗi ngày lễ chỉ nhận 1 lần, tải lại giữa ngày không nhận trùng.
+       * festivalToday: id lễ hội hôm nay (null ngày thường) — để HUD,
+       * bảng tổng kết và trang trí biết hôm nay là lễ gì.
+       * festivalProgress: số món lễ hội đã mua hôm nay (đếm cho nhiệm vụ
+       * "Gói bánh chưng" / "Mua lồng đèn"); reset mỗi sáng như các số
+       * liệu ngày khác. festivalGiftTxt: quà lễ hôm nay, hiện ở tổng kết.
+       */
+      festivalClaimed: {}, festivalToday: null, festivalProgress: 0, festivalGiftTxt: "",
       /* ===== GIAI ĐOẠN 3: làng — chợ, tiệm tạp hóa, trường, hàng xóm ===== */
       greetedToday: 0, greetedIds: {},        // chào hàng xóm: đếm hôm nay + id đã chào
       marketSoldToday: 0,                     // tiền bán được ở chợ hôm nay

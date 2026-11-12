@@ -12,6 +12,7 @@ npm install            # lần đầu (cần esbuild — đã có qua vite)
 node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi chạy
 node test/npc-pathing.test.mjs     # 110 kiểm tra đường đi + lịch dân làng
 node test/weather.test.mjs         # 66 kiểm tra thời tiết + mùa (Phase 4.1)
+node test/festivals.test.mjs       # 110 kiểm tra lễ hội trong năm (Phase 4.2)
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
 # OLD_CROPS=1 node test/economy-sim.mjs   # chạy lại với giá rau cũ để so sánh trước/sau
 ```
@@ -91,6 +92,43 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
 - **Save/load:** vòng tròn lưu/tải giữ thời tiết hôm nay; ngày nắng lưu
   `rainAt: null` (Infinity không vào được JSON) và tải lại thành Infinity;
   save cũ không có trường thời tiết vẫn đọc được, mặc định nắng.
+
+`test/festivals.test.mjs` (110 kiểm tra, đều đậu — Phase 4.2):
+- **Lịch:** năm 360 ngày, đúng ngày đã ghi (Tết 31–33, sinh nhật bé An 45,
+  sum họp 75/165/255/345, sinh nhật anh 135, kỷ niệm ngày cưới 180, sinh
+  nhật vợ 225, Trung thu 270, sinh nhật bà Tư 315); ngày thường không có
+  lễ; năm sau lặp lại đúng ngày (391 lại Tết Mùng 1, 630 lại Trung thu);
+  mỗi năm đúng 13 ngày lễ, không ngày nào trùng 2 lễ. Tết rơi vào mùa
+  khô, Trung thu rơi vào ngày cuối đợt mùa mưa (ngày 270 = ngày 30 của
+  chu kỳ 60).
+- **Qua đêm thật (nút "Ngày mới"):** sang ngày 31 thì lì xì Tết 20.000đ
+  + 2 sao, nhiệm vụ lễ hội "Gói 2 bánh chưng" thay 1 việc (vẫn 3 việc),
+  HUD hiện "Tết Mùng 1", trang trí Tết hiện, kỷ niệm + bảng tổng kết cuối
+  ngày đều ghi lễ hội.
+- **Quà 1 lần:** gọi `checkFestivalToday()` lại trong ngày, và save → tải
+  lại giữa ngày, đều không tặng thêm; sang ngày 32 thì Tết Mùng 2 tặng
+  quà riêng của nó.
+- **Đồ lễ hội:** bánh chưng chỉ bán ngày 28–36, bánh trung thu + lồng đèn
+  ngày 265–274, lồng đèn thêm ngày 42–48; ngày thường mua thì từ chối,
+  không trừ tiền. Mua đủ 2 bánh chưng thì xong việc lễ Tết (+10.000đ +
+  1 sao); mua 1 lồng đèn Trung thu thì xong việc lễ (+5.000đ + 1 sao).
+  Bán lại ở chợ: chị Lan mua bánh trung thu +10% (2 cái = 26.400đ),
+  anh Đức mua lồng đèn +5% (5.300đ).
+- **Save/load:** vòng tròn lưu/tải giữ `festivalClaimed` + lễ hôm nay
+  (kể cả đồ lễ trong giỏ); save cũ không có trường lễ vẫn đọc được,
+  mặc định quà rỗng / lễ null, rồi mở game ngày lễ thì quà vẫn tặng
+  được đúng 1 lần (sinh nhật bé An: 2 hạt cải + 1 sao).
+- **Việc lễ khác:** sinh nhật bé An (nhặt 3 trứng), Mùng 2 (chúc Tết 3
+  người), sum họp (bán 30.000đ), kỷ niệm ngày cưới (nấu cơm + quà 15k
+  + 2 sao) đều xong được bằng đúng bộ đếm game; bốc 20 lần việc thường
+  không lần nào lọt việc lễ.
+- **Trang trí:** Trung thu đèn lồng + trăng to (×1,9), sinh nhật bàn +
+  bánh hồng + bóng bay, kỷ niệm ngày cưới bàn + bánh đỏ, sum họp chỉ
+  bàn tiệc; ngày thường dọn hết, trăng về cỡ cũ, tóm tắt lễ là
+  "Không có lễ hội".
+- **Lưu ý khi test:** sang ngày 31 thì thành tựu "Một tuần ở quê" cũng
+  ghi thêm 1 dòng kỷ niệm — test kỷ niệm Tết chỉ cần dòng Tết có mặt,
+  không đếm đúng +1 dòng.
 
 ## Lưu ý: test từng rớt lúc đậu lúc rớt (đã sửa)
 

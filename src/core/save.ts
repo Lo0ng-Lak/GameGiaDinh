@@ -37,6 +37,10 @@ import { seasonOf } from '../world/weather';
           // không mưa (Infinity không lưu được thành JSON).
           weather: G.weather, rainToday: G.rainToday,
           rainAt: G.rainToday ? G.rainAt : null, rainLen: G.rainLen,
+          // PHASE 4.2: lễ hội — ngày lễ đã nhận quà, lễ hội hôm nay.
+          // Save cũ (trước Phase 4.2) không có các trường này -> quà chưa
+          // nhận, lễ hôm nay để null (sẽ tự tính lại khi mở game).
+          festivalClaimed: G.festivalClaimed, festivalToday: G.festivalToday,
           plots: plots.map(function (p) {
             return { state: p.state, type: p.type, progress: p.progress, watered: p.watered, waterings: p.waterings };
           })
@@ -104,6 +108,12 @@ import { seasonOf } from '../world/weather';
       }
       G.raining = false; G.rainT = 0; G.rainedToday = false;
       G.stormHit = false; G.stormDamaged = false;
+      // PHASE 4.2: lễ hội — save cũ không có festivalClaimed/festivalToday
+      // thì mặc định chưa nhận quà lễ nào, hôm nay chưa rõ là lễ gì
+      // (checkFestivalToday khi mở game sẽ tự tính lại theo số ngày).
+      G.festivalClaimed = d.festivalClaimed || {};
+      G.festivalToday = d.festivalToday || null;
+      G.festivalProgress = 0; G.festivalGiftTxt = "";
     }
     rollQuests();
 
