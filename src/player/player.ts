@@ -45,33 +45,6 @@ import { blockers, renderer } from '../world/scene';
     });
     document.addEventListener("pointerlockerror", function () { mouseLocked = false; });
     export function exitLock() { if (mouseLocked) document.exitPointerLock(); }
-    // Điện thoại: xin xoay ngang khi bắt đầu chơi (cần cử chỉ người dùng).
-    // Thất bại thì thôi (iOS không cho khóa xoay, một số trình duyệt chặn) —
-    // lớp phủ nhắc xoay ngang là dự phòng, game vẫn chạy bình thường.
-    export function tryLandscapeLock() {
-      try {
-        var isTouch = document.body.classList.contains("touch") ||
-                      (navigator.maxTouchPoints || 0) > 0 || "ontouchstart" in window;
-        if (!isTouch) return;
-        var scr = window.screen, orientation = scr && scr.orientation;
-        if (!orientation || typeof orientation.lock !== "function") return;
-        var doLock = function () {
-          try {
-            var r = orientation.lock("landscape");
-            if (r && typeof r.catch === "function") r.catch(function () {});
-          } catch (e) {}
-        };
-        var docEl = document.documentElement;
-        var reqFs = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
-        if (reqFs) {
-          try {
-            var p = reqFs.call(docEl);
-            if (p && typeof p.then === "function") { p.then(doLock, doLock); return; }
-          } catch (e) {}
-        }
-        doLock();
-      } catch (e) {}
-    }
     export var joyVec = { x: 0, y: 0 }, joyActive = false;
     export var joyEl = document.getElementById("joy"), knobEl = document.getElementById("joy-knob");
     export function isTouchUI(el) { return el.closest("#toolbar,#goto,#hud-top,.overlay,#joy,#btn-act,#prompt"); }

@@ -30,7 +30,7 @@ import { thief, thiefParts, thiefPath } from './npc/thief';
 import { visitPath, visitor, visitorParts } from './npc/visitor';
 import { updateVillagers } from './npc/villagers'; // PHASE 3: dân làng đi lại theo lịch sinh hoạt
 import { SCHOOL_PLAY_SPOT } from './world/village'; // PHASE 3: sân trường bé An ra chơi
-import { collide, finePointer, joyVec, keys, mouseLocked, overlayOpen, player, tryLandscapeLock, tryLock } from './player/player';
+import { collide, finePointer, joyVec, keys, mouseLocked, overlayOpen, player, tryLock } from './player/player';
 import { el, objectiveText, toast, updateHUD } from './ui/hud';
 import { gatePos, schoolPos } from './world/buildings';
 import { updateSky } from './world/daylight';
@@ -65,7 +65,6 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
       applyUpgrades();
       G.started = true;
       tryLock();
-      tryLandscapeLock();
       try { setAC(new (window.AudioContext || window.webkitAudioContext)()); } catch (e) { setAC(null); }
       initAmbient();
       toast("Chào buổi sáng! Bé An đang chờ ở hiên nhà để đi học.");

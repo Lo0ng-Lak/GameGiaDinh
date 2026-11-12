@@ -267,27 +267,6 @@
       #lock-hint.show { opacity: 1; }
       #lock-hint b { color: #ffd97a; }
 
-      /* Nhắc xoay ngang khi cầm điện thoại dọc */
-      #rotate-hint {
-        position: fixed; inset: 0; z-index: 40; display: none;
-        flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-        background: rgba(12, 18, 7, .88); color: #fdf6e3; text-align: center;
-        padding: 24px; pointer-events: none;
-      }
-      #rotate-hint .rotate-phone { font-size: 64px; line-height: 1; animation: rotate-phone 1.8s ease-in-out infinite; }
-      #rotate-hint .rotate-text { font-size: 19px; font-weight: 800; line-height: 1.5; max-width: 82vw; }
-      #rotate-hint .rotate-sub { font-size: 13.5px; opacity: .85; }
-      @keyframes rotate-phone { 0%, 25% { transform: rotate(0deg); } 65%, 100% { transform: rotate(90deg); } }
-      /* Chỉ điện thoại/máy tính bảng cầm dọc mới thấy — máy tính (kể cả cửa sổ hẹp) không bị ảnh hưởng */
-      @media (orientation: portrait) and (pointer: coarse) {
-        #rotate-hint { display: flex; }
-      }
-      /* Điện thoại cầm ngang, màn hình thấp: nút đi tới xếp gọn để không tràn khỏi màn hình */
-      @media (orientation: landscape) and (max-height: 520px) {
-        body.touch #goto { bottom: auto; top: calc(60px + env(safe-area-inset-top)); right: 8px; gap: 4px; }
-        body.touch #goto button { min-height: 30px; padding: 5px 9px; font-size: 11px; }
-      }
-
       @media (max-width: 640px) {
         #lock-hint { white-space: normal; width: 92vw; top: 54%; font-size: 12.5px; }
         #clock-card .phase { display: none; }
@@ -366,13 +345,6 @@
     <div id="joy"><div id="joy-knob"></div></div>
     <button id="btn-act" type="button">Chạm</button>
     <div id="toasts"></div>
-
-    <!-- Nhắc xoay ngang khi cầm điện thoại dọc (chỉ hiện trên thiết bị cảm ứng ở dọc) -->
-    <div id="rotate-hint">
-      <div class="rotate-phone">📱</div>
-      <div class="rotate-text">Xoay điện thoại sang ngang để chơi</div>
-      <div class="rotate-sub">Game chơi màn hình ngang — xoay máy rồi chơi tiếp nhé</div>
-    </div>
 
     <!-- Sạp bán -->
     <div class="overlay" id="shop-overlay">
