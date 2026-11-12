@@ -93,7 +93,7 @@ import { buyUpgrade, repairHouse, buySapling, buyDuckFlock, buyPiglet, sellPigFr
       Object.keys(FRUIT_TREES).forEach(function (k) {
         var t = FRUIT_TREES[k];
         shopRow(rows, "Cây " + t.name.toLowerCase() + " giống",
-          "Giá " + fmt(t.sapling) + " · Tưới " + t.waters + " lần là lớn · Mỗi sáng hái " + t.fruitPerDay + " " + t.fruitName.toLowerCase() + " (bán " + fmt(GOODS[t.fruit].sell) + "/quả) · Đang có " + G.saplings[k] + " cây giống",
+          "Giá " + fmt(t.sapling) + " · Tưới mỗi ngày, đủ " + t.growDays + " ngày tưới là lớn · Cây lớn rồi chăm đủ " + t.fruitCycle + " ngày thì ra " + t.fruitPerCycle + " " + t.fruitName.toLowerCase() + " (bán " + fmt(GOODS[t.fruit].sell) + "/quả) · Không tưới thì cây không lớn, không ra trái · Đang có " + G.saplings[k] + " cây giống",
           "Mua 1 cây giống", G.money < t.sapling, function () {
             if (buySapling(k)) { sndCoin(); renderShop(); }
           });
@@ -113,7 +113,7 @@ import { buyUpgrade, repairHouse, buySapling, buyDuckFlock, buyPiglet, sellPigFr
         shopRow(rows, "Lợn con", "Cần xây chuồng lợn trước — xem mục Nâng cấp nhà cửa bên dưới.", "Chưa có chuồng", true);
       } else if (G.pigs.count < LIVESTOCK.piglet.max) {
         shopRow(rows, "Lợn con",
-          "Giá " + fmt(LIVESTOCK.piglet.price) + " · Cho ăn " + fmt(LIVESTOCK.piglet.feed) + "/con mỗi ngày, ăn đủ " + LIVESTOCK.piglet.growDays + " hôm là lớn · Lợn lớn bán " + fmt(LIVESTOCK.piglet.sell) + "/con · Đang nuôi " + G.pigs.count + "/" + LIVESTOCK.piglet.max + " con",
+          "Giá " + fmt(LIVESTOCK.piglet.price) + " · Cho ăn " + fmt(LIVESTOCK.piglet.feed) + "/con mỗi ngày, mỗi con ăn đủ " + LIVESTOCK.piglet.growDays + " hôm là lớn · Lợn lớn bán " + fmt(LIVESTOCK.piglet.sell) + "/con (nuôi 1 con tốn cả cám ~95.000đ, lãi ~25.000đ) · Đang nuôi " + G.pigs.count + "/" + LIVESTOCK.piglet.max + " con",
           "Mua 1 lợn con", G.money < LIVESTOCK.piglet.price, function () {
             if (buyPiglet()) { sndCoin(); renderShop(); }
           });

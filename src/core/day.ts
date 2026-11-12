@@ -11,9 +11,9 @@ import { G, fmt } from './state';
 import { rollQuests } from '../events/quests';
 import { rollPrices } from '../economy/shop';
 import { drawCrop, plots } from '../farming/garden';
-import { drawTree } from '../farming/trees';
+import { overnightTrees } from '../farming/trees';
 import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
-import { FRUIT_TREES, UPGRADES } from '../core/data';
+import { UPGRADES } from '../core/data';
 import { child, childHome } from '../npc/child';
 import { husband, husbandPath } from '../npc/husband';
 import { thief, thiefParts, thiefPath } from '../npc/thief';
@@ -113,14 +113,15 @@ import { stopBikeSound } from '../world/sound';
           p.watered = false; drawCrop(p);
         }
       });
-      // PHASE 2: qua đêm cây ăn quả cũng lớn thêm, cây đã lớn thì ra trái mới mỗi sáng
-      G.trees.forEach(function (t, ti) {
-        if (t.type === "growing") {
-          if (t.watered) t.progress = Math.min(0.92, t.progress + 0.25);
-          t.watered = false; drawTree(ti);
-        } else if (t.type === "mature") {
-          t.fruitReady = FRUIT_TREES[t.type].fruitPerDay; drawTree(ti);
-        }
+      // PHASE 2: cây ăn quả lớn theo ngày — cây chỉ lớn/ra trái khi được tưới
+      // hôm trước (xem overnightTrees trong farming/trees.ts). Sửa lỗi cũ: code
+      // cũ so sánh t.type (chỉ là "xoai"/"oi") với "growing"/"mature" nên nhánh
+      // này không bao giờ chạy — cây trưởng thành không bao giờ ra trái mới
+      // nữa sau đợt đầu, cây đang lớn cũng không lớn thêm.
+      var treeEvents = overnightTrees();
+      treeEvents.forEach(function (ev) {
+        if (ev.kind === "matured") toast("Cây " + (ev.type === "xoai" ? "xoài" : "ổi") + " đã lớn thành cây trưởng thành! Từ giờ chăm tưới là có trái ăn.");
+        else if (ev.kind === "fruited") toast("Cây " + (ev.type === "xoai" ? "xoài" : "ổi") + " ra " + ev.n + " trái chín — hái mang bán nhé!");
       });
       toast("Ngày mới bắt đầu. Bé An đang chờ ở hiên nhà.");
       updateHUD();

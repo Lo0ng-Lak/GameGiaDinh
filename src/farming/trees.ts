@@ -1,9 +1,13 @@
 // @ts-nocheck
 /*
  * GameGiaDinh — src/farming/trees.ts
- * GIAI ĐOẠN 2: cây ăn quả — 3 chỗ trồng ở góc sân, mua cây giống, tưới 2 lần,
- * cây lớn rồi mỗi sáng ra trái, hái được nhiều lần. Hình dáng cây tự vẽ lại
- * theo trạng thái (đất trống / mầm / lớn / chín), giống cách drawCrop làm.
+ * GIAI ĐOẠN 2: cây ăn quả — 3 chỗ trồng ở góc sân, mua cây giống, trồng rồi
+ * TƯỚI MỖI NGÀY: cây lớn thêm 1/growDays vào sáng hôm sau (xoài 5 ngày, ổi 4
+ * ngày mới trưởng thành). Cây trưởng thành cần chăm tưới đủ fruitCycle ngày
+ * (xoài 3 ngày, ổi 2 ngày) mới ra 1 đợt trái; trái chưa hái hết thì chưa ra
+ * đợt mới. Không tưới thì cây đứng yên — không lớn, không ra trái. Hình dáng
+ * cây tự vẽ lại theo trạng thái (đất trống / mầm / lớn / chín), giống cách
+ * drawCrop làm. Cây cần nước có giọt nước xanh lơ lửng.
  */
 import * as THREE from 'three';
 import { G } from '../core/state';
@@ -71,17 +75,52 @@ export function drawTree(i) {
     }
     if (t.fruitReady > 0) { ring.material.opacity = 0.85; ring.material.color.setHex(0xffc94d); } // có trái chín: vòng vàng
     else ring.material.opacity = 0;
+    if (!t.watered && t.fruitReady === 0) addMesh(g, GEO.dropBall, dropM, 0.55, 3.1, 0.1); // cây lớn cũng khát nước — không tưới thì không ra trái
   }
 }
 
-// Tưới cây đang lớn — trả về thông báo hoặc null nếu không tưới được
+// Qua đêm: cây lớn thêm / ra trái mới theo số ngày đã tưới — logic tách riêng
+// khỏi UI để test mô phỏng được (trả về danh sách sự kiện trong đêm).
+export function overnightTrees() {
+  var events = [];
+  G.trees.forEach(function (t, ti) {
+    if (!t.type) return;
+    var def = FRUIT_TREES[t.type];
+    if (t.state === "growing") {
+      if (t.watered) {
+        t.progress += 1 / def.growDays;
+        if (t.progress >= 1) {
+          t.progress = 1; t.state = "mature"; t.ripen = 0; t.fruitReady = 0;
+          events.push({ kind: "matured", tree: ti, type: t.type });
+        }
+      }
+      t.watered = false; drawTree(ti);
+    } else if (t.state === "mature") {
+      if (t.fruitReady === 0 && t.watered) {
+        t.ripen = (t.ripen || 0) + 1;
+        if (t.ripen >= def.fruitCycle) {
+          t.fruitReady = def.fruitPerCycle; t.ripen = 0;
+          events.push({ kind: "fruited", tree: ti, type: t.type, n: t.fruitReady });
+        }
+      }
+      t.watered = false; drawTree(ti);
+    }
+  });
+  return events;
+}
+
+// Tưới cây (đang lớn hoặc đã lớn, 1 lần/ngày) — trả về thông báo hoặc null
 export function waterTree(i) {
   var t = G.trees[i];
-  if (!t.type || t.state !== "growing" || t.watered || G.can <= 0) return null;
+  if (!t.type || (t.state !== "growing" && t.state !== "mature") || t.watered || G.can <= 0) return null;
   G.can--; t.watered = true; t.waterings++;
   G.wateredToday++;
   drawTree(i);
-  return "Tưới cây " + FRUIT_TREES[t.type].name + " (" + t.waterings + "/" + FRUIT_TREES[t.type].waters + " lần)";
+  var def = FRUIT_TREES[t.type];
+  if (t.state === "growing")
+    return "Tưới cây " + def.name + " — cây lớn thêm vào sáng mai (" + Math.round(t.progress * 100) + "%, đủ " + def.growDays + " ngày tưới là lớn)";
+  var left = def.fruitCycle - (t.ripen || 0);
+  return "Tưới cây " + def.name + " — cây được chăm, chăm đủ " + def.fruitCycle + " ngày thì ra " + def.fruitPerCycle + " " + def.fruitName.toLowerCase() + " (đã chăm " + (t.ripen || 0) + "/" + def.fruitCycle + " ngày)";
 }
 
 // Hái trái chín — trả về số trái hái được

@@ -4,7 +4,8 @@
  * GIAI ĐOẠN 2: vật nuôi mới ngoài gà —
  *  - Đàn vịt (3 con) ở bờ ao: mua ở sạp, cho ăn cám → vài chục giây sau đẻ 2–3 trứng vịt ở ổ.
  *  - Lợn con trong chuồng lợn (góc tây sân): mua lợn con, cho ăn mỗi ngày,
- *    ăn đủ 3 ngày thì lớn, bán 120.000đ/con. Cần mua chuồng lợn trước.
+ *    ăn đủ 7 ngày thì lớn, bán 120.000đ/con. Tốn 5.000đ cám/con mỗi ngày,
+ *    tính ra lãi 25.000đ/con sau 1 tuần. Cần mua chuồng lợn trước.
  * Hình dáng vẽ bằng khối đơn giản giống đàn gà có sẵn, đặt gần ao / góc sân.
  */
 import * as THREE from 'three';
@@ -95,7 +96,7 @@ export function refreshPigs() {
     pig.visible = show;
     if (show) {
       var grown = i < G.pigs.grown; // con đã lớn to hơn
-      var s = grown ? 1.1 : 0.6 + Math.min(0.4, G.pigs.growDays * 0.13);
+      var s = grown ? 1.1 : 0.6 + Math.min(0.4, (G.pigs.days[i] || 0) / LIVESTOCK.piglet.growDays * 0.4);
       pig.scale.set(s, s, s);
     }
   });
@@ -126,7 +127,9 @@ export function collectDuckEggs() {
   return n;
 }
 
-// Cho lợn ăn — trả về thông báo hoặc null
+// Cho lợn ăn — trả về thông báo hoặc null. Mỗi con lợn có tiến độ riêng
+// (days[i]): cho ăn đủ growDays (7) hôm thì con đó lớn. Lợn chưa lớn mà bỏ
+// đói 1 hôm thì hôm đó không tính — phải cho ăn đều cả tuần mới lớn được.
 export function feedPigs() {
   if (!G.owned.pigpen || G.pigs.count <= 0 || G.pigs.fedToday) return null;
   var cost = LIVESTOCK.piglet.feed * G.pigs.count;
@@ -134,21 +137,24 @@ export function feedPigs() {
   G.money -= cost;
   G.spentToday += cost;
   G.pigs.fedToday = true;
-  G.pigs.growDays++;
-  // ăn đủ 3 ngày: một con lớn (lớn lần lượt từng con)
-  if (G.pigs.growDays >= LIVESTOCK.piglet.growDays && G.pigs.grown < G.pigs.count) {
-    G.pigs.grown++;
-    G.pigs.growDays = 0;
+  var started = G.pigs.grown;
+  for (var i = started; i < G.pigs.count; i++) {
+    G.pigs.days[i] = (G.pigs.days[i] || 0) + 1;
+    if (G.pigs.days[i] >= LIVESTOCK.piglet.growDays) G.pigs.grown++;
   }
   refreshPigs();
-  return "Cho lợn ăn hết " + (cost).toLocaleString("vi-VN") + "đ — lợn đang lớn dần (" + G.pigs.grown + "/" + G.pigs.count + " con lớn)";
+  var youngest = G.pigs.count > G.pigs.grown ? (G.pigs.days[G.pigs.grown] || 0) : LIVESTOCK.piglet.growDays;
+  return "Cho lợn ăn hết " + (cost).toLocaleString("vi-VN") + "đ — lợn đang lớn dần (" + G.pigs.grown + "/" + G.pigs.count + " con lớn, con nhỏ nhất đã ăn " + youngest + "/" + LIVESTOCK.piglet.growDays + " hôm)";
 }
 
-// Bán 1 con lợn đã lớn — trả về số tiền hoặc 0
+// Bán 1 con lợn đã lớn — trả về số tiền hoặc 0. Lợn lớn là những con đầu
+// trong days[] (đã đủ ngày ăn), bán con lớn nhất đầu tiên, con đang lớn giữ
+// nguyên tiến độ của nó.
 export function sellGrownPig() {
   if (!G.owned.pigpen || G.pigs.grown <= 0) return 0;
   G.pigs.grown--;
   G.pigs.count--;
+  G.pigs.days.splice(0, 1);
   var price = LIVESTOCK.piglet.sell;
   G.money += price;
   G.totalEarned += price;

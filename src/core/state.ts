@@ -55,13 +55,18 @@ import { CROPS, GOODS, priceOf } from './data';
       /* ===== GIAI ĐOẠN 2: nâng cấp nhà, cây ăn quả, chăn nuôi, giá theo ngày ===== */
       owned: { tv: false, fridge: false, bike: false, land: false, coopBig: false, pigpen: false, houseFixed: false },
       saplings: { xoai: 0, oi: 0 },
+      // PHASE 2: cây ăn quả (3 mô đất) — state: "empty" | "growing" | "mature";
+      // progress: 0..1 theo số ngày tưới (growDays); ripen: số ngày chăm kể từ
+      // đợt trái trước (đủ fruitCycle ngày thì ra trái mới); fruitReady: trái chín
+      // đang chờ hái. Nuôi lợn theo từng con: days[i] = số hôm con i đã ăn đủ
+      // (đủ growDays hôm thì lớn), pigs.grown = số con đã lớn.
       trees: [
-        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 },
-        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 },
-        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, fruitReady: 0 }
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, ripen: 0, fruitReady: 0 },
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, ripen: 0, fruitReady: 0 },
+        { type: null, state: "empty", progress: 0, watered: false, waterings: 0, ripen: 0, fruitReady: 0 }
       ],
       ducks: { owned: false, fed: false, timer: 0, ready: 0 },
-      pigs: { count: 0, grown: 0, fedToday: false, growDays: 0 },
+      pigs: { count: 0, grown: 0, fedToday: false, days: [] },
       priceDay: {},
       boughtToday: 0, duckEggsToday: 0, fruitToday: 0, pigsSoldToday: 0, spentToday: 0
     };

@@ -92,9 +92,10 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           else if (G.saplings.oi > 0) best.label = "Trồng cây ổi giống ở đây";
           else best.label = "Chỗ trồng cây ăn quả — mua cây giống ở sạp cô Tư";
         }
-        else if (tr.state === "growing") best.label = !tr.watered ? (G.can > 0 ? "Tưới cây " + tDef.name + " (" + tr.waterings + "/" + tDef.waters + " lần)" : "Bình hết nước — ra giếng múc") : tDef.name + " đang lớn (" + Math.round(tr.progress * 100) + "%)";
+        else if (tr.state === "growing") best.label = !tr.watered ? (G.can > 0 ? "Tưới cây " + tDef.name + " — lớn thêm vào sáng mai (" + Math.round(tr.progress * 100) + "%)" : "Bình hết nước — ra giếng múc") : tDef.name + " đã tưới hôm nay — lớn thêm vào sáng mai (" + Math.round(tr.progress * 100) + "%)";
         else if (tr.fruitReady > 0) best.label = "Hái " + tr.fruitReady + " " + tDef.fruitName.toLowerCase() + " chín";
-        else best.label = tDef.name + " đã lớn — mai ra trái mới";
+        else if (tr.state === "mature") best.label = tDef.name + " đã lớn — tưới mỗi ngày, chăm đủ " + tDef.fruitCycle + " ngày thì ra " + tDef.fruitPerCycle + " trái (" + (tr.ripen || 0) + "/" + tDef.fruitCycle + " ngày)";
+        else best.label = tDef.name + " đã lớn";
       }
       else if (best.kind === "duck") {
         if (!G.ducks.owned) best.label = "Đàn vịt ở bờ ao — mua vịt ở sạp cô Tư";
@@ -107,7 +108,7 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         else if (G.pigs.count === 0) best.label = "Chuồng lợn trống — mua lợn con ở sạp";
         else if (G.pigs.grown > 0) best.label = "Bán 1 con lợn đã lớn (" + fmt(LIVESTOCK.piglet.sell) + ")";
         else if (!G.pigs.fedToday) best.label = "Cho lợn ăn cám (" + fmt(LIVESTOCK.piglet.feed * G.pigs.count) + ")";
-        else best.label = "Lợn đã ăn no, đang lớn dần (" + G.pigs.grown + "/" + G.pigs.count + " con lớn)";
+        else best.label = "Lợn đã ăn no, đang lớn dần (con nhỏ nhất đã ăn " + (G.pigs.days[G.pigs.grown] || 0) + "/" + LIVESTOCK.piglet.growDays + " hôm)";
       }
       else if (best.kind === "husband") best.label = "Nói chuyện với anh";
       else if (best.kind === "thief") best.label = "Đuổi trộm ra khỏi sân!";
@@ -142,7 +143,7 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
       } else {
         // PHASE 2: trộm cũng hái trái chín trên cây ăn quả
         var ripeTree = -1;
-        G.trees.forEach(function (t, ti) { if (t.type === "mature" && t.fruitReady > 0 && ripeTree < 0) ripeTree = ti; });
+        G.trees.forEach(function (t, ti) { if (t.state === "mature" && t.fruitReady > 0 && ripeTree < 0) ripeTree = ti; });
         if (ripeTree >= 0) {
           var rt = G.trees[ripeTree];
           th.lootKind = "tree"; th.lootType = rt.type; th.loot = rt.fruitReady;
@@ -345,26 +346,33 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           toast(vlines[Math.floor(Math.random() * vlines.length)]);
         }
       } else if (t.kind === "tree") {
-        // PHASE 2: cây ăn quả — trồng cây giống, tưới 2 lần, hái trái mỗi ngày
+        // PHASE 2: cây ăn quả — trồng cây giống, tưới mỗi ngày, cây lớn theo ngày
+        // (xoài 5 ngày, ổi 4 ngày); cây lớn rồi chăm tưới đủ kỳ (xoài 3 ngày,
+        // ổi 2 ngày) mới ra 1 đợt trái, hái hết mới ra đợt sau
         var ti = t.treeIndex, tr2 = G.trees[ti];
         if (!tr2.type) {
           var kind = G.saplings.xoai > 0 ? "xoai" : (G.saplings.oi > 0 ? "oi" : null);
           if (!kind) { toast("Chưa có cây giống — ra sạp cô Tư mua cây xoài hoặc cây ổi giống đã."); return; }
           G.saplings[kind]--;
-          tr2.type = kind; tr2.state = "growing"; tr2.progress = 0; tr2.watered = false; tr2.waterings = 0; tr2.fruitReady = 0;
+          tr2.type = kind; tr2.state = "growing"; tr2.progress = 0; tr2.watered = false; tr2.waterings = 0; tr2.ripen = 0; tr2.fruitReady = 0;
           drawTree(ti); sndPlant();
-          toast("Đã trồng cây " + FRUIT_TREES[kind].name + ". Tưới nước 2 lần cho cây lớn nhé.");
+          toast("Đã trồng cây " + FRUIT_TREES[kind].name + ". Tưới mỗi ngày, đủ " + FRUIT_TREES[kind].growDays + " ngày tưới là cây lớn.");
           saveGame();
         } else if (tr2.state === "growing") {
           var wmsg = waterTree(ti);
           if (wmsg) { sndWater(); sndPour(); toast(wmsg + "."); saveGame(); }
-          else if (tr2.watered) toast(FRUIT_TREES[tr2.type].name + " đã tưới rồi, đang lớn dần.");
+          else if (tr2.watered) toast(FRUIT_TREES[tr2.type].name + " đã tưới rồi, lớn thêm vào sáng mai.");
           else toast("Bình hết nước — ra giếng múc đầy bình trước.");
         } else if (tr2.state === "mature" && tr2.fruitReady > 0) {
           var n2 = harvestTree(ti);
           if (n2 > 0) { sndHarvest(); toast("Hái được " + n2 + " " + FRUIT_TREES[tr2.type].fruitName.toLowerCase() + " chín vào giỏ.", true); saveGame(); }
+        } else if (tr2.state === "mature") {
+          var wmsg2 = waterTree(ti);
+          if (wmsg2) { sndWater(); sndPour(); toast(wmsg2 + "."); saveGame(); }
+          else if (tr2.watered) toast(FRUIT_TREES[tr2.type].name + " đã tưới hôm nay rồi — chăm đủ ngày là ra trái.");
+          else toast("Bình hết nước — ra giếng múc đầy bình trước.");
         } else {
-          toast(FRUIT_TREES[tr2.type].name + " đã lớn — sáng mai ra trái mới.");
+          toast(FRUIT_TREES[tr2.type].name + " đã lớn — cứ tưới mỗi ngày, chăm đủ ngày là ra trái.");
         }
       } else if (t.kind === "duck") {
         // PHASE 2: vịt ở bờ ao — cho ăn cám rồi nhặt trứng vịt
@@ -381,7 +389,8 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           toast("Không đủ tiền mua cám cho vịt — cần 4.000đ.");
         }
       } else if (t.kind === "pigpen") {
-        // PHASE 2: chuồng lợn — cho ăn mỗi ngày, đủ 3 hôm thì lớn, bán được tiền
+        // PHASE 2 (cân bằng lại): chuồng lợn — cho ăn mỗi ngày, mỗi con ăn đủ
+        // 7 hôm thì lớn, bán được tiền; lỡ bỏ đói 1 hôm thì hôm đó không tính
         if (!G.owned.pigpen) { toast("Chỗ này xây được chuồng lợn — mua ở sạp cô Tư (50.000đ)."); return; }
         if (G.pigs.count === 0) { toast("Chuồng lợn trống — ra sạp mua lợn con (60.000đ/con)."); return; }
         if (G.pigs.grown > 0) {
@@ -394,7 +403,7 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           var pmsg = feedPigs();
           if (pmsg) { sndCluck(); toast(pmsg + "."); saveGame(); }
         } else {
-          toast("Lợn đã ăn no rồi — mai cho ăn tiếp, ăn đủ 3 hôm là lớn.");
+          toast("Lợn đã ăn no rồi — mai cho ăn tiếp, mỗi con ăn đủ " + LIVESTOCK.piglet.growDays + " hôm là lớn.");
         }
       }
       updateHUD();

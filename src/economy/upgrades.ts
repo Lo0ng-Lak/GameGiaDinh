@@ -91,8 +91,9 @@ export function buyPiglet() {
   G.spentToday += def.price;
   G.boughtToday++;
   G.pigs.count++;
+  G.pigs.days.push(0); // con mới: chưa ăn hôm nào
   refreshPigs();
-  toast("Mua lợn con — cho ăn mỗi ngày 3 hôm là lớn, bán được " + fmt(def.sell) + ".");
+  toast("Mua lợn con — cho ăn mỗi ngày, ăn đủ " + def.growDays + " hôm là lớn, bán được " + fmt(def.sell) + ".");
   checkQuestsAchievements();
   updateHUD(); saveGame();
   return true;
@@ -103,6 +104,7 @@ export function sellPigFromShop() {
   if (G.pigs.grown <= 0) return 0;
   var price = LIVESTOCK.piglet.sell;
   G.pigs.grown--; G.pigs.count--;
+  G.pigs.days.splice(0, 1); // bán con lớn nhất đầu tiên, con đang lớn giữ tiến độ
   G.money += price; G.totalEarned += price; G.earnedToday += price; G.pigsSoldToday++;
   refreshPigs();
   toast("Bán 1 con lợn đã lớn — +" + fmt(price) + ".");

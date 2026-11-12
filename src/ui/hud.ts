@@ -5,7 +5,7 @@
  * Duong dan dich khi chuyen sang TypeScript + Vite: src/ui/hud.ts
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
-import { CROP_KEYS } from '../core/data';
+import { CROP_KEYS, LIVESTOCK } from '../core/data';
 import { G, SCHOOL_BELL, fmt, fmtTime, produceTotal } from '../core/state';
 import { checkQuestsAchievements, renderQuestCard, renderQuestPanel } from '../events/quests';
 import { plots } from '../farming/garden';
@@ -75,17 +75,18 @@ import { AMB, sndCoin } from '../world/sound';
       if (mature) return "Có luống <b>rau đã chín</b> (vòng vàng) — lại gần bấm E để thu hoạch.";
       if (G.fish.state === "bite") return "<b>Cá đang cắn câu ở ao!</b> — chạy nhanh ra bờ ao giật cần.";
       if (G.chicken.ready > 0) return "Ổ gà có <b>" + G.chicken.ready + " trứng</b> — ra chuồng gà nhặt trứng vào giỏ.";
-      // PHASE 2: trái cây chín, trứng vịt
-      var treeRipe = G.trees.filter(function (t) { return t.type === "mature" && t.fruitReady > 0; }).length;
+      // PHASE 2: trái cây chín, trứng vịt (sửa lỗi cũ: so sánh t.type thay vì
+      // t.state nên gợi ý này không bao giờ hiện)
+      var treeRipe = G.trees.filter(function (t) { return t.state === "mature" && t.fruitReady > 0; }).length;
       if (treeRipe > 0) return "Cây ăn quả có <b>trái chín</b> (vòng vàng) — lại gần bấm E để hái.";
       if (G.ducks.owned && G.ducks.ready > 0) return "Ổ vịt có <b>" + G.ducks.ready + " trứng vịt</b> — ra bờ ao nhặt trứng vào giỏ.";
       if (!G.cookedToday && G.minutes >= 630 && G.minutes < 1080)
         return "Nhớ ghé <b>bếp củi nấu cơm</b> cho cả nhà — có cá hay trứng trong giỏ thì dùng luôn.";
       if (G.husband.state === "walking") return "Anh đi làm thuê đang về tới — ra hiên đón anh nhé.";
       if (produceTotal() > 0) return "Giỏ đang có rau — mang ra <b>sạp cô Tư</b> ở đầu đường để bán, mua thêm hạt.";
-      // PHASE 2: lợn chưa ăn, cây ăn quả khát nước
-      if (G.owned.pigpen && G.pigs.count > 0 && !G.pigs.fedToday) return "Lợn trong chuồng <b>chưa ăn</b> — ra góc sân cho lợn ăn cám, ăn đủ 3 hôm là lớn.";
-      var dryTree = G.trees.some(function (t) { return t.type === "growing" && !t.watered; });
+      // PHASE 2: lợn chưa ăn, cây ăn quả khát nước (sửa lỗi cũ: t.type -> t.state)
+      if (G.owned.pigpen && G.pigs.count > 0 && !G.pigs.fedToday) return "Lợn trong chuồng <b>chưa ăn</b> — ra góc sân cho lợn ăn cám, mỗi con ăn đủ " + LIVESTOCK.piglet.growDays + " hôm là lớn.";
+      var dryTree = G.trees.some(function (t) { return t.state === "growing" && !t.watered; });
       if (dryTree) return "Cây ăn quả đang <b>khô nước</b> (giọt xanh) — múc nước ở giếng rồi tưới, cây mới lớn tiếp.";
       var dry = plots.some(function (p) { return p.state === "growing" && !p.watered; });
       if (dry) return "Có luống đang <b>khô nước</b> (giọt xanh) — múc nước ở giếng rồi tưới, cây mới lớn tiếp.";

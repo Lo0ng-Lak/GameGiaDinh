@@ -15,7 +15,7 @@ import './ui/goto';
 import './ui/structure';
 import { currentTarget, findTarget, refreshEggs, setCurrentTarget, thiefSteal } from './activities/interactions';
 import { deliverChild } from './activities/school';
-import { CROPS, FRUIT_TREES, LIVESTOCK } from './core/data';
+import { CROPS, LIVESTOCK } from './core/data';
 import { endDay } from './core/day';
 import { SAVE_KEY, applySave, pendingSave, readSave, saveGame, setPendingSave } from './core/save';
 import { DAY_END, G, SCHOOL_BELL, fmt } from './core/state';
@@ -23,7 +23,6 @@ import { rollPrices, shopOverlay } from './economy/shop';
 import { applyUpgrades } from './world/upgrades';
 import { addMemory, rollQuests } from './events/quests';
 import { drawCrop, plots } from './farming/garden';
-import { drawTree } from './farming/trees';
 import { chickenLayCount, refreshDuckEggs } from './farming/livestock';
 import { child, childHome, childParts } from './npc/child';
 import { husband, husbandParts, husbandPath } from './npc/husband';
@@ -125,24 +124,8 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
             if (mk.name === "ring") { var s = 1 + Math.sin(tNow * 2.4) * 0.05; mk.scale.set(s, s, 1); }
           });
         });
-        // PHASE 2: cây ăn quả lớn dần — tưới đủ 2 lần mới chín (giống cà chua, bí đỏ)
-        G.trees.forEach(function (tr, ti) {
-          if (tr.type && tr.state === "growing" && tr.watered) {
-            var tdef = FRUIT_TREES[tr.type];
-            tr.progress += dt / tdef.grow;
-            if (tdef.waters === 2 && tr.waterings === 1 && tr.progress >= 0.5) {
-              tr.watered = false; tr.progress = 0.5; drawTree(ti);
-              toast(tdef.name + " khô nước rồi — tưới thêm lần nữa nhé.");
-            }
-            if (tr.progress >= 1) {
-              tr.progress = 1; tr.state = "mature"; tr.fruitReady = tdef.fruitPerDay; drawTree(ti); sndHarvest();
-              toast(tdef.name + " đã lớn, ra " + tr.fruitReady + " " + tdef.fruitName.toLowerCase() + " chín — hái mang bán nhé!");
-            } else if (Math.floor(tr.progress * 20) !== tr._lastStage) {
-              tr._lastStage = Math.floor(tr.progress * 20);
-              if (tr._lastStage % 7 === 0) drawTree(ti);
-            }
-          }
-        });
+        // (Cây ăn quả lớn theo ngày — xem overnightTrees() ở cuối ngày, không
+        // lớn dần theo giây nữa, để khớp với tuổi cây tính bằng ngày.)
       }
 
       /* --- Di chuyển --- */

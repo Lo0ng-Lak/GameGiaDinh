@@ -74,11 +74,28 @@ GameGiaDinh/
 ## Giai đoạn 2 — Làm giàu: nâng cấp nhà, kinh tế, mua sắm
 
 - **Nâng cấp nhà cửa:** mua ở sạp cô Tư — Tivi (150.000đ, +2 sao, màn hình sáng lúc chiều tối), Tủ lạnh (180.000đ, +1 sao, nấu ăn được +2 sao), Xe máy (250.000đ, +2 sao, đi nhanh hơn ~40%), Mở rộng đất trồng (120.000đ — thêm 4 luống, tổng 16), Mở rộng chuồng gà (80.000đ — gà đẻ 5–7 trứng), Xây chuồng lợn (50.000đ). Sửa nhà bằng Quỹ sửa nhà khi đủ 300.000đ (tường sơn mới, đèn lồng đỏ, +2 sao).
-- **Cây ăn quả:** mua cây xoài / cây ổi giống ở sạp, trồng ở 3 mô đất trống trong sân, tưới 2 lần thì lớn; mỗi sáng ra trái mới (xoài 3, ổi 2), hái bán được tiền. Trộm cũng hái trộm trái chín nếu không canh.
-- **Vật nuôi mới:** Đàn vịt (30.000đ, ở bờ ao) — cho ăn cám 4.000đ, ~30 giây sau đẻ 2–3 trứng vịt. Lợn con (60.000đ/con, tối đa 2, cần chuồng lợn) — cho ăn 5.000đ/con mỗi ngày, ăn đủ 3 hôm là lớn, bán 120.000đ/con.
+- **Cây ăn quả (cân bằng lại 12/11):** mua cây xoài / cây ổi giống ở sạp, trồng ở 3 mô đất trống trong sân. Cây lớn THEO NGÀY, không theo số lần tưới: tưới mỗi ngày thì lớn thêm 1 phần — xoài cần 5 ngày tưới, ổi 4 ngày mới trưởng thành. Cây trưởng thành phải chăm tưới đủ kỳ mới ra trái: xoài 3 ngày chăm → 2 xoài (bán 12.000đ/quả), ổi 2 ngày chăm → 2 ổi (8.000đ/quả); không tưới thì không ra trái, trái chưa hái hết thì chưa ra đợt mới. Trộm cũng hái trộm trái chín nếu không canh.
+- **Vật nuôi mới:** Đàn vịt (30.000đ, ở bờ ao) — cho ăn cám 4.000đ, ~30 giây sau đẻ 2–3 trứng vịt. Lợn con (60.000đ/con, tối đa 2, cần chuồng lợn) — cho ăn 5.000đ/con mỗi ngày, mỗi con ăn đủ 7 hôm mới lớn, bán 120.000đ/con (cả cám tốn ~95.000đ/con, lãi ~25.000đ/con sau 1 tuần); bỏ đói 1 hôm thì hôm đó không tính.
 - **Giá bán theo ngày:** giá nông sản lên xuống ±10% mỗi sáng (bảng giá ở sạp cô Tư, có dấu ▲/▼) — bán lúc được giá thì lời hơn.
 - **Nhiệm vụ & thành tựu mới:** nhiệm vụ mua sắm, nhặt trứng vịt, hái trái cây, bán lợn; thành tựu "Nhà cửa khang trang", "Vườn rộng nhà to", "Trang trại nhỏ". Tổng kết cuối ngày ghi rõ tiền mua đồ, đồ đã mua, trứng vịt, trái cây, lợn bán được.
-- Mọi thứ đều lưu vào `localStorage` cùng save cũ (đồ đã mua, cây, vịt, lợn, giá theo ngày) — tải lại game vẫn còn.
+- Mọi thứ đều lưu vào `localStorage` cùng save cũ (đồ đã mua, cây, vịt, lợn, giá theo ngày) — tải lại game vẫn còn. Save từ bản Phase 2 cũ vẫn đọc được: cây cũ chưa có số ngày chăm (`ripen`) thì bắt đầu kỳ chăm mới từ 0, lợn cũ giữ số hôm ăn chung thành tiến độ của con đang lớn nhất (capped ở 6/7 ngày).
+
+## Cân bằng kinh tế (sau bản sửa 12/11 — số cũ → số mới)
+
+| Hạng mục | Trước | Sau | Ý nghĩa |
+|---|---|---|---|
+| Xoài | 3 trái × 14.000đ **mỗi sáng** = 42.000đ/ngày | 2 trái × 12.000đ **mỗi 3 ngày chăm** = 8.000đ/ngày | Cây xoài là khoản đầu tư dài hạn, không còn "máy in tiền" |
+| Ổi | 2 trái × 9.000đ mỗi sáng = 18.000đ/ngày | 2 trái × 8.000đ mỗi 2 ngày chăm = 8.000đ/ngày | Tương tự |
+| Cây lớn | Sau 2 lần tưới (~1 phút) | Xoài 5 ngày tưới, ổi 4 ngày tưới | Lớn theo ngày trong game, có hiển thị % tiến độ |
+| Lợn lớn | Ăn đủ 3 hôm, chung 1 bộ đếm cả đàn | Mỗi con ăn đủ 7 hôm, tính riêng từng con | Nuôi 1 con: mua 60.000đ + cám 35.000đ = 95.000đ, bán 120.000đ → lãi 25.000đ/tuần |
+| Sinh hoạt | 12.000–16.000đ/ngày | Không đổi | 3 cây ăn quả chăm đều cho ~24.000đ/ngày — đủ sống dư một chút, nhưng phải chăm mỗi ngày |
+
+Kết quả mô phỏng 30 ngày (chạy `node test/economy-sim.mjs`, dùng code thật cho cây/lợn/vịt/giá/sinh hoạt, hạt giống tính bằng số liệu thật của CROPS, tiền công chồng đúng phân phối game):
+- **Cây ăn quả:** mô hình mới cho **387.000đ/30 ngày** (2 cây, chăm đều) — mô hình cũ cho **1.740.000đ** (giảm **78%**). Xoài 2 trái × 12.000đ/3 ngày, ổi 2 × 8.000đ/2 ngày — khoản đầu tư dài hạn, không còn "máy in tiền".
+- **Lợn:** 1 con mua 60.000đ + cám 7×5.000đ = 95.000đ, bán 120.000đ → **lãi 25.000đ/con/tuần** (test `test/save-shopping.test.mjs` kiểm chứng đúng số này bằng hàm thật).
+- **Vịt:** cho ăn 4.000đ/ngày, đẻ 2–3 trứng (5.000đ/quả) → lãi ròng khoảng **7.000đ/ngày**.
+- **Người chơi chăm chỉ** (12 luống cà chua + cây + lợn + vịt): 60.000đ → **12,4 triệu sau 30 ngày** (~411.000đ/ngày). **Người chơi vừa phải** (6 luống cải + 2 cây): 60.000đ → **3,2 triệu sau 30 ngày** (~104.000đ/ngày). Đầu game vẫn chật vật thật: ngày 1–6 phải tính tiền mua hạt từng ngày, chỉ sau ~1 tuần mới dư dả.
+- **Thành thật về chỗ chưa cân bằng:** sau khi sửa cây/lợn, thu nhập lớn nhất không còn ở cây ăn quả mà ở **cà chua** — 12 luống cà chua cho ~13 triệu/30 ngày (hạt 10.000đ, bán 2×26.000đ/vụ). Tiền công chồng (~50.000đ/ngày, đúng phân phối game) cũng một mình đã đủ sống dư sinh hoạt (~14.000đ/ngày). Đây là số liệu gốc từ Giai đoạn 1, không nằm trong phạm vi sửa lần này (chỉ cây ăn quả + lợn theo review) — nếu Sư Huynh muốn siết tiếp thì cần sửa giá/lợi nhuận rau (đặc biệt cà chua) hoặc tăng chi tiêu.
 
 ## Ghi chú về bản chuyển đổi này
 

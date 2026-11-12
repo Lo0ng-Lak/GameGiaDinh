@@ -20,21 +20,29 @@
       ca:    { name: "Cá rô ao", sell: 22000 },
       chuoi: { name: "Nải chuối", sell: 15000 },
       trungvit: { name: "Trứng vịt", sell: 5000 },
-      xoai: { name: "Xoài chín", sell: 14000 },
-      oi:   { name: "Ổi chín", sell: 9000 }
+      xoai: { name: "Xoài chín", sell: 12000 },
+      oi:   { name: "Ổi chín", sell: 8000 }
     };
     export var GOOD_KEYS = ["trung", "ca", "chuoi", "trungvit", "xoai", "oi"];
     export function priceOf(k) { return CROPS[k] ? CROPS[k].sell : GOODS[k].sell; }
 
-    // — PHASE 2: cây ăn quả (mua cây giống, tưới 2 lần, hái trái mỗi ngày) —
+    // — PHASE 2 (cân bằng lại, sau review 12/11): cây ăn quả lớn THEO NGÀY, không phải
+    // sau 2 lần tưới. Tưới mỗi ngày thì cây lớn thêm 1/growDays; đủ growDays ngày tưới
+    // mới thành cây trưởng thành. Cây trưởng thành cần chăm tưới đủ fruitCycle ngày
+    // mới ra 1 đợt trái (fruitPerCycle trái); trái không ra nữa khi chưa hái hết
+    // đợt cũ. Giá trái cũng hạ xuống để 3 cây tối đa chỉ cho ~24.000đ/ngày có chăm
+    // đều (xoài 2×12.000đ/3 ngày, ổi 2×8.000đ/2 ngày) — khoản đầu tư dài hạn, không
+    // còn là "máy in tiền" (cũ: xoài 3×14.000đ = 42.000đ/ngày, ổi 18.000đ/ngày). —
     export var FRUIT_TREES = {
-      xoai: { name: "Cây xoài", sapling: 25000, grow: 170, waters: 2, fruit: "xoai", fruitName: "Xoài chín", fruitPerDay: 3 },
-      oi:   { name: "Cây ổi",   sapling: 18000, grow: 130, waters: 2, fruit: "oi",   fruitName: "Ổi chín",  fruitPerDay: 2 }
+      xoai: { name: "Cây xoài", sapling: 25000, growDays: 5, fruitCycle: 3, fruitPerCycle: 2, fruit: "xoai", fruitName: "Xoài chín" },
+      oi:   { name: "Cây ổi",   sapling: 18000, growDays: 4, fruitCycle: 2, fruitPerCycle: 2, fruit: "oi",   fruitName: "Ổi chín" }
     };
-    // — PHASE 2: vật nuôi mới —
+    // — PHASE 2: vật nuôi mới — lợn lớn sau 7 hôm cho ăn đều (cũ: 3 hôm), mỗi con
+    // tốn 5.000đ cám/ngày suốt thời gian nuôi: chi phí 60.000đ + 7×5.000đ = 95.000đ,
+    // bán 120.000đ → lãi 25.000đ/con sau 1 tuần, không còn nuôi vài hôm là giàu. —
     export var LIVESTOCK = {
       duckFlock: { name: "Đàn vịt (3 con)", price: 30000, feed: 4000, eggMin: 2, eggMax: 3, eggKind: "trungvit" },
-      piglet:    { name: "Lợn con", price: 60000, feed: 5000, growDays: 3, sell: 120000, max: 2 }
+      piglet:    { name: "Lợn con", price: 60000, feed: 5000, growDays: 7, sell: 120000, max: 2 }
     };
     // — PHASE 2: nâng cấp nhà cửa —
     export var UPGRADES = {

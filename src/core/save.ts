@@ -6,6 +6,7 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import { G } from './state';
+import { LIVESTOCK } from './data';
 import { rollQuests } from '../events/quests';
 import { drawCrop, plots, ensureExtraPlots } from '../farming/garden';
 import { drawTree } from '../farming/trees';
@@ -27,7 +28,7 @@ import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
           // PHASE 2: đồ đã mua, cây ăn quả, vịt, lợn, giá theo ngày
           owned: G.owned, saplings: G.saplings, priceDay: G.priceDay,
           trees: G.trees.map(function (t) {
-            return { type: t.type, state: t.state, progress: t.progress, watered: t.watered, waterings: t.waterings, fruitReady: t.fruitReady };
+            return { type: t.type, state: t.state, progress: t.progress, watered: t.watered, waterings: t.waterings, ripen: t.ripen || 0, fruitReady: t.fruitReady };
           }),
           ducks: G.ducks, pigs: G.pigs,
           plots: plots.map(function (p) {
@@ -59,10 +60,24 @@ import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
         var t = G.trees[i]; if (!t || !st) return;
         t.type = st.type || null; t.state = st.state || "empty";
         t.progress = st.progress || 0; t.watered = !!st.watered; t.waterings = st.waterings || 0;
+        t.ripen = st.ripen || 0; // save cũ không có ripen -> 0, cây bắt đầu kỳ chăm mới
         t.fruitReady = st.fruitReady || 0; drawTree(i);
       });
       if (d.ducks) { G.ducks = d.ducks; refreshDuckEggs(); }
-      if (d.pigs) { G.pigs = d.pigs; refreshPigs(); }
+      if (d.pigs) {
+        G.pigs = d.pigs;
+        // Save cũ (Phase 2 v1): growDays là số hôm ăn CHUNG của cả đàn -> chuyển
+        // sang days[] theo từng con; con đang lớn nhất giữ số hôm đã ăn (tối đa
+        // growDays-1 để không lớn ngay khi tải), con khác bắt đầu từ 0.
+        if (!Array.isArray(G.pigs.days)) {
+          var oldDays = typeof G.pigs.growDays === "number" ? G.pigs.growDays : 0;
+          G.pigs.days = [];
+          for (var pi = 0; pi < G.pigs.count; pi++)
+            G.pigs.days[pi] = pi === G.pigs.grown ? Math.min(oldDays, LIVESTOCK.piglet.growDays - 1) : 0;
+        }
+        delete G.pigs.growDays;
+        refreshPigs();
+      }
       if (d.plots) d.plots.forEach(function (sp, i) {
         var p = plots[i]; if (!p) return;
         p.state = sp.state || "empty"; p.type = sp.type || null;
