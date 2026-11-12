@@ -333,6 +333,8 @@
           <li><b>Nấu cơm:</b> ghé bếp củi nấu bữa cơm nhà — có cá hay trứng trong giỏ thì dùng luôn, không thì tốn 8.000đ đồ ăn. Nấu xong cả nhà vui, được +1 sao.</li>
           <li><b>Hái chuối:</b> buồng chuối chín vàng ở các cây chuối quanh sân thì hái mang bán; hái xong cây ra buồng mới.</li>
           <li><b>Chiều về:</b> khoảng 17:00 anh đi làm thuê về tới hiên, mang theo tiền công ngày — hôm được hôm ít, như đi làm thật.</li>
+          <li><b>Coi chừng trộm:</b> có hôm một gã lạ lẻn vào sân hốt trứng với rau — nghe chó mực sủa ầm thì chạy lại gần bấm <b>E</b> đuổi nó ra trước khi nó vác bao chạy thoát. Đuổi kịp thì giữ nguyên của cải.</li>
+          <li><b>Chuyện bất ngờ khác:</b> có hôm mưa rào đổ xuống tưới rau miễn phí, có hôm bà Tư hàng xóm qua chơi biếu hạt giống — để ý mục tiêu ở góc trái nhé.</li>
           <li>Đi bằng <b>WASD</b>, làm việc bằng <b>E</b>. Nhìn quanh: <b>bấm một lần vào cảnh rồi di chuột tự do</b> — không cần giữ chuột; bấm <b>Esc</b> khi muốn thả chuột ra. Trên điện thoại: cần điều khiển để đi, vuốt để nhìn, nút <b>Chạm</b> để làm việc.</li>
         </ul>
         <button class="big-btn" id="btn-start" type="button">Ra sân, bắt đầu ngày mới</button>
@@ -377,7 +379,14 @@
       eggsToday: 0, fishToday: 0,
       fish: { state: "idle", t: 0 },          // idle | wait | bite
       cookedToday: false, smokeBoost: 0,
-      husband: { state: "notyet", wage: 0, wp: 0, talked: false }  // notyet | walking | home
+      husband: { state: "notyet", wage: 0, wp: 0, talked: false },  // notyet | walking | home
+      // Sự kiện bất ngờ trong ngày: trộm lẻn vào sân, mưa rào, bà Tư qua chơi
+      thief: { state: "none", wp: 0, t: 0, loot: 0, lootKind: "", lootTxt: "", lootItems: null, lootType: "", result: "" },  // none | in | steal | out | flee | done
+      thiefAt: 630 + Math.random() * 180,       // khoảng 10:30–13:30 trộm lẻn vào
+      raining: false, rainT: 0, rainedToday: false,
+      rainAt: 780 + Math.random() * 150,        // khoảng 13:00–15:30 có mưa rào
+      visit: { state: "none", wp: 0, t: 0, talked: false },  // none | walking | here | leaving | done
+      visitAt: 900 + Math.random() * 60         // khoảng 15:00–16:00 bà Tư qua chơi
     };
     var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     var DAY_END = 19 * 60;                     // 19:00
@@ -412,6 +421,7 @@
     function sndCluck() { beep(500, 0.07, "square", 0.07); beep(420, 0.09, "square", 0.07, 0.1); beep(560, 0.07, "square", 0.06, 0.22); }
     function sndSplash() { beep(340, 0.16, "sine", 0.1); beep(620, 0.22, "sine", 0.07, 0.07); beep(950, 0.14, "sine", 0.05, 0.15); }
     function sndCook() { beep(180, 0.3, "sine", 0.07); beep(240, 0.3, "sine", 0.06, 0.18); beep(150, 0.4, "sine", 0.06, 0.4); }
+    function sndBark() { beep(210, 0.09, "square", 0.1); beep(250, 0.09, "square", 0.1, 0.14); beep(210, 0.09, "square", 0.09, 0.3); beep(270, 0.08, "square", 0.08, 0.44); }
 
     /* ================== THREE — DỰNG CẢNH QUÊ ================== */
     var container = document.getElementById("scene");
@@ -1368,6 +1378,83 @@
       scene.add(husband);
     })();
 
+    /* ================== GÃ TRỘM — LẺN VÀO SÂN HỐT ĐỒ, PHẢI ĐUỔI RA ================== */
+    var thief, thiefParts = {};
+    var thiefPath = [
+      new THREE.Vector3(30, 0, -14), new THREE.Vector3(20, 0, -12), new THREE.Vector3(10, 0, -5.5),
+      new THREE.Vector3(3, 0, 1.5), new THREE.Vector3(-0.2, 0, 6.6)
+    ];
+    (function buildThief() {
+      thief = new THREE.Group();
+      [-0.11, 0.11].forEach(function (s, idx) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.14), mat(0x2e2e33));
+        leg.position.y = -0.31;
+        var piv = new THREE.Group(); piv.position.set(s, 0.78, 0); piv.add(leg); thief.add(piv);
+        thiefParts[idx === 0 ? "legL" : "legR"] = piv;
+      });
+      var torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.66, 0.27), mat(0x3a3f4a));
+      torso.position.y = 1.11; torso.castShadow = true; thief.add(torso);
+      [-1, 1].forEach(function (s) {
+        var piv = new THREE.Group(); piv.position.set(s * 0.31, 1.38, 0);
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.58, 0.11), mat(0x3a3f4a));
+        arm.position.y = -0.26; piv.add(arm); thief.add(piv);
+        thiefParts[s < 0 ? "armL" : "armR"] = piv;
+      });
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat(0xc99878));
+      head.position.y = 1.68; head.castShadow = true; thief.add(head);
+      // Mũ lưỡi trai kéo sụp + khẩu trang che mặt
+      var cap = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 6), mat(0x23232a));
+      cap.position.y = 1.76; cap.scale.y = 0.55; thief.add(cap);
+      var brim = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.22), mat(0x23232a));
+      brim.position.set(0, 1.72, 0.22); thief.add(brim);
+      var mask = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.14, 0.05), mat(0x555c66));
+      mask.position.set(0, 1.6, 0.17); thief.add(mask);
+      // Bao tải vác sau lưng — hốt được đồ thì phình to
+      var sack = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), mat(0x8a6f45));
+      sack.scale.set(1, 1.15, 0.8); sack.position.set(0, 1.15, -0.32); sack.castShadow = true; thief.add(sack);
+      thiefParts.sack = sack;
+      thief.position.copy(thiefPath[0]);
+      thief.visible = false;
+      scene.add(thief);
+    })();
+
+    /* ================== BÀ TƯ HÀNG XÓM — QUA CHƠI, BIẾU HẠT GIỐNG ================== */
+    var visitor, visitorParts = {};
+    var visitPath = [
+      new THREE.Vector3(9, 0, -10.2), new THREE.Vector3(2, 0, -7),
+      new THREE.Vector3(-3, 0, -4.2), new THREE.Vector3(-7.3, 0, -1.3)
+    ];
+    (function buildVisitor() {
+      visitor = new THREE.Group();
+      [-0.1, 0.1].forEach(function (s, idx) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.58, 0.13), mat(0x33302e));
+        leg.position.y = -0.29;
+        var piv = new THREE.Group(); piv.position.set(s, 0.72, 0); piv.add(leg); visitor.add(piv);
+        visitorParts[idx === 0 ? "legL" : "legR"] = piv;
+      });
+      var torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.26), mat(0x7a4a8c));
+      torso.position.y = 1.03; torso.castShadow = true; visitor.add(torso);
+      [-1, 1].forEach(function (s) {
+        var piv = new THREE.Group(); piv.position.set(s * 0.29, 1.28, 0);
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.52, 0.1), mat(0x7a4a8c));
+        arm.position.y = -0.24; piv.add(arm); visitor.add(piv);
+        visitorParts[s < 0 ? "armL" : "armR"] = piv;
+      });
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), mat(0xdca87e));
+      head.position.y = 1.56; head.castShadow = true; visitor.add(head);
+      // Tóc bạc búi sau + nón lá
+      var bun = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mat(0xcfcfcf));
+      bun.position.set(0, 1.66, -0.14); visitor.add(bun);
+      var hat = new THREE.Mesh(new THREE.ConeGeometry(0.37, 0.16, 12), mat(0xd6b26a));
+      hat.position.y = 1.74; visitor.add(hat);
+      // Giỏ mây xách tay
+      var basket = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.2, 9), mat(0xa8895a));
+      basket.position.set(0.38, 0.78, 0); visitor.add(basket);
+      visitor.position.copy(visitPath[0]);
+      visitor.visible = false;
+      scene.add(visitor);
+    })();
+
     /* ================== ĐỜI SỐNG NỀN: CHIM BAY, LÁ RƠI, SAO ĐÊM, ĐÈN HIÊN ================== */
     (function buildAmbientLife() {
       // Đàn chim bay ngang trời
@@ -1415,6 +1502,17 @@
       var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
       bulb.position.copy(lamp.position); scene.add(bulb);
       window.__porchBulb = bulb;
+      // Mưa rào: hạt mưa rơi quanh người chơi, chỉ hiện khi trời đổ mưa
+      var rn = 700, rpos = new Float32Array(rn * 3);
+      for (var ri = 0; ri < rn; ri++) {
+        rpos[ri * 3] = (Math.random() - 0.5) * 42;
+        rpos[ri * 3 + 1] = Math.random() * 16;
+        rpos[ri * 3 + 2] = (Math.random() - 0.5) * 42;
+      }
+      var rgeo = new THREE.BufferGeometry(); rgeo.setAttribute("position", new THREE.BufferAttribute(rpos, 3));
+      var rain = new THREE.Points(rgeo, new THREE.PointsMaterial({ color: 0xbfd9ea, size: 0.14, transparent: true, opacity: 0.55, depthWrite: false }));
+      rain.visible = false; rain.frustumCulled = false; scene.add(rain);
+      window.__rain = rain;
     })();
 
     /* ================== LỚP CHI TIẾT — đồ đạc, sân vườn, ao, đồng lúa ================== */
@@ -1581,6 +1679,8 @@
       dog.position.set(-6.9, 0, -0.85); dog.rotation.y = -0.7;
       scene.add(dog);
       window.__dogTail = dogTailPiv;
+      window.__dog = dog;
+      window.__dogHome = dog.position.clone();
 
       /* --- Giếng: bờ đá, dây gầu, ròng rọc, gáo dừa, bình tưới để cạnh --- */
       var apron = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 1.65, 0.07, 18), mat(0xa39a8d));
@@ -2001,6 +2101,10 @@
     });
 
     function objectiveText() {
+      if (G.thief.state === "in" || G.thief.state === "steal" || G.thief.state === "out")
+        return "<b>Có trộm lẻn vào sân!</b> — chạy lại gần nó bấm <b>E</b> để đuổi ra, đừng để nó mang đồ chạy thoát.";
+      if (G.visit.state === "here" && !G.visit.talked)
+        return "Bà Tư hàng xóm đang ở hiên — ra <b>nói chuyện với bà</b> một lát.";
       if (G.childState === "home" && G.minutes < SCHOOL_BELL + 90)
         return "Việc đầu ngày: <b>đưa bé An đi học</b> — bé đang chờ ở hiên nhà, hạn chót <b>7:30</b>.";
       if (G.childState === "follow")
@@ -2040,6 +2144,9 @@
       consider("stove", window.__stovePos.x, window.__stovePos.z, 2.5);
       (window.__bananas || []).forEach(function (b) { consider("banana", b.x, b.z, 2.3, { banana: b }); });
       if (G.husband.state === "home") consider("husband", husband.position.x, husband.position.z, 2.4);
+      if (G.thief.state === "in" || G.thief.state === "steal" || G.thief.state === "out")
+        consider("thief", thief.position.x, thief.position.z, 2.5);
+      if (G.visit.state === "here") consider("visitor", visitor.position.x, visitor.position.z, 2.4);
       if (G.childState === "home") consider("child", child.position.x, child.position.z, 2.4);
       if (!best) return null;
       // Nhãn theo ngữ cảnh
@@ -2071,6 +2178,8 @@
       }
       else if (best.kind === "banana") best.label = best.banana.ripe ? "Hái nải chuối chín vàng" : "Buồng chuối còn xanh…";
       else if (best.kind === "husband") best.label = "Nói chuyện với anh";
+      else if (best.kind === "thief") best.label = "Đuổi trộm ra khỏi sân!";
+      else if (best.kind === "visitor") best.label = G.visit.talked ? "Chào bà Tư hàng xóm" : "Nói chuyện với bà Tư hàng xóm";
       return best;
     }
 
@@ -2078,6 +2187,43 @@
       if (!window.__eggMeshes) return;
       window.__eggMeshes.forEach(function (e, i) { e.visible = i < G.chicken.ready; });
     }
+    /* ---- Trộm hốt đồ: ưu tiên trứng trong ổ, rồi nông sản trong giỏ, rồi rau chín ngoài luống ---- */
+    function thiefSteal() {
+      var th = G.thief;
+      if (G.chicken.ready > 0) {
+        th.lootKind = "trung"; th.loot = Math.min(G.chicken.ready, 4);
+        G.chicken.ready -= th.loot; if (G.chicken.ready === 0) G.chicken.fed = false;
+        refreshEggs(); th.lootTxt = th.loot + " trứng gà trong ổ";
+      } else if (produceTotal() > 0) {
+        var left = 3; th.lootKind = "produce"; th.lootItems = {}; th.loot = 0;
+        for (var k in G.produce) {
+          while (G.produce[k] > 0 && left > 0) {
+            G.produce[k]--; th.lootItems[k] = (th.lootItems[k] || 0) + 1; th.loot++; left--;
+          }
+        }
+        th.lootTxt = th.loot + " món nông sản trong giỏ";
+      } else {
+        var mp = null;
+        plots.forEach(function (p) { if (p.state === "mature" && !mp) mp = p; });
+        if (mp) {
+          th.lootKind = "plot"; th.lootType = mp.type; th.loot = CROPS[mp.type].yield;
+          th.lootTxt = "1 luống " + CROPS[mp.type].name + " chín ngoài vườn";
+          mp.state = "empty"; mp.type = null; mp.progress = 0; mp.watered = false; mp.waterings = 0;
+          drawCrop(mp);
+        } else { th.lootKind = ""; th.loot = 0; th.lootTxt = "chưa kịp lấy gì"; }
+      }
+      if (th.loot > 0 && thiefParts.sack) thiefParts.sack.scale.set(1.45, 1.65, 1.15);
+      updateHUD();
+    }
+    function thiefReturnLoot() {
+      var th = G.thief;
+      if (th.lootKind === "trung") { G.chicken.ready += th.loot; refreshEggs(); }
+      else if (th.lootKind === "produce" && th.lootItems) { for (var k in th.lootItems) G.produce[k] += th.lootItems[k]; }
+      else if (th.lootKind === "plot") { G.produce[th.lootType] += th.loot; }
+      th.loot = 0; th.lootKind = ""; th.lootItems = null;
+      if (thiefParts.sack) thiefParts.sack.scale.set(1, 1.15, 0.8);
+    }
+
     function cookMeal(dish) {
       G.cookedToday = true; G.stars++; G.smokeBoost = 22;
       sndCook();
@@ -2172,6 +2318,28 @@
         ];
         toast(lines[Math.min(G.husband.talked, lines.length - 1)]);
         G.husband.talked++;
+      } else if (t.kind === "thief") {
+        var th2 = G.thief;
+        if (th2.loot > 0) {
+          thiefReturnLoot();
+          toast("Đuổi kịp trộm! Nó vứt lại bao đồ rồi bỏ chạy — của cải giữ nguyên. +1 sao vui vẻ", true);
+        } else {
+          toast("Đuổi kịp trộm trước khi nó lấy được gì! Nó bỏ chạy rồi. +1 sao vui vẻ", true);
+        }
+        G.stars++;
+        th2.result = "Đuổi kịp, giữ nguyên của cải";
+        th2.state = "flee";
+        sndBark();
+      } else if (t.kind === "visitor") {
+        if (!G.visit.talked) {
+          G.visit.talked = true;
+          var giftKey = CROP_KEYS[Math.floor(Math.random() * CROP_KEYS.length)];
+          G.seeds[giftKey] += 2; G.stars++;
+          sndCoin();
+          toast("Bà Tư: \"Qua thăm mẹ con chị. Biếu 2 hạt " + CROPS[giftKey].name + " nhà trồng, mai gieo thử nhé!\" +1 sao vui vẻ", true);
+        } else {
+          toast("Bà Tư: \"Vườn rau nhà chị xanh tốt quá, khéo tay thật đấy.\"");
+        }
       }
       updateHUD();
     }
@@ -2252,6 +2420,9 @@
         '<div class="sum-row"><span>Số luống đã trồng</span><b>' + G.plantedToday + ' luống</b></div>' +
         '<div class="sum-row"><span>Bữa cơm nhà</span><b>' + (G.cookedToday ? "Đã nấu, cả nhà vui vẻ" : "Chưa nấu hôm nay") + '</b></div>' +
         '<div class="sum-row"><span>Đưa con đi học</span><b>' + schoolTxt + '</b></div>' +
+        '<div class="sum-row"><span>Trộm lẻn vào sân</span><b>' + (G.thief.result || "Không có, nhà yên ổn") + '</b></div>' +
+        '<div class="sum-row"><span>Khách qua nhà</span><b>' + (G.visit.talked ? "Bà Tư ghé chơi, biếu hạt giống" : "Không có ai ghé") + '</b></div>' +
+        '<div class="sum-row"><span>Thời tiết</span><b>' + (G.rainedToday ? "Có mưa rào, rau được trời tưới" : "Nắng cả ngày") + '</b></div>' +
         '<div class="sum-row"><span>Tiền hiện có</span><b>' + fmt(G.money) + '</b></div>';
       dayOverlay.classList.add("show");
     }
@@ -2265,6 +2436,16 @@
       G.fish.state = "idle"; if (window.__bobber) window.__bobber.visible = false;
       G.husband.state = "notyet"; G.husband.wage = 0; G.husband.wp = 0; G.husband.talked = false;
       husband.visible = false; husband.position.copy(husbandPath[0]);
+      // Ngày mới: sự kiện bất ngờ lên lịch lại ngẫu nhiên
+      G.thief.state = "none"; G.thief.wp = 0; G.thief.t = 0; G.thief.loot = 0; G.thief.lootKind = ""; G.thief.lootTxt = ""; G.thief.lootItems = null; G.thief.result = "";
+      G.thiefAt = 630 + Math.random() * 180;
+      thief.visible = false; thief.position.copy(thiefPath[0]); thief.position.y = 0;
+      if (thiefParts.sack) thiefParts.sack.scale.set(1, 1.15, 0.8);
+      G.raining = false; G.rainT = 0; G.rainedToday = false; G.rainAt = 780 + Math.random() * 150;
+      if (window.__rain) window.__rain.visible = false;
+      G.visit.state = "none"; G.visit.wp = 0; G.visit.t = 0; G.visit.talked = false; G.visitAt = 900 + Math.random() * 60;
+      visitor.visible = false; visitor.position.copy(visitPath[0]);
+      if (window.__dog) window.__dog.position.copy(window.__dogHome);
       (window.__bananas || []).forEach(function (b) {
         if (!b.ripe && b.timer > 30) b.timer = 30;   // qua đêm chuối chín nhanh hơn
       });
@@ -2524,6 +2705,131 @@
             }
           }
         });
+        /* --- Sự kiện bất ngờ 1: trộm lẻn vào sân hốt đồ --- */
+        var thE = G.thief;
+        if (thE.state === "none" && G.minutes >= G.thiefAt) {
+          thE.state = "in"; thE.wp = 1;
+          thief.visible = true; thief.position.copy(thiefPath[0]);
+          sndBark();
+          toast("Chó sủa ầm ĩ ngoài hiên — có kẻ lạ đang lẻn vào sân!");
+        }
+        if (thief.visible && (thE.state === "in" || thE.state === "out" || thE.state === "flee")) {
+          var tTgt = thE.state === "flee" ? thiefPath[0] : thiefPath[thE.wp];
+          var tSpd = thE.state === "in" ? 2.0 : thE.state === "out" ? 3.5 : 4.4;
+          var tdx = tTgt.x - thief.position.x, tdz = tTgt.z - thief.position.z;
+          var tdd = Math.hypot(tdx, tdz);
+          if (tdd < 0.3) {
+            if (thE.state === "in") {
+              thE.wp++;
+              if (thE.wp >= thiefPath.length) { thE.state = "steal"; thE.t = 2.5; thief.rotation.y = Math.PI; }
+            } else if (thE.state === "out") {
+              thE.wp--;
+              if (thE.wp < 0) {
+                thief.visible = false; thE.state = "done";
+                if (thE.loot > 0) {
+                  thE.result = "Trộm chạy thoát, mất " + thE.lootTxt;
+                  toast("Trộm chạy thoát rồi! Nó mang theo " + thE.lootTxt + ". Hôm sau nhớ để ý tiếng chó sủa.");
+                } else {
+                  thE.result = "Trộm chạy thoát tay không";
+                  toast("Trộm chạy thoát, may mà nó chưa lấy được gì.");
+                }
+                updateHUD();
+              }
+            } else { thief.visible = false; thE.state = "done"; }
+          } else {
+            thief.position.x += tdx / tdd * dt * tSpd;
+            thief.position.z += tdz / tdd * dt * tSpd;
+            thief.rotation.y = Math.atan2(tdx, tdz);
+            var tsw = Math.sin(tNow * (thE.state === "in" ? 6 : 10.5)) * 0.5;
+            thiefParts.legL.rotation.x = tsw; thiefParts.legR.rotation.x = -tsw;
+            thiefParts.armL.rotation.x = -tsw * 0.5; thiefParts.armR.rotation.x = tsw * 0.5;
+          }
+        } else if (thief.visible && thE.state === "steal") {
+          thE.t -= dt;
+          thief.position.y = -0.05 + Math.abs(Math.sin(tNow * 3)) * 0.03;  // lom khom hốt đồ
+          if (thE.t <= 0) {
+            thief.position.y = 0;
+            thiefSteal();
+            thE.state = "out"; thE.wp = thiefPath.length - 2;
+            if (thE.loot > 0) toast("Trộm hốt được đồ rồi, đang vác bao chạy ra đường! Đuổi theo mau!");
+            else toast("Trộm lục lọi chuồng gà mà chưa lấy được gì — đuổi nó đi!");
+          }
+        }
+        /* --- Chó mực canh nhà: có trộm thì chạy ra sủa đuổi theo, hết chuyện thì về hiên nằm --- */
+        if (window.__dog) {
+          var dg = window.__dog, dgHome = window.__dogHome;
+          if (thief.visible && (thE.state === "in" || thE.state === "steal" || thE.state === "out")) {
+            var gx = thief.position.x - dg.position.x, gz = thief.position.z - dg.position.z;
+            var gd = Math.hypot(gx, gz);
+            if (gd > 1.7) { dg.position.x += gx / gd * dt * 4.6; dg.position.z += gz / gd * dt * 4.6; }
+            if (gd > 0.1) dg.rotation.y = Math.atan2(-gz, gx);
+            dg.position.y = Math.abs(Math.sin(tNow * 10)) * 0.06;
+            G._barkT = (G._barkT || 0) - dt;
+            if (G._barkT <= 0) { G._barkT = 1.5 + Math.random() * 0.9; sndBark(); }
+          } else if (dg.position.distanceTo(dgHome) > 0.25) {
+            var ghx = dgHome.x - dg.position.x, ghz = dgHome.z - dg.position.z;
+            var ghd = Math.hypot(ghx, ghz);
+            dg.position.x += ghx / ghd * dt * 2.4; dg.position.z += ghz / ghd * dt * 2.4;
+            dg.rotation.y = Math.atan2(-ghz, ghx);
+            dg.position.y = Math.abs(Math.sin(tNow * 8)) * 0.05;
+          } else { dg.position.y = 0; dg.rotation.y = -0.7; }
+        }
+        /* --- Sự kiện bất ngờ 2: bà Tư hàng xóm qua chơi --- */
+        var vsE = G.visit;
+        if (vsE.state === "none" && G.minutes >= G.visitAt) {
+          vsE.state = "walking"; vsE.wp = 1;
+          visitor.visible = true; visitor.position.copy(visitPath[0]);
+          toast("Bà Tư hàng xóm xách giỏ qua chơi nhà mình kìa.");
+        }
+        if (visitor.visible && (vsE.state === "walking" || vsE.state === "leaving")) {
+          var vTgt = visitPath[vsE.wp];
+          var vdx = vTgt.x - visitor.position.x, vdz = vTgt.z - visitor.position.z;
+          var vdd = Math.hypot(vdx, vdz);
+          if (vdd < 0.25) {
+            if (vsE.state === "walking") {
+              vsE.wp++;
+              if (vsE.wp >= visitPath.length) { vsE.state = "here"; vsE.t = 0; visitor.rotation.y = -2.2; }
+            } else {
+              vsE.wp--;
+              if (vsE.wp < 0) { visitor.visible = false; vsE.state = "done"; }
+            }
+          } else {
+            visitor.position.x += vdx / vdd * dt * 1.9;
+            visitor.position.z += vdz / vdd * dt * 1.9;
+            visitor.rotation.y = Math.atan2(vdx, vdz);
+            var vsw = Math.sin(tNow * 7) * 0.4;
+            visitorParts.legL.rotation.x = vsw; visitorParts.legR.rotation.x = -vsw;
+            visitorParts.armL.rotation.x = -vsw * 0.6; visitorParts.armR.rotation.x = vsw * 0.6;
+          }
+        }
+        if (vsE.state === "here") {
+          vsE.t += dt;
+          visitorParts.legL.rotation.x *= 0.8; visitorParts.legR.rotation.x *= 0.8;
+          visitorParts.armL.rotation.x *= 0.8;
+          visitorParts.armR.rotation.x = Math.sin(tNow * 1.6) * 0.1;
+          if ((vsE.talked && vsE.t > 25) || vsE.t > 110) {
+            vsE.state = "leaving"; vsE.wp = visitPath.length - 2;
+            toast("Bà Tư về rồi. Hẹn bà hôm khác qua chơi.");
+          }
+        }
+        /* --- Sự kiện bất ngờ 3: mưa rào — rau được tưới miễn phí --- */
+        if (!G.rainedToday && G.minutes >= G.rainAt) {
+          G.rainedToday = true; G.raining = true; G.rainT = 55;
+          if (window.__rain) window.__rain.visible = true;
+          var wateredN = 0;
+          plots.forEach(function (p) { if (p.state === "growing" && !p.watered) { p.watered = true; wateredN++; drawCrop(p); } });
+          toast(wateredN > 0
+            ? "Mưa rào đổ xuống bất chợt! " + wateredN + " luống rau được trời tưới miễn phí."
+            : "Mưa rào đổ xuống bất chợt! Ngồi hiên ngắm mưa quê một lát.");
+        }
+        if (G.raining) {
+          G.rainT -= dt;
+          if (G.rainT <= 0) {
+            G.raining = false;
+            if (window.__rain) window.__rain.visible = false;
+            toast("Mưa tạnh rồi, trời lại trong xanh.");
+          }
+        }
         // 17:00 anh đi làm thuê về
         if (G.husband.state === "notyet" && G.minutes >= 1020) {
           G.husband.state = "walking"; G.husband.wp = 1;
@@ -2601,6 +2907,9 @@
         if (lh) lh.classList.toggle("show", !!(G.started && !G.dayOver && !mouseLocked && finePointer && !overlayOpen()));
         if (G.started) { objEl.innerHTML = objectiveText(); updateHUD(); }
         updateSky();
+        // Đang mưa rào: nắng dịu lại, sương mù dày hơn
+        if (G.raining) { sun.intensity *= 0.5; hemi.intensity *= 0.75; scene.fog.near = 20; scene.fog.far = 58; }
+        else { scene.fog.near = 34; scene.fog.far = 95; }
       }
       fireflies.position.y = Math.sin(tNow * 0.7) * 0.15;
       /* --- Trời, mây, mặt nước, bướm: chuyển động nền --- */
@@ -2610,6 +2919,7 @@
       sunDisc.lookAt(camera.position);
       sunGlow.position.copy(sunDisc.position);
       clouds.forEach(function (c) { c.position.x += c.userData.speed * dt; if (c.position.x > 170) c.position.x = -170; });
+      if (window.__rain && window.__rain.visible) window.__rain.position.set(player.x, -((tNow * 9) % 4), player.z);
       if (window.__ripples) window.__ripples.forEach(function (rp) {
         var ph = (tNow * 0.22 + rp.userData.off) % 1;
         var rs = 0.3 + ph * 1.6; rp.scale.set(rs, rs, 1);
