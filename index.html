@@ -663,10 +663,10 @@
       var g = new THREE.Group();
       var walls = new THREE.Mesh(new THREE.BoxGeometry(8, 3.1, 5.4), texMat(plasterTex));
       walls.position.y = 1.55; walls.castShadow = true; walls.receiveShadow = true; g.add(walls);
-      // Mái ngói hai dốc
+      // Mái ngói hai dốc — tấm mái phải dài hơn thân nhà (8m) để phủ kín hai đầu hồi
       var roofMat = texMat(roofTex);
       [-1, 1].forEach(function (s) {
-        var r = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.18, 3.6), roofMat);
+        var r = new THREE.Mesh(new THREE.BoxGeometry(8.9, 0.18, 3.6), roofMat);
         r.position.set(0, 3.95, s * 1.42); r.rotation.x = s * 0.62; r.castShadow = true; g.add(r);
       });
       // Đầu hồi tam giác ở hai đầu nhà
@@ -676,7 +676,7 @@
         var gGeo = new THREE.ExtrudeGeometry(gShape, { depth: 0.14, bevelEnabled: false });
         gGeo.rotateY(Math.PI / 2);
         var gable = new THREE.Mesh(gGeo, texMat(plasterTex));
-        gable.position.set(gx, 0, 0); gable.castShadow = true; g.add(gable);
+        gable.position.set(gx - 0.07, 0, 0); gable.castShadow = true; g.add(gable);
       });
       // Cửa chính + cửa sổ
       var door = new THREE.Mesh(new THREE.BoxGeometry(1.15, 2.15, 0.1), mat(0x7a4a21));
@@ -819,8 +819,8 @@
       block(15.5, 3, 3.2);
       // Cầu gỗ nhỏ ra ao để đứng câu cá + phao câu (hiện khi thả câu)
       var dock = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.14, 1.1), texMat(woodTex));
-      dock.position.set(13.1, 0.1, 4.9); dock.rotation.y = 0.5; dock.receiveShadow = true; scene.add(dock);
-      window.__fishPos = new THREE.Vector3(12.9, 0, 4.6);
+      dock.position.set(12.8, 0.1, 5.1); dock.rotation.y = 0.5; dock.receiveShadow = true; scene.add(dock);
+      window.__fishPos = new THREE.Vector3(12.6, 0, 4.9);
       var bob = new THREE.Group();
       var bobTop = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xe2483a }));
       bobTop.position.y = 0.03; bob.add(bobTop);
@@ -1263,7 +1263,7 @@
       var walls = new THREE.Mesh(new THREE.BoxGeometry(7.5, 3, 4.6), texMat(plasterTex));
       walls.position.y = 1.5; walls.castShadow = true; walls.receiveShadow = true; g.add(walls);
       [-1, 1].forEach(function (s) {
-        var r = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 3.1), mat(0x38618c));
+        var r = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.16, 3.1), mat(0x38618c));
         r.position.set(0, 3.6, s * 1.25); r.rotation.x = s * 0.6; r.castShadow = true; g.add(r);
       });
       var door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2, 0.1), mat(0x7a4a21));
