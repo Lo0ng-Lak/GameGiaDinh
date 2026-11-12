@@ -13,7 +13,7 @@ import { CROPS, GOODS, priceOf } from './data';
       day: 1, minutes: 5 * 60 + 30,           // 05:30
       money: 60000, stars: 0,
       seeds: { cai: 4, cachua: 2, bido: 1, ngo: 2 },
-      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0, trungvit: 0, xoai: 0, oi: 0, banhchung: 0, banhtrungthu: 0, longden: 0 },
+      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0, trungvit: 0, xoai: 0, oi: 0, mangtre: 0, banhchung: 0, banhtrungthu: 0, longden: 0 },
       selSeed: "cai",
       can: 5, canMax: 5,
       childState: "home",                      // home | follow | school | away
@@ -90,7 +90,15 @@ import { CROPS, GOODS, priceOf } from './data';
       greetedToday: 0, greetedIds: {},        // chào hàng xóm: đếm hôm nay + id đã chào
       marketSoldToday: 0,                     // tiền bán được ở chợ hôm nay
       teacherEggsToday: 0,                    // trứng đã đưa cô giáo hôm nay
-      groceryToday: {}                       // đồ tạp hóa đã mua hôm nay: id -> true
+      groceryToday: {},                       // đồ tạp hóa đã mua hôm nay: id -> true
+      /* ===== GIAI ĐOẠN 4.3: khám phá làng mới — chùa, rừng tre, đồi ngắm =====
+       * templePrayedToday: đã thắp hương ở chùa hôm nay chưa (1 lần/ngày
+       * +1 sao); viewpointRestedToday: đã ngồi nghỉ trên đồi hôm nay chưa
+       * (chỉ ghi kỷ niệm, không cộng sao); bambooReady: 3 cây măng ở rừng
+       * tre còn hái được không — mỗi sáng mọc lại; bambooToday: măng hái
+       * được hôm nay (hiện ở bảng tổng kết cuối ngày). */
+      templePrayedToday: false, viewpointRestedToday: false,
+      bambooReady: [true, true, true], bambooToday: 0
     };
     export var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     export var DAY_END = 19 * 60;                     // 19:00

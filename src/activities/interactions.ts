@@ -25,6 +25,7 @@ import { visitor } from '../npc/visitor';
 import { player } from '../player/player';
 import { toast, updateHUD } from '../ui/hud';
 import { stallPos } from '../world/buildings';
+import { HILL_REST_SPOT, TEMPLE_PRAY_SPOT } from '../world/places';
 import { spawnParticles } from '../world/particles';
 import { coopPos, wellPos } from '../world/scene';
 import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPlant, sndPour, sndSplash, sndWater } from '../world/sound';
@@ -52,6 +53,10 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
       consider("fish", window.__fishPos.x, window.__fishPos.z, 2.5);
       consider("stove", window.__stovePos.x, window.__stovePos.z, 2.5);
       (window.__bananas || []).forEach(function (b) { consider("banana", b.x, b.z, 2.3, { banana: b }); });
+      // PHASE 4.3: chùa, rừng tre, đồi ngắm ruộng ở rìa làng
+      consider("temple", TEMPLE_PRAY_SPOT.x, TEMPLE_PRAY_SPOT.z, 2.6);
+      consider("viewpoint", HILL_REST_SPOT.x, HILL_REST_SPOT.z, 2.5);
+      (window.__bambooShoots || []).forEach(function (s, i) { consider("bamboo", s.x, s.z, 2.3, { shootIndex: i }); });
       if (G.husband.state === "home") consider("husband", husband.position.x, husband.position.z, 2.4);
       if (G.thief.state === "in" || G.thief.state === "steal" || G.thief.state === "out")
         consider("thief", thief.position.x, thief.position.z, 2.5);
@@ -106,6 +111,9 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
         else best.label = "Nấu cơm nhà (8.000đ đồ ăn)";
       }
       else if (best.kind === "banana") best.label = best.banana.ripe ? "Hái nải chuối chín vàng" : "Buồng chuối còn xanh…";
+      else if (best.kind === "temple") best.label = G.templePrayedToday ? "Đã thắp hương hôm nay rồi — lòng nhẹ như mây" : "Thắp hương ở chùa — cầu bình an cho cả nhà";
+      else if (best.kind === "viewpoint") best.label = G.viewpointRestedToday ? "Ngồi nghỉ thêm một lát, ngắm ruộng lúa chín" : "Ngồi nghỉ trên đồi, ngắm ruộng lúa chín vàng";
+      else if (best.kind === "bamboo") best.label = G.bambooReady[best.shootIndex] ? "Hái măng tre non trong rừng tre" : "Măng ở đây vừa hái rồi — mai mọc lại";
       else if (best.kind === "tree") {
         var tr = G.trees[best.treeIndex], tDef = tr.type ? FRUIT_TREES[tr.type] : null;
         if (!tr.type) {
@@ -317,6 +325,35 @@ import { sndBark, sndBell, sndCluck, sndCoin, sndCook, sndDig, sndHarvest, sndPl
           G.produce.chuoi++; G.bananaToday++; sndHarvest();
           toast("Hái được 1 nải chuối chín vào giỏ.", true);
         } else toast("Buồng chuối này còn xanh, chờ chín vàng đã.");
+      } else if (t.kind === "temple") {
+        // PHASE 4.3: thắp hương ở chùa — 1 lần/ngày, +1 sao vui vẻ
+        if (G.templePrayedToday) { toast("Hôm nay đã thắp hương rồi — lòng nhẹ như mây, cứ thong thả làm việc nhà."); return; }
+        G.templePrayedToday = true; G.stars++;
+        sndBell();
+        toast("Thắp một nén hương ở chùa làng, khấn cho cả nhà bình an, vụ mùa thuận lợi. +1 sao vui vẻ", true);
+        addMemory("Thắp hương ở chùa làng, cầu bình an cho cả nhà.");
+        saveGame();
+      } else if (t.kind === "viewpoint") {
+        // PHASE 4.3: ngồi nghỉ trên đồi ngắm ruộng — không cộng sao, chỉ một
+        // khoảnh khắc yên bình + 1 dòng kỷ niệm (1 lần/ngày)
+        if (!G.viewpointRestedToday) {
+          G.viewpointRestedToday = true;
+          addMemory("Ngồi trên đồi ngắm ruộng lúa chín vàng, gió đồng mát rượi.");
+          toast("Ngồi trên ghế đá, nhìn ruộng lúa chín vàng trải dài tới chân núi. Gió đồng mát rượi — một lát yên bình giữa ngày làm việc.", true);
+          saveGame();
+        } else {
+          toast("Ruộng lúa vẫn chín vàng dưới nắng. Ngồi thêm một lát nữa rồi về làm việc thôi.");
+        }
+      } else if (t.kind === "bamboo") {
+        // PHASE 4.3: hái măng tre non — mỗi cây 1 lần/ngày, sáng mai mọc lại
+        var si = t.shootIndex;
+        if (!G.bambooReady[si]) { toast("Măng ở đây vừa hái rồi — mai ra lại, măng non mọc nhanh lắm."); return; }
+        G.bambooReady[si] = false; G.bambooToday++;
+        G.produce.mangtre++;
+        if (window.__bambooShoots && window.__bambooShoots[si]) window.__bambooShoots[si].group.visible = false;
+        sndHarvest();
+        toast("Hái được 1 cây măng tre non vào giỏ — mang ra chợ bán hoặc nấu canh măng.", true);
+        saveGame();
       } else if (t.kind === "husband") {
         var lines = [
           "Anh: \"Hôm nay chủ trả công đàng hoàng. Nhà mình cứ yên tâm.\"",

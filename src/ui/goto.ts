@@ -11,7 +11,9 @@ import { collide, player } from '../player/player';
     export var gotoTargets = {
       well: { x: -4.5, z: 5.6, yaw: 0 }, garden: { x: 9.2, z: 9.2, yaw: 0.82 }, stall: { x: 9, z: -9, yaw: 0 },
       school: { x: 19.9, z: -12.4, yaw: -1.1 }, home: { x: -7.2, z: -1.2, yaw: 1.1 },
-      pond: { x: 12.4, z: 5.4, yaw: -0.9 }, stove: { x: -14.2, z: 1.9, yaw: 0.75 }, coop: { x: -0.5, z: 5.6, yaw: 3.14 }
+      pond: { x: 12.4, z: 5.4, yaw: -0.9 }, stove: { x: -14.2, z: 1.9, yaw: 0.75 }, coop: { x: -0.5, z: 5.6, yaw: 3.14 },
+      // PHASE 4.3: 3 địa điểm mới ở rìa làng — đứng ngoài vòng chặn, quay mặt vào chỗ
+      temple: { x: -22.3, z: 15.5, yaw: 1.57 }, grove: { x: 23, z: 11.6, yaw: -2.25 }, hill: { x: 1, z: -16.9, yaw: -0.96 }
     };
     document.querySelectorAll("[data-goto]").forEach(function (b) {
       b.addEventListener("click", function () {

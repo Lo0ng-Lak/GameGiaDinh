@@ -12,6 +12,7 @@ import { drawCrop, plots, ensureExtraPlots } from '../farming/garden';
 import { drawTree } from '../farming/trees';
 import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
 import { seasonOf } from '../world/weather';
+import { refreshBambooShoots } from '../world/places';
 
     /* ---- Lưu game vào trình duyệt: tiền, sao, hạt, giỏ, luống rau, quỹ, thành tựu, kỷ niệm ---- */
     export var SAVE_KEY = "gia-dinh-que-save-v1";
@@ -41,6 +42,10 @@ import { seasonOf } from '../world/weather';
           // Save cũ (trước Phase 4.2) không có các trường này -> quà chưa
           // nhận, lễ hôm nay để null (sẽ tự tính lại khi mở game).
           festivalClaimed: G.festivalClaimed, festivalToday: G.festivalToday,
+          // PHASE 4.3: khám phá làng mới — đã thắp hương / nghỉ đồi hôm nay
+          // chưa, măng còn hái được cây nào, măng hái được hôm nay.
+          templePrayedToday: G.templePrayedToday, viewpointRestedToday: G.viewpointRestedToday,
+          bambooReady: G.bambooReady.slice(), bambooToday: G.bambooToday,
           plots: plots.map(function (p) {
             return { state: p.state, type: p.type, progress: p.progress, watered: p.watered, waterings: p.waterings };
           })
@@ -114,6 +119,14 @@ import { seasonOf } from '../world/weather';
       G.festivalClaimed = d.festivalClaimed || {};
       G.festivalToday = d.festivalToday || null;
       G.festivalProgress = 0; G.festivalGiftTxt = "";
+      // PHASE 4.3: chùa / rừng tre / đồi — save cũ không có các trường này
+      // thì mặc định chưa thắp hương, chưa nghỉ trên đồi, măng còn đủ 3 cây.
+      G.templePrayedToday = !!d.templePrayedToday;
+      G.viewpointRestedToday = !!d.viewpointRestedToday;
+      G.bambooReady = (Array.isArray(d.bambooReady) && d.bambooReady.length === 3)
+        ? d.bambooReady.map(function (b) { return !!b; }) : [true, true, true];
+      G.bambooToday = d.bambooToday || 0;
+      refreshBambooShoots();
     }
     rollQuests();
 

@@ -15,6 +15,7 @@ import { addMemory, checkQuestsAchievements } from '../events/quests';
 import { toast } from '../ui/hud';
 import { mat, scene, blockers } from '../world/scene';
 import { FIELD_SPOT, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, MARKET_STALLS, POND_SPOT, SCHOOL_YARD_SPOT, stallFront } from '../world/village';
+import { GROVE_REST_SPOT, TEMPLE_SPOT } from '../world/places';
 
 // ---- Định nghĩa dân làng ----
 export var VILLAGERS = [
@@ -25,14 +26,20 @@ export var VILLAGERS = [
     lines: [
       "Bác Hai: \"Vụ này lúa tốt, nhà chị trồng rau cũng xanh mướt.\"",
       "Bác Hai: \"Sáng mai bác đi cày sớm, chiều qua chợ mua ít đồ.\"",
-      "Bác Hai: \"Con bé An nhà chị ngoan, gặp bác là chào rõ to.\""
+      "Bác Hai: \"Con bé An nhà chị ngoan, gặp bác là chào rõ to.\"",
+      "Bác Hai: \"Trưa nắng bác vào rừng tre ngồi nghỉ, mát rượi, măng non mọc đầy.\""
     ],
     schedule: [
       { from: 330, to: 420, at: HOUSE_FRONT.h1[0] },
       { from: 420, to: 660, at: FIELD_SPOT },
       { from: 660, to: 780, at: HOUSE_FRONT.h1[0] },
-      { from: 780, to: 930, at: { x: -8, z: -10.8 } },
-      { from: 930, to: 1140, at: HOUSE_FRONT.h1[0] }
+      // PHASE 4.3: trưa nắng vào rừng tre góc đông-bắc ngồi nghỉ cho mát
+      { from: 780, to: 930, at: GROVE_REST_SPOT },
+      // Từ rừng tre về nhà: đi thẳng sẽ đâm vào khe giữa 2 vòng chặn chồng
+      // nhau của nhà chính + ghế hiên, trượt (slide) kẹt cứng ở (-10,5,-2,5)
+      // không tới được nhà (test đã bắt được). Đi vòng qua phía đông ao,
+      // rồi theo đường làng phía bắc (z=-14,5) về nhà như anh Đức.
+      { from: 930, to: 1140, at: HOUSE_FRONT.h1[0], via: [{ x: 20, z: -2 }, { x: 14, z: -14.5 }, { x: -14, z: -14.5 }] }
     ]
   },
   {
@@ -42,11 +49,14 @@ export var VILLAGERS = [
     lines: [
       "Bà Năm: \"Chị đảm đang quá, vườn rau nhà chị ai cũng khen.\"",
       "Bà Năm: \"Chiều bà ra cổng trường đón cháu, tiện ngắm các cháu chơi.\"",
-      "Bà Năm: \"Hôm nào rảnh qua nhà bà uống nước chè xanh nhé.\""
+      "Bà Năm: \"Hôm nào rảnh qua nhà bà uống nước chè xanh nhé.\"",
+      "Bà Năm: \"Sáng nào bà cũng lên chùa thắp nén hương, cầu cho làng mình bình an.\""
     ],
     schedule: [
-      { from: 330, to: 480, at: HOUSE_FRONT.h1[1] },
-      { from: 480, to: 660, at: { x: -3.5, z: -9.6 } },
+      // PHASE 4.3: buổi sớm bà lên chùa góc tây-bắc thắp hương, rồi mới về
+      // làm việc; đầu ngày bà đứng ở chùa nên test đặt sẵn bà ở đó lúc 05:30
+      { from: 330, to: 420, at: TEMPLE_SPOT },
+      { from: 420, to: 660, at: { x: -3.5, z: -9.6 } },
       { from: 660, to: 900, at: HOUSE_FRONT.h1[1] },
       { from: 900, to: 960, at: { x: 21.5, z: -13.2 } },
       { from: 960, to: 1140, at: HOUSE_FRONT.h1[1] }

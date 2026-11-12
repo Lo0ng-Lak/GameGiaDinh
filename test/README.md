@@ -10,7 +10,7 @@ test là hàm thật, không phải bản sao.
 ```sh
 npm install            # lần đầu (cần esbuild — đã có qua vite)
 node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi chạy
-node test/npc-pathing.test.mjs     # 110 kiểm tra đường đi + lịch dân làng
+node test/npc-pathing.test.mjs     # 177 kiểm tra đường đi + lịch dân làng + địa điểm mới 4.3
 node test/weather.test.mjs         # 66 kiểm tra thời tiết + mùa (Phase 4.1)
 node test/festivals.test.mjs       # 110 kiểm tra lễ hội trong năm (Phase 4.2)
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
@@ -61,7 +61,7 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
   lần đều có việc đưa bé đi học (bug chỉ số 8 cũ đã sửa); bảng sạp chợ / tạp
   hóa mở được không lỗi; qua đêm reset hết số liệu làng.
 
-`test/npc-pathing.test.mjs` (110 kiểm tra, đều đậu):
+`test/npc-pathing.test.mjs` (177 kiểm tra, đều đậu):
 - **Lịch:** 7 dân làng phủ kín 05:30–19:00 không hở giờ; đúng giờ ở sạp
   (cô Ba 06:30–17:00, chị Lan 07:00–17:00, anh Đức 07:00–16:00), tiệm tạp
   hóa ông Tư 06:00–18:00, sân trường cô giáo 07:00–16:30, ruộng bác Hai
@@ -77,6 +77,23 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
   đủ nâng cấp (tủ lạnh, xe máy, chuồng lợn... thêm 4 vòng chặn). Ca đi lâu
   nhất: anh Đức từ ao về nhà 46 phút (đi vòng qua đường làng phía bắc,
   trong ca 60 phút).
+- **Địa điểm mới 4.3 (thêm 67 kiểm tra):** chùa có vòng chặn r=2,8, rừng tre
+  3 khóm r=0,9, đồi có vòng chặn r=2,2 — cả 5 vòng đều nằm ngoài sân rào
+  lõi; bà Năm ghé chùa 05:30–07:00, bác Hai nghỉ ở rừng tre 13:00–15:30;
+  điểm thắp hương / 3 cây măng / ghế đá trên đồi đều ngoài vòng chặn và
+  trong bản đồ; 3 nút "Đi tới" mới cũng vậy; đi bộ bằng đúng `collide()`
+  của game từ mỗi chỗ mới về giữa làng đều tới được (không ngõ cụt).
+  Tương tác thật qua `doInteract`/`findTarget`: thắp hương +1 sao, lần 2
+  cùng ngày không tăng; ngồi nghỉ trên đồi ghi kỷ niệm, không cộng sao;
+  hái măng từng cây 1 lần/ngày (cây đã hái thì ẩn), hái hết 3 cây bán cho
+  anh Đức được 18.900đ; qua đêm (nút "Ngày mới" thật) măng mọc lại đủ 3
+  cây, mai thắp hương/nghỉ đồi lại được; vòng tròn lưu/tải giữ trạng thái
+  thắp hương + măng đã hái; save cũ không có trường 4.3 vẫn đọc được,
+  mặc định chưa thắp hương, măng còn đủ 3 cây. Lỗi tìm được khi làm 4.3:
+  bác Hai đi thẳng từ rừng tre về nhà thì kẹt cứng ở khe giữa 2 vòng chặn
+  chồng nhau của nhà chính + ghế hiên (đứng yên ở (-10,5, -2,5) tới hết
+  ngày) — đã sửa bằng điểm `via` đi vòng qua phía đông ao rồi theo đường
+  làng phía bắc, về tới nhà sau 69 phút trong ca 210 phút.
 
 `test/weather.test.mjs` (66 kiểm tra, đều đậu — Phase 4.1):
 - **Mùa:** chu kỳ 60 ngày (30 mưa + 30 khô), kiểm tra đúng ranh giới

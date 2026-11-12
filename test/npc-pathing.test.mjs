@@ -197,6 +197,158 @@ for (const u of ['tv', 'fridge', 'bike', 'land', 'coopBig', 'pigpen']) g.buyUpgr
 console.log('    vòng chặn: mặc định ' + defaultBlockers + ' -> sau khi mua đủ nâng cấp ' + blockers.length);
 simulateDay('E. Mô phỏng cả ngày — đã mua đủ nâng cấp nhà');
 
+// ================= F. Địa điểm mới 4.3: chùa, rừng tre, đồi ngắm ruộng =================
+section('F. Địa điểm mới 4.3: vòng chặn, lịch dân làng, lối đi mở');
+function hasBlocker(x, z, r) {
+  return blockers.some(function (b) { return b.x === x && b.z === z && b.r === r; });
+}
+check('chùa có vòng chặn r=2,8 ở (-25,5, 15,5)', hasBlocker(-25.5, 15.5, 2.8));
+for (const c of g.GROVE_CLUSTERS) {
+  check('rừng tre: 1 khóm có vòng chặn r=0,9 ở ' + pt(c), hasBlocker(c.x, c.z, 0.9));
+}
+check('đồi ngắm ruộng có vòng chặn r=2,2 ở (4, -19)', hasBlocker(4, -19, 2.2));
+// Vòng chặn mới đều nằm ngoài sân rào lõi — lõi làng không động vào
+for (const nb of [{ x: -25.5, z: 15.5 }, ...g.GROVE_CLUSTERS, { x: 4, z: -19 }]) {
+  check('vòng chặn mới ' + pt(nb) + ' nằm ngoài sân rào lõi (|x|>19 hoặc |z|>12 hoặc z<-11)',
+    nb.x < -19 || nb.x > 19 || nb.z > 12 || nb.z < -11);
+}
+// Lịch dân làng tới chỗ mới (điểm đến đã được B/C kiểm tra ngoài vòng chặn,
+// trong bản đồ, không trùng nhau; mô phỏng D/E đã chạy qua chúng)
+const nam = VILLAGERS.find(v => v.id === 'nam'), hai = VILLAGERS.find(v => v.id === 'hai');
+check('bà Năm ghé chùa 05:30–07:00', segAt(nam, 330).at === g.TEMPLE_SPOT && segAt(nam, 419).at === g.TEMPLE_SPOT);
+check('bác Hai nghỉ ở rừng tre 13:00–15:30', segAt(hai, 780).at === g.GROVE_REST_SPOT && segAt(hai, 929).at === g.GROVE_REST_SPOT);
+// Điểm tương tác của 3 chỗ mới: ngoài vòng chặn, trong bản đồ
+{
+  const tp = clearance(g.TEMPLE_PRAY_SPOT.x, g.TEMPLE_PRAY_SPOT.z);
+  check('điểm thắp hương ngoài vòng chặn (cách ' + tp.min.toFixed(2) + 'm)', tp.min >= 0.2);
+  check('điểm thắp hương trong bản đồ', g.TEMPLE_PRAY_SPOT.x >= -27 && g.TEMPLE_PRAY_SPOT.z <= 19);
+  for (const s of g.GROVE_SHOOTS) {
+    const sc = clearance(s.x, s.z);
+    check('cây măng ' + pt(s) + ' ngoài vòng chặn (cách ' + sc.min.toFixed(2) + 'm)', sc.min >= 0.3);
+    check('cây măng ' + pt(s) + ' trong bản đồ', s.x >= -27 && s.x <= 31 && s.z >= -20.5 && s.z <= 19);
+  }
+  const hc = clearance(g.HILL_REST_SPOT.x, g.HILL_REST_SPOT.z);
+  check('điểm ngồi nghỉ trên đồi ngoài vòng chặn (cách ' + hc.min.toFixed(2) + 'm)', hc.min >= 1);
+  check('điểm ngồi nghỉ trên đồi trong bản đồ', g.HILL_REST_SPOT.x >= -27 && g.HILL_REST_SPOT.z >= -20.5);
+}
+// Nút "Đi tới" cho 3 chỗ mới: trong bản đồ, ngoài vòng chặn
+for (const k of ['temple', 'grove', 'hill']) {
+  const t = g.gotoTargets[k];
+  check('Đi tới "' + k + '" ' + pt(t) + ': trong bản đồ',
+    t.x >= -27 && t.x <= 31 && t.z >= -20.5 && t.z <= 19);
+  const gc = clearance(t.x, t.z);
+  check('Đi tới "' + k + '" ' + pt(t) + ': ngoài vòng chặn (cách ' + gc.min.toFixed(2) + 'm)', gc.min >= 0);
+}
+// Không ngõ cụt: đi bộ (dùng đúng collide() của game, từng bước 0,5m, trượt
+// quanh vòng chặn như người chơi) từ mỗi chỗ mới về giữa làng phải tới được
+function canWalkTo(from, to) {
+  let x = from.x, z = from.z, stuck = 0;
+  for (let step = 0; step < 400; step++) {
+    const dx = to.x - x, dz = to.z - z, d = Math.hypot(dx, dz);
+    if (d < 1) return true;
+    const c = g.collide(x + dx / d * 0.5, z + dz / d * 0.5);
+    if (Math.hypot(c.x - x, c.z - z) < 0.05) { stuck++; if (stuck > 20) return false; }
+    else stuck = 0;
+    x = c.x; z = c.z;
+  }
+  return Math.hypot(to.x - x, to.z - z) < 1;
+}
+check('đi bộ từ chùa ra giữa làng không kẹt (không ngõ cụt)', canWalkTo(g.TEMPLE_PRAY_SPOT, { x: 0, z: 0 }));
+check('đi bộ từ rừng tre ra giữa làng không kẹt (không ngõ cụt)', canWalkTo(g.GROVE_REST_SPOT, { x: 0, z: 0 }));
+check('đi bộ từ đồi ngắm ruộng ra giữa làng không kẹt (không ngõ cụt)', canWalkTo(g.HILL_REST_SPOT, { x: 0, z: 0 }));
+
+// ================= G. Tương tác 4.3 + save cũ =================
+section('G. Tương tác 4.3: thắp hương, nghỉ đồi, hái măng + save cũ');
+function nextDay() {
+  g.endDay();
+  globalThis.document.getElementById('btn-next-day').fire('click');
+}
+// --- Thắp hương ở chùa: +1 sao, 1 lần/ngày ---
+resetState();
+G.stars = 0;
+const mem0 = G.memories.length;
+g.setCurrentTarget({ kind: 'temple' });
+g.doInteract();
+check('thắp hương lần đầu: +1 sao vui vẻ', G.stars === 1, 'stars=' + G.stars);
+check('thắp hương: đã đánh dấu trong ngày', G.templePrayedToday === true);
+check('thắp hương: ghi 1 dòng kỷ niệm', G.memories.length === mem0 + 1 && /chùa/.test(G.memories[G.memories.length - 1]));
+g.doInteract();
+check('thắp hương lần 2 cùng ngày: không tăng sao', G.stars === 1, 'stars=' + G.stars);
+g.player.x = g.TEMPLE_PRAY_SPOT.x; g.player.z = g.TEMPLE_PRAY_SPOT.z;
+const ft = g.findTarget();
+check('đứng ở điểm thắp hương: E hiện đúng "Thắp hương ở chùa"', ft && ft.kind === 'temple', ft && ft.kind);
+// --- Nghỉ trên đồi: kỷ niệm, không cộng sao ---
+resetState();
+const starsBefore = G.stars;
+const mem1 = G.memories.length;
+g.setCurrentTarget({ kind: 'viewpoint' });
+g.doInteract();
+check('ngồi nghỉ trên đồi: đã đánh dấu, không cộng sao', G.viewpointRestedToday === true && G.stars === starsBefore);
+check('ngồi nghỉ: ghi 1 dòng kỷ niệm', G.memories.length === mem1 + 1 && /đồi/.test(G.memories[G.memories.length - 1]));
+g.doInteract();
+check('ngồi nghỉ lần 2 cùng ngày: không ghi thêm kỷ niệm', G.memories.length === mem1 + 1);
+g.player.x = g.HILL_REST_SPOT.x; g.player.z = g.HILL_REST_SPOT.z;
+const fh = g.findTarget();
+check('đứng ở ghế đá trên đồi: E hiện đúng "Ngồi nghỉ trên đồi"', fh && fh.kind === 'viewpoint', fh && fh.kind);
+// --- Hái măng tre: mỗi cây 1 lần/ngày, bán được ở chợ ---
+resetState();
+check('măng tre: lúc đầu giỏ chưa có', (G.produce.mangtre || 0) === 0);
+check('măng tre: giá bán gốc 6.000đ', g.GOODS.mangtre.sell === 6000);
+check('măng tre: anh Đức lấy (+5% = 6.300đ), cô Ba không lấy', g.marketPriceOf('duc', 'mangtre') === 6300 && g.VENDORS.ba.keys.indexOf('mangtre') < 0);
+g.setCurrentTarget({ kind: 'bamboo', shootIndex: 0 });
+g.doInteract();
+check('hái măng cây 0: giỏ +1 măng, cây hết hái', G.produce.mangtre === 1 && G.bambooReady[0] === false && G.bambooToday === 1);
+check('hái măng: cây đã hái thì ẩn khỏi rừng tre', globalThis.window.__bambooShoots[0].group.visible === false);
+g.doInteract();
+check('hái lại cùng cây măng: không thêm măng', G.produce.mangtre === 1);
+g.setCurrentTarget({ kind: 'bamboo', shootIndex: 1 }); g.doInteract();
+g.setCurrentTarget({ kind: 'bamboo', shootIndex: 2 }); g.doInteract();
+check('hái hết 3 cây măng: giỏ có 3 măng', G.produce.mangtre === 3);
+g.player.x = g.GROVE_SHOOTS[0].x; g.player.z = g.GROVE_SHOOTS[0].z;
+const fb = g.findTarget();
+check('đứng ở cây măng đã hái: E vẫn hiện "Măng ở đây vừa hái rồi"', fb && fb.kind === 'bamboo' && /vừa hái/.test(fb.label), fb && fb.label);
+const moneyBefore = G.money;
+const sold = g.sellToVendor('duc', 'mangtre');
+check('bán 3 măng cho anh Đức: +18.900đ, giỏ hết măng', sold === 18900 && G.money === moneyBefore + 18900 && G.produce.mangtre === 0, 'bán được ' + sold);
+// --- Qua đêm: măng mọc lại, mai thắp hương / nghỉ đồi lại được ---
+resetState();
+g.setCurrentTarget({ kind: 'temple' }); g.doInteract();
+g.setCurrentTarget({ kind: 'bamboo', shootIndex: 1 }); g.doInteract();
+g.setCurrentTarget({ kind: 'viewpoint' }); g.doInteract();
+const starsDay1 = G.stars;
+nextDay();
+check('sang ngày mới: thắp hương / nghỉ đồi về chưa làm', G.templePrayedToday === false && G.viewpointRestedToday === false);
+check('sang ngày mới: măng mọc lại đủ 3 cây, đếm hôm nay về 0', G.bambooReady.join(',') === 'true,true,true' && G.bambooToday === 0);
+check('sang ngày mới: 3 cây măng hiện lại trong rừng tre',
+  globalThis.window.__bambooShoots.every(function (s) { return s.group.visible; }));
+g.setCurrentTarget({ kind: 'temple' }); g.doInteract();
+check('ngày mới thắp hương lại: +1 sao', G.stars === starsDay1 + 1, 'stars=' + G.stars);
+// --- Save/load: vòng tròn giữ trạng thái; save cũ không có trường 4.3 vẫn đọc được ---
+resetState();
+g.setCurrentTarget({ kind: 'temple' }); g.doInteract();
+g.setCurrentTarget({ kind: 'bamboo', shootIndex: 1 }); g.doInteract();
+g.saveGame();
+const saved43 = g.readSave();
+G.templePrayedToday = false; G.bambooReady = [true, true, true]; G.produce.mangtre = 0;
+g.applySave(saved43);
+check('save/load: giữ trạng thái đã thắp hương', G.templePrayedToday === true);
+check('save/load: giữ măng cây 1 đã hái, cây 0 và 2 còn', G.bambooReady.join(',') === 'true,false,true');
+check('save/load: giữ 1 măng trong giỏ', G.produce.mangtre === 1);
+check('save/load: cây măng đã hái vẫn ẩn sau khi tải', globalThis.window.__bambooShoots[1].group.visible === false);
+resetState();
+G.day = 5; G.money = 80000; G.stars = 3;
+g.saveGame();
+const oldSave = g.readSave();
+delete oldSave.templePrayedToday; delete oldSave.viewpointRestedToday;
+delete oldSave.bambooReady; delete oldSave.bambooToday;
+delete oldSave.produce.mangtre;
+g.applySave(oldSave);
+check('save cũ (trước 4.3): thắp hương / nghỉ đồi về mặc định chưa làm', G.templePrayedToday === false && G.viewpointRestedToday === false);
+check('save cũ: măng về mặc định còn đủ 3 cây, đếm hôm nay 0', G.bambooReady.join(',') === 'true,true,true' && G.bambooToday === 0);
+check('save cũ: giỏ chưa có măng tre', (G.produce.mangtre || 0) === 0);
+check('save cũ: 3 cây măng hiện đủ trong rừng tre',
+  globalThis.window.__bambooShoots.every(function (s) { return s.group.visible; }));
+
 console.log('\n================ KẾT QUẢ ================');
 console.log(`PASS: ${pass} | FAIL: ${fail}`);
 if (fail > 0) { console.log('Thất bại: ' + failures.join(', ')); process.exit(1); }

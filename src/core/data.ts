@@ -32,6 +32,10 @@
       trungvit: { name: "Trứng vịt", sell: 5000 },
       xoai: { name: "Xoài chín", sell: 12000 },
       oi:   { name: "Ổi chín", sell: 8000 },
+      // PHASE 4.3: măng tre non hái ở rừng tre góc đông-bắc — mỗi ngày mọc
+      // lại 3 cây; bán ở sạp cô Tư giá gốc, anh Đức lấy +5% (sạp đồ khô
+      // lấy mọi món trong GOOD_KEYS).
+      mangtre: { name: "Măng tre", sell: 6000 },
       // PHASE 4.2: đồ lễ hội — chỉ mua được vài ngày quanh lễ ở sạp cô Tư
       // (xem FESTIVAL_ITEMS trong events/festivals.ts); mua về đãi khách
       // hoặc làm nhiệm vụ lễ hội, bán lại thì lỗ một ít.
@@ -39,7 +43,7 @@
       banhtrungthu: { name: "Bánh trung thu", sell: 12000 },
       longden:      { name: "Lồng đèn giấy", sell: 5000 }
     };
-    export var GOOD_KEYS = ["trung", "ca", "chuoi", "trungvit", "xoai", "oi", "banhchung", "banhtrungthu", "longden"];
+    export var GOOD_KEYS = ["trung", "ca", "chuoi", "trungvit", "xoai", "oi", "mangtre", "banhchung", "banhtrungthu", "longden"];
     export function priceOf(k) { return CROPS[k] ? CROPS[k].sell : GOODS[k].sell; }
 
     // — PHASE 2 (cân bằng lại, sau review 12/11): cây ăn quả lớn THEO NGÀY, không phải

@@ -149,6 +149,19 @@ Kết quả mô phỏng 30 ngày (chạy `node test/economy-sim.mjs`, dùng code
 - **Lưu game:** `festivalClaimed` + `festivalToday` lưu vào save; **save cũ** không có các trường này vẫn đọc được (mặc định chưa nhận quà lễ nào, hôm nay chưa rõ là lễ gì — mở game ngày lễ thì quà vẫn tặng đúng 1 lần). Mở game đã lưu đúng ngày lễ thì tính lại lễ hôm nay, nhiệm vụ lễ hội và trang trí hiện lại, quà không tặng trùng.
 - **Cân bằng:** quà lễ cả năm cộng lại ~90.000đ tiền + ~15 sao + 4 hạt giống — không đáng kể so với thu nhập 30 ngày (~5 triệu). Mô phỏng 30 ngày (`node test/economy-sim.mjs`) vẫn cho kết quả tương đương trước: người chăm chỉ 4.742.710đ (trước 4.722.710đ — chênh đúng 20.000đ lì xì Tết Mùng 1 vì lần qua đêm cuối của mô phỏng rơi vào ngày 31), cây ăn quả 388.800đ/30 ngày, chênh rau tối đa 1,4 lần. Đồ lễ hội giá cố định (không quay giá ngày) để dòng số ngẫu nhiên của game không đổi.
 
+## Giai đoạn 4.3 — Mở rộng làng: chùa, rừng tre, đồi ngắm ruộng
+
+- **Mở rộng vừa phải, ở rìa bản đồ** (đúng lời dặn: không phình bản đồ khi chưa kiểm chứng hiệu năng thật) — 3 chỗ mới, tất cả nằm ngoài sân rào lõi, lõi làng không động vào. Dựng bằng đúng mẫu có sẵn (box/cyl/cone + `mat()`/`texMat()`, biển vẽ bằng canvas như biển trường), không thêm hình nặng hay texture mới. File mới `src/world/places.ts`.
+  | Chỗ mới | Vị trí | Vòng chặn | Tương tác (phím E) |
+  |---|---|---|---|
+  | Chùa làng | góc tây-bắc (-25,5, 15,5) | r=2,8 (ôm kín nền 4,2×3,2m) | Thắp hương ở điểm (-22,3, 15,5) — 1 lần/ngày, +1 sao, ghi kỷ niệm |
+  | Rừng tre | góc đông-bắc (26, 14) | 3 khóm r=0,9, chừa lối đi xuyên giữa các khóm | Hái măng tre non ở 3 cây mọc rìa khóm — mỗi cây 1 lần/ngày, sáng mai mọc lại; măng bán 6.000đ (sạp cô Tư giá gốc, anh Đức +5% = 6.300đ) |
+  | Đồi ngắm ruộng | mép nam (4, -19) | gò đất r=2,2 | Ngồi ghế đá ở (1, -16,9) ngắm ruộng lúa — không cộng sao, chỉ một khoảnh khắc yên bình + 1 dòng kỷ niệm (1 lần/ngày) |
+- **Dân làng dùng chỗ mới:** bà Năm ghé chùa 05:30–07:00 mỗi sáng; bác Hai nghỉ trưa trong rừng tre 13:00–15:30. Từ rừng tre về nhà, bác Hai đi vòng qua phía đông ao rồi theo đường làng phía bắc — đi thẳng sẽ kẹt cứng ở khe giữa 2 vòng chặn chồng nhau của nhà chính + ghế hiên (test mô phỏng đã bắt được lỗi này, đã sửa bằng điểm `via` như anh Đức).
+- **Đi tới nhanh:** 3 nút mới "Tới chùa", "Tới rừng tre", "Tới đồi ngắm" (đứng ngoài vòng chặn, quay mặt vào chỗ). Lối đi giữa mỗi chỗ mới và làng đã kiểm chứng không có ngõ cụt (đi bộ bằng đúng `collide()` của game).
+- **Lưu game:** `templePrayedToday`, `viewpointRestedToday`, `bambooReady[3]`, `bambooToday` lưu vào save; **save cũ** không có các trường này vẫn đọc được (mặc định chưa thắp hương/nghỉ đồi, măng còn đủ 3 cây). Bảng tổng kết cuối ngày thêm dòng "Khám phá làng mới".
+- **Cân bằng:** măng tre tối đa 3 cây/ngày × 6.300đ = 18.900đ/ngày — bằng một món phụ như trứng vịt, không phá cân bằng đã kiểm chứng. Mô phỏng 30 ngày vẫn tương đương trước (người chăm chỉ ~4,01 triệu, cây ăn quả 388.000đ/30 ngày, chênh rau tối đa 1,6 lần — lệch nhỏ do thứ tự bốc số ngẫu nhiên đổi khi module mới dựng tre ngẫu nhiên lúc nạp, không do măng làm giàu; sim không hái măng).
+
 ## Ghi chú về bản chuyển đổi này
 
 - **Logic game giữ nguyên 100%** so với bản chơi thử v8 (bản một file duy nhất trước đây). Chỉ tách code thành module và đổi cách nạp Three.js — không sửa gameplay, không viết lại engine.

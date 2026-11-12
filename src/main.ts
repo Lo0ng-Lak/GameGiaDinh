@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import './world/weather';
 import './world/ambient';
 import './world/details';
+import './world/places'; // PHASE 4.3: chùa, rừng tre, đồi ngắm ruộng ở rìa làng
 import './world/upgrades'; // PHASE 2: tivi, tủ lạnh, xe máy, chuồng gà mở rộng, sửa nhà
 import './ui/goto';
 import './ui/structure';
