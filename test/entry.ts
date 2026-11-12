@@ -7,7 +7,8 @@
 // tiếp (main chạy animate khi nạp) — nhưng sound.ts import clockT từ main,
 // nên main vẫn nằm trong bundle; requestAnimationFrame được stub là no-op
 // nên animate chỉ chạy đúng 1 khung.
-export { clockT } from '../src/main';
+export { clockT, startRain } from '../src/main';
+export { seasonOf, seasonName, weatherName, weatherIcon, weatherLabel, rollWeather, weatherSummaryText, SEASON_CYCLE, SEASON_RAINY_DAYS, WEATHERS, WEATHER_ODDS } from '../src/world/weather';
 export { G, fmt, fmtTime, produceTotal, produceValue, sellPriceOf, SCHOOL_BELL } from '../src/core/state';
 export { CROPS, CROP_KEYS, GOODS, GOOD_KEYS, FRUIT_TREES, LIVESTOCK, UPGRADES, HOUSE_REPAIR_SAVINGS } from '../src/core/data';
 export { saveGame, readSave, applySave, SAVE_KEY } from '../src/core/save';

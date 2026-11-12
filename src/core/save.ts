@@ -11,6 +11,7 @@ import { rollQuests } from '../events/quests';
 import { drawCrop, plots, ensureExtraPlots } from '../farming/garden';
 import { drawTree } from '../farming/trees';
 import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
+import { seasonOf } from '../world/weather';
 
     /* ---- Lưu game vào trình duyệt: tiền, sao, hạt, giỏ, luống rau, quỹ, thành tựu, kỷ niệm ---- */
     export var SAVE_KEY = "gia-dinh-que-save-v1";
@@ -31,6 +32,11 @@ import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
             return { type: t.type, state: t.state, progress: t.progress, watered: t.watered, waterings: t.waterings, ripen: t.ripen || 0, fruitReady: t.fruitReady };
           }),
           ducks: G.ducks, pigs: G.pigs,
+          // PHASE 4.1: thời tiết hôm nay đã bốc (để tắt trang mở lại giữa
+          // ngày vẫn giữ đúng thời tiết hôm đó). rainAt = null khi hôm nay
+          // không mưa (Infinity không lưu được thành JSON).
+          weather: G.weather, rainToday: G.rainToday,
+          rainAt: G.rainToday ? G.rainAt : null, rainLen: G.rainLen,
           plots: plots.map(function (p) {
             return { state: p.state, type: p.type, progress: p.progress, watered: p.watered, waterings: p.waterings };
           })
@@ -84,6 +90,20 @@ import { refreshDuckEggs, refreshPigs } from '../farming/livestock';
         p.progress = sp.progress || 0; p.watered = !!sp.watered; p.waterings = sp.waterings || 0;
         p.dryT = 0; p._wilted = false; drawCrop(p);
       });
+      // PHASE 4.1: khôi phục thời tiết hôm nay đã bốc. Save cũ (trước Phase
+      // 4.1) không có các trường này -> mặc định nắng, không mưa; mùa suy
+      // ra từ số ngày nên luôn đúng dù save cũ hay mới.
+      G.season = seasonOf(G.day);
+      if (d.weather === "sunny" || d.weather === "cloudy" || d.weather === "rain" || d.weather === "storm") {
+        G.weather = d.weather;
+        G.rainToday = !!d.rainToday;
+        G.rainAt = (typeof d.rainAt === "number") ? d.rainAt : Infinity;
+        G.rainLen = (typeof d.rainLen === "number" && d.rainLen > 0) ? d.rainLen : 55;
+      } else {
+        G.weather = "sunny"; G.rainToday = false; G.rainAt = Infinity; G.rainLen = 55;
+      }
+      G.raining = false; G.rainT = 0; G.rainedToday = false;
+      G.stormHit = false; G.stormDamaged = false;
     }
     rollQuests();
 

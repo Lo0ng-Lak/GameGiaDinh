@@ -6,6 +6,7 @@
  * Xem assets/CAU-TRUC-DU-AN.md de biet ban do module va lo trinh chuyen doi.
  */
 import * as THREE from 'three';
+import { G } from '../core/state';
 import { ground, mat, road, scene, yard } from './scene';
 
     /* ================== LỚP CHÂN THẬT: cột điện, bóng mây, vũng nước, cầu vồng, xe máy ================== */
@@ -94,4 +95,83 @@ import { ground, mat, road, scene, yard } from './scene';
       scene.add(bike);
       window.__bike = bike;
     })();
+
+    /* ================== PHASE 4.1: THỜI TIẾT THEO NGÀY + MÙA ==================
+     * Mùa suy ra từ số ngày chơi, chu kỳ 60 ngày kiểu miền Nam Việt Nam:
+     *   ngày 1–30: Mùa mưa — mưa/giông ~50% số ngày
+     *   ngày 31–60: Mùa khô — mưa/giông chỉ ~10% số ngày
+     * rồi lặp lại (ngày 61 lại là mùa mưa...). rollWeather() bốc thời tiết
+     * mỗi sáng (nút "Ngày mới" gọi), rồi điều khiển cơn mưa rào có sẵn ở
+     * main.ts: ngày mưa => mưa tới đúng giờ đã bốc, ngày nắng/mây => không
+     * mưa (rainAt = Infinity). Mưa tưới miễn phí cả luống rau lẫn cây ăn
+     * quả (xem startRain() trong main.ts). Giông = mưa lâu hơn + trời tối
+     * hơn + có cơ hội nhỏ quật ngã 1 luống rau chín (xem startRain).
+     * Mùa khô: rau khát nước héo nhanh gấp đôi (dryT tăng gấp đôi, main.ts).
+     */
+    export var SEASON_CYCLE = 60;            // 1 chu kỳ = 60 ngày: 30 mưa + 30 khô
+    export var SEASON_RAINY_DAYS = 30;
+    export var SEASONS = {
+      rainy: { name: "Mùa mưa" },
+      dry: { name: "Mùa khô" }
+    };
+    export var WEATHERS = {
+      sunny: { name: "Nắng", icon: "☀️" },
+      cloudy: { name: "Nhiều mây", icon: "⛅" },
+      rain: { name: "Mưa rào", icon: "🌧️" },
+      storm: { name: "Giông bão", icon: "⛈️" }
+    };
+    // Xác suất trong mùa mưa: mưa 35%, giông 15%, mây 25%, nắng 25%
+    // (mưa/giông 50%). Trong mùa khô: mưa 7%, giông 3%, mây 25%, nắng 65%
+    // (mưa/giông 10%).
+    export var WEATHER_ODDS = {
+      rainy: { rain: 0.35, storm: 0.15, cloudy: 0.25, sunny: 0.25 },
+      dry: { rain: 0.07, storm: 0.03, cloudy: 0.25, sunny: 0.65 }
+    };
+
+    export function seasonOf(day) {
+      var d = ((day - 1) % SEASON_CYCLE) + 1;
+      return d <= SEASON_RAINY_DAYS ? "rainy" : "dry";
+    }
+    export function seasonName(s) { return (SEASONS[s] || SEASONS.rainy).name; }
+    export function weatherName(w) { return (WEATHERS[w] || WEATHERS.sunny).name; }
+    export function weatherIcon(w) { return (WEATHERS[w] || WEATHERS.sunny).icon; }
+    export function weatherLabel(w, s) {
+      return weatherIcon(w) + " " + weatherName(w) + " · " + seasonName(s);
+    }
+    // Bốc thời tiết cho ngày hiện tại (G.day), đặt giờ + độ dài cơn mưa.
+    // Trả về loại thời tiết đã bốc.
+    export function rollWeather() {
+      var season = seasonOf(G.day);
+      G.season = season;
+      var odds = WEATHER_ODDS[season];
+      var r = Math.random(), w;
+      if (r < odds.rain) w = "rain";
+      else if (r < odds.rain + odds.storm) w = "storm";
+      else if (r < odds.rain + odds.storm + odds.cloudy) w = "cloudy";
+      else w = "sunny";
+      G.weather = w;
+      G.rainToday = (w === "rain" || w === "storm");
+      if (w === "storm") {
+        G.rainAt = 660 + Math.random() * 180;   // giông tới sớm hơn: 11:00–14:00
+        G.rainLen = 110;                        // giông mưa lâu gấp đôi mưa rào
+      } else if (w === "rain") {
+        G.rainAt = 780 + Math.random() * 150;   // mưa rào: 13:00–15:30 như cũ
+        G.rainLen = 55;
+      } else {
+        G.rainAt = Infinity;                    // nắng/mây: hôm nay không mưa
+        G.rainLen = 55;
+      }
+      G.raining = false; G.rainT = 0; G.rainedToday = false;
+      G.stormHit = false; G.stormDamaged = false;
+      return w;
+    }
+    // Dòng tóm tắt thời tiết cho bảng "Hết ngày" (day.ts).
+    export function weatherSummaryText() {
+      var s = seasonName(G.season || seasonOf(G.day));
+      if (G.weather === "rain") return "Có mưa rào, rau được trời tưới · " + s;
+      if (G.weather === "storm")
+        return "Giông bão" + (G.stormHit ? ", quật ngã 1 luống rau chín" : ", rau được trời tưới") + " · " + s;
+      if (G.weather === "cloudy") return "Trời nhiều mây, không mưa · " + s;
+      return "Nắng cả ngày · " + s;
+    }
 

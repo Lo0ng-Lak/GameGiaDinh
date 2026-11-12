@@ -31,7 +31,14 @@ import { CROPS, GOODS, priceOf } from './data';
       thiefDay: Math.random() < 0.65,           // có hôm có trộm, có hôm yên ổn hẳn
       thiefAt: 480 + Math.random() * 570,       // trộm lẻn vào bất kỳ lúc nào 8:00–17:30, không theo khung giờ cố định
       raining: false, rainT: 0, rainedToday: false,
-      rainAt: 780 + Math.random() * 150,        // khoảng 13:00–15:30 có mưa rào
+      rainAt: Infinity,                     // chỉ đặt giờ mưa khi rollWeather() bốc trúng ngày mưa
+      // PHASE 4.1: thời tiết theo ngày + mùa — xem src/world/weather.ts.
+      // weather: "sunny" | "cloudy" | "rain" | "storm"; season: "rainy" | "dry"
+      // (mùa suy ra từ số ngày, không cần lưu riêng — G.season chỉ là bộ nhớ đệm).
+      // rainToday: hôm nay có mưa không; rainLen: cơn mưa kéo dài bao lâu (giây
+      // game); stormHit: giông đã quật ngã 1 luống rau chín hôm nay chưa.
+      weather: "sunny", season: "rainy", rainToday: false, rainLen: 55,
+      stormHit: false, stormDamaged: false,
       visit: { state: "none", wp: 0, t: 0, talked: false },  // none | walking | here | leaving | done
       visitAt: 900 + Math.random() * 60,        // khoảng 15:00–16:00 bà Tư qua chơi
       // Lớp chân thật: âm thanh tự nhiên, gió, mặt đất ướt sau mưa, cầu vồng, xe máy chạy qua đường

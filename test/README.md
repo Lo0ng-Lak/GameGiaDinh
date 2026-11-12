@@ -11,6 +11,7 @@ test là hàm thật, không phải bản sao.
 npm install            # lần đầu (cần esbuild — đã có qua vite)
 node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi chạy
 node test/npc-pathing.test.mjs     # 110 kiểm tra đường đi + lịch dân làng
+node test/weather.test.mjs         # 66 kiểm tra thời tiết + mùa (Phase 4.1)
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
 # OLD_CROPS=1 node test/economy-sim.mjs   # chạy lại với giá rau cũ để so sánh trước/sau
 ```
@@ -75,6 +76,21 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
   đủ nâng cấp (tủ lạnh, xe máy, chuồng lợn... thêm 4 vòng chặn). Ca đi lâu
   nhất: anh Đức từ ao về nhà 46 phút (đi vòng qua đường làng phía bắc,
   trong ca 60 phút).
+
+`test/weather.test.mjs` (66 kiểm tra, đều đậu — Phase 4.1):
+- **Mùa:** chu kỳ 60 ngày (30 mưa + 30 khô), kiểm tra đúng ranh giới
+  ngày 1/30/31/60/61/90/91/120/121.
+- **Bốc thời tiết:** ép `Math.random` về các ngưỡng để kiểm tra đúng loại
+  (mưa/giông/mây/nắng) và giờ mưa + độ dài mưa từng mùa; bốc 1000 lần với
+  seed cố định: mùa mưa ~50% ngày mưa/giông, mùa khô ~10%.
+- **Mưa:** `startRain()` thật tưới miễn phí luống + cây ăn quả, không tốn
+  nước giếng; qua đêm (nút "Ngày mới" thật) luống được mưa tưới lớn thêm.
+  Ngày nắng mùa khô: điều kiện mở mưa sai, luống/cây vẫn khô.
+- **Giông:** ép 30% trúng/trượt — trúng thì đúng 1 luống chín rụng xuống
+  50%, gọi mưa lần 2 không quật thêm; trượt thì không luống nào bị sao.
+- **Save/load:** vòng tròn lưu/tải giữ thời tiết hôm nay; ngày nắng lưu
+  `rainAt: null` (Infinity không vào được JSON) và tải lại thành Infinity;
+  save cũ không có trường thời tiết vẫn đọc được, mặc định nắng.
 
 ## Lưu ý: test từng rớt lúc đậu lúc rớt (đã sửa)
 

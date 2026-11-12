@@ -23,6 +23,8 @@ import { rollPrices, shopOverlay } from './economy/shop';
 import { applyUpgrades } from './world/upgrades';
 import { addMemory, rollQuests } from './events/quests';
 import { drawCrop, plots } from './farming/garden';
+import { drawTree } from './farming/trees';
+import { rollWeather } from './world/weather';
 import { chickenLayCount, refreshDuckEggs } from './farming/livestock';
 import { child, childHome, childParts } from './npc/child';
 import { husband, husbandParts, husbandPath } from './npc/husband';
@@ -60,6 +62,7 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
     el("btn-start").addEventListener("click", function () {
       el("start-overlay").classList.remove("show");
       if (pendingSave) { applySave(pendingSave); setPendingSave(null); rollQuests(); }
+      else rollWeather();   // nhà mới: bốc thời tiết ngày 1 (save cũ thì applySave đã đặt mặc định nắng)
       // PHASE 2: giá bán theo ngày (ban đầu chưa có thì quay mới) + hiện đồ đã mua
       if (!G.priceDay || Object.keys(G.priceDay).length === 0) rollPrices();
       applyUpgrades();
@@ -77,6 +80,45 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
     export var PR_STEPS = [2, 1.75, 1.5, 1.3, 1.15, 1];
     export var stepSndT = 0, promptEl = el("prompt"), promptText = el("prompt-text"), objEl = el("objective");
     export var hudT = 0;
+    /* --- PHASE 4.1: cơn mưa bắt đầu — tưới miễn phí + giông quật rau ---
+     * Tách riêng khỏi animate() để test gọi thẳng được. Mưa tưới cả luống
+     * rau đang lớn lẫn cây ăn quả (đang lớn hay đã lớn, chưa tưới hôm nay)
+     * — mưa là nước trời, không tốn nước giếng, cây tính như đã tưới 1 lần.
+     * Giông: 30% quật ngã 1 luống rau CHÍN (rụng xuống còn lớn dở 50%,
+     * không mất hẳn) — thiệt hại vừa phải, chỉ 1 luống, tối đa 1 lần/ngày. */
+    export function startRain() {
+      G.rainedToday = true; G.raining = true; G.rainT = G.rainLen || 55;
+      if (window.__rain) window.__rain.visible = true;
+      var wateredN = 0;
+      plots.forEach(function (p) {
+        if (p.state === "growing" && !p.watered) { p.watered = true; p.dryT = 0; p._wilted = false; wateredN++; drawCrop(p); }
+      });
+      var treeN = 0;
+      G.trees.forEach(function (t, ti) {
+        if (t.type && (t.state === "growing" || t.state === "mature") && !t.watered) { t.watered = true; treeN++; drawTree(ti); }
+      });
+      var head = G.weather === "storm" ? "Giông bão kéo tới, mưa xối xả!" : "Mưa rào đổ xuống bất chợt!";
+      if (G.weather === "storm" && !G.stormDamaged) {
+        G.stormDamaged = true;
+        if (Math.random() < 0.3) {
+          var mature = plots.filter(function (p) { return p.state === "mature"; });
+          if (mature.length > 0) {
+            var victim = mature[Math.floor(Math.random() * mature.length)];
+            victim.state = "growing"; victim.progress = 0.5; victim.watered = true;
+            victim.dryT = 0; victim._wilted = false; drawCrop(victim);
+            G.stormHit = true;
+            toast("Giông quật ngã một luống rau chín — phải chờ nó lớn lại.");
+          }
+        }
+      }
+      var parts = [];
+      if (wateredN > 0) parts.push(wateredN + " luống rau");
+      if (treeN > 0) parts.push(treeN + " cây ăn quả");
+      toast(parts.length > 0
+        ? head + " " + parts.join(" và ") + " được trời tưới miễn phí."
+        : head + " Ngồi hiên ngắm mưa quê một lát.");
+    }
+
     export function animate() {
       requestAnimationFrame(animate);
       var dt = Math.min(clockT.getDelta(), 0.1);
@@ -115,9 +157,10 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
               if (p._lastStage % 7 === 0) drawCrop(p);
             }
           }
-          // Để khô lâu thì cây héo dần — đếm thời gian khát nước của từng luống
+          // Để khô lâu thì cây héo dần — đếm thời gian khát nước của từng luống.
+          // PHASE 4.1: mùa khô nắng gắt, đất khô nhanh gấp đôi nên rau héo sớm hơn.
           if (p.state === "growing" && !p.watered) {
-            p.dryT += dt;
+            p.dryT += dt * (G.season === "dry" ? 2 : 1);
             if (p.dryT > 7 && !p._wilted) { p._wilted = true; drawCrop(p); }
           } else if (p._wilted) { p._wilted = false; }
           // Dấu hiệu nhấp nhô
@@ -476,16 +519,12 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
             toast("Bà Tư về rồi. Hẹn bà hôm khác qua chơi.");
           }
         }
-        /* --- Sự kiện bất ngờ 3: mưa rào — rau được tưới miễn phí --- */
-        if (!G.rainedToday && G.minutes >= G.rainAt) {
-          G.rainedToday = true; G.raining = true; G.rainT = 55;
-          if (window.__rain) window.__rain.visible = true;
-          var wateredN = 0;
-          plots.forEach(function (p) { if (p.state === "growing" && !p.watered) { p.watered = true; wateredN++; drawCrop(p); } });
-          toast(wateredN > 0
-            ? "Mưa rào đổ xuống bất chợt! " + wateredN + " luống rau được trời tưới miễn phí."
-            : "Mưa rào đổ xuống bất chợt! Ngồi hiên ngắm mưa quê một lát.");
-        }
+        /* --- Sự kiện bất ngờ 3: mưa rào — rau + cây ăn quả được tưới miễn phí ---
+         * PHASE 4.1: cơn mưa chỉ tới khi rollWeather() bốc trúng ngày mưa
+         * (G.rainToday); ngày nắng/mây thì rainAt = Infinity nên không mưa.
+         * Giông thì mưa lâu hơn (G.rainLen) và có thể quật ngã 1 luống rau
+         * chín — xem startRain() tách riêng dưới để test gọi thẳng được. */
+        if (G.rainToday && !G.rainedToday && G.minutes >= G.rainAt) startRain();
         if (G.raining) {
           G.rainT -= dt;
           if (G.rainT <= 0) {
@@ -643,8 +682,13 @@ import { AC, beep, initAmbient, setAC, sndBark, sndBell, sndCluck, sndCoin, sndH
           if (G._saveT >= 5) { G._saveT = 0; saveGame(); }
         }
         updateSky();
-        // Đang mưa rào: nắng dịu lại, sương mù dày hơn
-        if (G.raining) { sun.intensity *= 0.5; hemi.intensity *= 0.75; scene.fog.near = 20; scene.fog.far = 58; }
+        // Đang mưa rào: nắng dịu lại, sương mù dày hơn. PHASE 4.1: giông thì
+        // trời tối hẳn hơn mưa thường; ngày nhiều mây thì nắng cũng dịu đi.
+        if (G.raining) {
+          var storm = G.weather === "storm";
+          sun.intensity *= storm ? 0.32 : 0.5; hemi.intensity *= storm ? 0.6 : 0.75;
+          scene.fog.near = storm ? 14 : 20; scene.fog.far = storm ? 45 : 58;
+        } else if (G.weather === "cloudy") { sun.intensity *= 0.85; hemi.intensity *= 0.92; }
         else { scene.fog.near = 34; scene.fog.far = 95; }
       }
       fireflies.position.y = Math.sin(tNow * 0.7) * 0.15;

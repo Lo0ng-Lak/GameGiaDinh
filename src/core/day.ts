@@ -21,6 +21,7 @@ import { visitPath, visitor } from '../npc/visitor';
 import { exitLock, player } from '../player/player';
 import { el, toast, updateHUD } from '../ui/hud';
 import { stopBikeSound } from '../world/sound';
+import { rollWeather, weatherLabel, weatherSummaryText } from '../world/weather';
 
     /* ================== KẾT THÚC NGÀY ================== */
     export var dayOverlay = el("day-overlay");
@@ -61,7 +62,7 @@ import { stopBikeSound } from '../world/sound';
         '<div class="sum-row"><span>Trộm lẻn vào sân</span><b>' + (G.thief.result || "Không có, nhà yên ổn") + '</b></div>' +
         '<div class="sum-row"><span>Khách qua nhà</span><b>' + (G.visit.talked ? "Bà Tư ghé chơi, biếu hạt giống" : "Không có ai ghé") + '</b></div>' +
         '<div class="sum-row"><span>Làng xóm &amp; chợ</span><b>' + (G.greetedToday > 0 ? "Chào " + G.greetedToday + " người" : "Chưa chào ai") + ' · Bán chợ ' + fmt(G.marketSoldToday) + (G.teacherEggsToday > 0 ? ' · Đưa cô giáo ' + G.teacherEggsToday + ' trứng' : '') + '</b></div>' +
-        '<div class="sum-row"><span>Thời tiết</span><b>' + (G.rainedToday ? "Có mưa rào, rau được trời tưới" : "Nắng cả ngày") + '</b></div>' +
+        '<div class="sum-row"><span>Thời tiết</span><b>' + weatherSummaryText() + '</b></div>' +
         '<div class="sum-row"><span>Tiền hiện có</span><b>' + fmt(G.money) + '</b></div>';
       dayOverlay.classList.add("show");
     }
@@ -94,7 +95,11 @@ import { stopBikeSound } from '../world/sound';
       G.thiefAt = 480 + Math.random() * 570;          // giờ nào cũng có thể, 8:00–17:30
       thief.visible = false; thief.position.copy(thiefPath[0]); thief.position.y = 0;
       if (thiefParts.sack) thiefParts.sack.scale.set(1, 1.15, 0.8);
-      G.raining = false; G.rainT = 0; G.rainedToday = false; G.rainAt = 780 + Math.random() * 150;
+      // PHASE 4.1: ngày mới bốc thời tiết + mùa mới — thời tiết hôm nay do
+      // rollWeather() quyết định (mưa thì mưa tới đúng giờ đã bốc, nắng/mây
+      // thì không mưa). rollWeather cũng reset cờ mưa (raining/rainT/
+      // rainedToday/stormHit) nên thay luôn khối reset mưa cũ ở đây.
+      rollWeather();
       if (window.__rain) window.__rain.visible = false;
       G.visit.state = "none"; G.visit.wp = 0; G.visit.t = 0; G.visit.talked = false; G.visitAt = 900 + Math.random() * 60;
       visitor.visible = false; visitor.position.copy(visitPath[0]);
@@ -126,7 +131,7 @@ import { stopBikeSound } from '../world/sound';
         if (ev.kind === "matured") toast("Cây " + (ev.type === "xoai" ? "xoài" : "ổi") + " đã lớn thành cây trưởng thành! Từ giờ chăm tưới là có trái ăn.");
         else if (ev.kind === "fruited") toast("Cây " + (ev.type === "xoai" ? "xoài" : "ổi") + " ra " + ev.n + " trái chín — hái mang bán nhé!");
       });
-      toast("Ngày mới bắt đầu. Bé An đang chờ ở hiên nhà.");
+      toast("Ngày mới bắt đầu — " + weatherLabel(G.weather, G.season) + ". Bé An đang chờ ở hiên nhà.");
       updateHUD();
       saveGame();
     });
