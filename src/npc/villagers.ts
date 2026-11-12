@@ -13,8 +13,8 @@ import { G } from '../core/state';
 import { saveGame } from '../core/save';
 import { addMemory, checkQuestsAchievements } from '../events/quests';
 import { toast } from '../ui/hud';
-import { mat, scene } from '../world/scene';
-import { FIELD_SPOT, GROCERY_FRONT, HOUSE_POS, MARKET_STALLS, POND_SPOT, SCHOOL_YARD_SPOT, stallFront } from '../world/village';
+import { mat, scene, blockers } from '../world/scene';
+import { FIELD_SPOT, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, MARKET_STALLS, POND_SPOT, SCHOOL_YARD_SPOT, stallFront } from '../world/village';
 
 // ---- Định nghĩa dân làng ----
 export var VILLAGERS = [
@@ -28,11 +28,11 @@ export var VILLAGERS = [
       "Bác Hai: \"Con bé An nhà chị ngoan, gặp bác là chào rõ to.\""
     ],
     schedule: [
-      { from: 330, to: 420, at: HOUSE_POS.h1 },
+      { from: 330, to: 420, at: HOUSE_FRONT.h1[0] },
       { from: 420, to: 660, at: FIELD_SPOT },
-      { from: 660, to: 780, at: HOUSE_POS.h1 },
-      { from: 780, to: 930, at: { x: -6, z: -10.2 } },
-      { from: 930, to: 1140, at: HOUSE_POS.h1 }
+      { from: 660, to: 780, at: HOUSE_FRONT.h1[0] },
+      { from: 780, to: 930, at: { x: -8, z: -10.8 } },
+      { from: 930, to: 1140, at: HOUSE_FRONT.h1[0] }
     ]
   },
   {
@@ -45,11 +45,11 @@ export var VILLAGERS = [
       "Bà Năm: \"Hôm nào rảnh qua nhà bà uống nước chè xanh nhé.\""
     ],
     schedule: [
-      { from: 330, to: 480, at: HOUSE_POS.h1 },
-      { from: 480, to: 660, at: { x: 2, z: -10.2 } },
-      { from: 660, to: 900, at: HOUSE_POS.h1 },
+      { from: 330, to: 480, at: HOUSE_FRONT.h1[1] },
+      { from: 480, to: 660, at: { x: -3.5, z: -9.6 } },
+      { from: 660, to: 900, at: HOUSE_FRONT.h1[1] },
       { from: 900, to: 960, at: { x: 21.5, z: -13.2 } },
-      { from: 960, to: 1140, at: HOUSE_POS.h1 }
+      { from: 960, to: 1140, at: HOUSE_FRONT.h1[1] }
     ]
   },
   {
@@ -61,9 +61,9 @@ export var VILLAGERS = [
       "Cô Ba: \"Chợ sớm đông vui, chị bán rau xong thì ghé chơi nhé.\""
     ],
     schedule: [
-      { from: 330, to: 390, at: HOUSE_POS.h2 },
+      { from: 330, to: 390, at: HOUSE_FRONT.h2[0] },
       { from: 390, to: 1020, at: stallFront(MARKET_STALLS[0]), stall: "ba" },
-      { from: 1020, to: 1140, at: HOUSE_POS.h2 }
+      { from: 1020, to: 1140, at: HOUSE_FRONT.h2[0] }
     ]
   },
   {
@@ -75,9 +75,9 @@ export var VILLAGERS = [
       "Chị Lan: \"Trứng gà trứng vịt cũng mang qua đây, chị mua cả.\""
     ],
     schedule: [
-      { from: 330, to: 420, at: HOUSE_POS.h2 },
+      { from: 330, to: 420, at: HOUSE_FRONT.h2[1] },
       { from: 420, to: 1020, at: stallFront(MARKET_STALLS[1]), stall: "lan" },
-      { from: 1020, to: 1140, at: HOUSE_POS.h2 }
+      { from: 1020, to: 1140, at: HOUSE_FRONT.h2[1] }
     ]
   },
   {
@@ -90,10 +90,13 @@ export var VILLAGERS = [
     ],
     schedule: [
       { from: 330, to: 360, at: POND_SPOT },
-      { from: 360, to: 420, at: HOUSE_POS.h1 },
+      // Từ ao về nhà: đi thẳng sẽ đâm gần như xuyên tâm vòng chặn nhà
+      // chính nên trượt rất chậm, không kịp về trong 60 phút. Đi vòng qua
+      // đường làng phía bắc (z=-14.5) rồi mới về nhà.
+      { from: 360, to: 420, at: HOUSE_FRONT.h1[2], via: [{ x: -2, z: -14.5 }, { x: -14, z: -14.5 }] },
       { from: 420, to: 960, at: stallFront(MARKET_STALLS[2]), stall: "duc" },
       { from: 960, to: 1080, at: POND_SPOT },
-      { from: 1080, to: 1140, at: HOUSE_POS.h1 }
+      { from: 1080, to: 1140, at: HOUSE_FRONT.h1[2], via: [{ x: -2, z: -14.5 }, { x: -14, z: -14.5 }] }
     ]
   },
   {
@@ -105,9 +108,9 @@ export var VILLAGERS = [
       "Ông Tư: \"Chị mua đồ nhà là tôi mừng, cả làng quen nhau cả mà.\""
     ],
     schedule: [
-      { from: 330, to: 360, at: { x: -12, z: -14 } },
+      { from: 330, to: 360, at: { x: -14.8, z: -13.8 } },
       { from: 360, to: 1080, at: GROCERY_FRONT },
-      { from: 1080, to: 1140, at: { x: -12, z: -14 } }
+      { from: 1080, to: 1140, at: { x: -14.8, z: -13.8 } }
     ]
   },
   {
@@ -120,9 +123,9 @@ export var VILLAGERS = [
       "Cô giáo: \"Cảm ơn chị, các cháu có bữa trưa ngon là nhờ nhà mình đấy.\""
     ],
     schedule: [
-      { from: 330, to: 420, at: HOUSE_POS.h2 },
+      { from: 330, to: 420, at: HOUSE_FRONT.h2[2] },
       { from: 420, to: 990, at: SCHOOL_YARD_SPOT },
-      { from: 990, to: 1140, at: HOUSE_POS.h2 }
+      { from: 990, to: 1140, at: HOUSE_FRONT.h2[2] }
     ]
   }
 ];
@@ -188,20 +191,48 @@ export function villagerAtStall(def) {
 }
 
 // ---- Di chuyển theo lịch — gọi mỗi khung từ main.ts animate() ----
+// Dân làng đi bộ cũng trượt quanh vật cản như người chơi (blockers là các
+// hình tròn ở scene.ts) — trước đây họ đi thẳng tới mục tiêu nên đi xuyên
+// nhà chính, xuyên sạp chợ, xuyên cả tiệm tạp hóa. Trượt theo mép vòng
+// chặn thì tới được đích mà không xuyên vật thể; đích phải nằm ngoài vòng
+// chặn thì mới tới được (xem test/npc-pathing.test.mjs kiểm tra điều đó).
+function slide(nx, nz) {
+  for (var pass = 0; pass < 3; pass++) {
+    var moved = false;
+    for (var i = 0; i < blockers.length; i++) {
+      var b = blockers[i], dx = nx - b.x, dz = nz - b.z, d = Math.hypot(dx, dz);
+      if (d < b.r && d > 0.0001) { nx = b.x + dx / d * b.r; nz = b.z + dz / d * b.r; moved = true; }
+    }
+    if (!moved) break;
+  }
+  nx = Math.max(-27, Math.min(31, nx));
+  nz = Math.max(-20.5, Math.min(19, nz));
+  return { x: nx, z: nz };
+}
 export function updateVillagers(dt, tNow) {
   if (!G.started || G.dayOver) return;
   VILLAGERS.forEach(function (def) {
     var mesh = villagerMeshes[def.id];
     var parts = villagerParts[def.id];
-    var target = currentSegment(def).at;
+    var seg = currentSegment(def);
+    // Đổi ca thì đi lại từ điểm via đầu tiên; via là các điểm trung gian
+    // đi qua theo thứ tự trước khi tới đích (đi vòng qua vật cản lớn).
+    if (def._seg !== seg) { def._seg = seg; def._via = 0; }
+    if (def._via == null) def._via = 0;
+    var pts = (seg.via || []).concat([seg.at]);
+    if (def._via >= pts.length) def._via = pts.length - 1;
+    var target = pts[def._via];
     var dx = target.x - mesh.position.x, dz = target.z - mesh.position.z;
     var d = Math.hypot(dx, dz);
     var sw = 0;
     if (d > 0.3) {
       var step = Math.min(d, dt * 1.6); // đi bộ làng quê, không chạy
-      mesh.position.x += dx / d * step; mesh.position.z += dz / d * step;
+      var s = slide(mesh.position.x + dx / d * step, mesh.position.z + dz / d * step);
+      mesh.position.x = s.x; mesh.position.z = s.z;
       mesh.rotation.y = Math.atan2(dx, dz);
       sw = Math.sin(tNow * 8) * 0.45;
+    } else if (def._via < pts.length - 1) {
+      def._via++; // tới điểm via thì đi tiếp điểm sau
     } else {
       // Đứng một chỗ: khẽ đung đưa, tay buông
       mesh.rotation.y += Math.sin(tNow * 0.7) * 0.001;

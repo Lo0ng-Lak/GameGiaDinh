@@ -10,7 +10,9 @@ test là hàm thật, không phải bản sao.
 ```sh
 npm install            # lần đầu (cần esbuild — đã có qua vite)
 node test/save-shopping.test.mjs   # 124 kiểm tra, tự build bundle rồi chạy
+node test/npc-pathing.test.mjs     # 110 kiểm tra đường đi + lịch dân làng
 node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng + kết luận
+# OLD_CROPS=1 node test/economy-sim.mjs   # chạy lại với giá rau cũ để so sánh trước/sau
 ```
 
 ## Cách test hoạt động
@@ -56,6 +58,37 @@ node test/economy-sim.mjs          # mô phỏng kinh tế 30 ngày, in bảng +
   đủ thì giao xong hết trứng, nhiệm vụ xong, thưởng 15.000đ; `rollQuests` 5
   lần đều có việc đưa bé đi học (bug chỉ số 8 cũ đã sửa); bảng sạp chợ / tạp
   hóa mở được không lỗi; qua đêm reset hết số liệu làng.
+
+`test/npc-pathing.test.mjs` (110 kiểm tra, đều đậu):
+- **Lịch:** 7 dân làng phủ kín 05:30–19:00 không hở giờ; đúng giờ ở sạp
+  (cô Ba 06:30–17:00, chị Lan 07:00–17:00, anh Đức 07:00–16:00), tiệm tạp
+  hóa ông Tư 06:00–18:00, sân trường cô giáo 07:00–16:30, ruộng bác Hai
+  07:00–11:00, ao anh Đức 05:30–06:00 và 16:00–18:00.
+- **Điểm đến:** mọi điểm trong lịch (kể cả điểm `via`) nằm ngoài vòng chặn
+  và trong bản đồ; cặp dân làng gần nhất vẫn cách nhau 1,2m — không ai đứng
+  trong tường nhà hay trùng chỗ nhau (3 lỗi cũ đã sửa: dân làng đứng lọt
+  trong nhà hàng xóm, bác Hai/bà Năm trùng điểm trước sạp, ông Tư đứng
+  trong vòng chặn nhà chính do vòng nhà r=5,2 phủ lấn).
+- **Mô phỏng cả ngày bằng `updateVillagers` thật** (1 phút game = 2/3 giây
+  thật, đi 1,6 m/s, trượt quanh vật cản): 0 lần đi xuyên vật thể, mọi ca
+  đều tới điểm hẹn trước khi hết ca, cả ở trạng thái mặc định và sau khi mua
+  đủ nâng cấp (tủ lạnh, xe máy, chuồng lợn... thêm 4 vòng chặn). Ca đi lâu
+  nhất: anh Đức từ ao về nhà 46 phút (đi vòng qua đường làng phía bắc,
+  trong ca 60 phút).
+
+## Lưu ý: test từng rớt lúc đậu lúc rớt (đã sửa)
+
+`save-shopping.test.mjs` từng đậu 124/124 nhưng thỉnh thoảng rớt 5 kiểm tra
+tiền (mua tivi ra 55.000đ thay vì 50.000đ, lãi lợn 30.000đ thay vì 25.000đ
+— lệch đúng 5.000đ). Nguyên nhân: `src/core/save.ts:88` có `rollQuests()` ở
+cấp module, nên lúc nạp game đã bốc sẵn 3 việc ngẫu nhiên; khoảng 20% số lần
+bốc trúng việc "Mua 1 món ở sạp" (thưởng 5.000đ), mua tivi hay chuồng lợn
+xong là hoàn thành việc đó nên tiền tăng thêm 5.000đ. Đây là hành vi game
+đúng, lỗi ở test. Cách sửa: (1) seed `Math.random` bằng mulberry32
+(20261112) trước khi nạp bundle — cả 3 file test + sim đều dùng chung seed;
+(2) `resetState()` của save-shopping test xóa `G.quests` về rỗng, các kiểm
+tra tiền không còn nhiễm thưởng nhiệm vụ; test nào cần nhiệm vụ thì tự đặt
+tường minh. Sau khi sửa: 10/10 lần chạy đều 124/124.
 
 ## Cái gì KHÔNG test được ở đây
 

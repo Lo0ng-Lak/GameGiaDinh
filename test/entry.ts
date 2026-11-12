@@ -21,4 +21,5 @@ export { checkQuestsAchievements, rollQuests, QUEST_DEFS, ACHIEVEMENTS } from '.
 export { updateHUD } from '../src/ui/hud';
 export { VILLAGERS, villagerById, currentSegment, villagerAtStall, updateVillagers, greetVillager, giveToTeacher, villagerMeshes } from '../src/npc/villagers';
 export { VENDORS, GROCERY, marketPriceOf, sellToVendor, buyGrocery, vendorBuyableCount, openVendorPanel, openGroceryPanel } from '../src/economy/market';
-export { MARKET_STALLS, GROCERY_POS, GROCERY_FRONT, HOUSE_POS, SCHOOL_YARD_SPOT, SCHOOL_PLAY_SPOT, FIELD_SPOT, POND_SPOT, stallFront } from '../src/world/village';
+export { blockers } from '../src/world/scene';
+export { MARKET_STALLS, GROCERY_POS, GROCERY_FRONT, HOUSE_POS, HOUSE_FRONT, SCHOOL_YARD_SPOT, SCHOOL_PLAY_SPOT, FIELD_SPOT, POND_SPOT, stallFront } from '../src/world/village';

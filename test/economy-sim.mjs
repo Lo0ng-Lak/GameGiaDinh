@@ -35,6 +35,17 @@ const require = createRequire(import.meta.url);
 const g = require(BUNDLE);
 const { G, CROPS, FRUIT_TREES, LIVESTOCK, GOODS } = g;
 
+// OLD_CROPS=1: khôi phục giá rau cũ (Giai đoạn 1) để so sánh trước/sau
+// của lần cân bằng này: cải 5k/14k, cà chua 10k/26k×2, bí 18k/52k,
+// ngô 8k/20k×2. Chạy 2 lần (có/không OLD_CROPS) rồi đối chiếu cùng kịch bản.
+if (process.env.OLD_CROPS === '1') {
+  Object.assign(CROPS.cai, { seed: 5000, sell: 14000, yield: 1 });
+  Object.assign(CROPS.cachua, { seed: 10000, sell: 26000, yield: 2 });
+  Object.assign(CROPS.bido, { seed: 18000, sell: 52000, yield: 1 });
+  Object.assign(CROPS.ngo, { seed: 8000, sell: 20000, yield: 2 });
+  console.log('!!! ĐANG DÙNG GIÁ RAU CŨ (OLD_CROPS=1) ĐỂ SO SÁNH !!!');
+}
+
 const freshG = JSON.parse(JSON.stringify(G));
 function resetState() {
   for (const k of Object.keys(G)) delete G[k];
@@ -179,8 +190,22 @@ const s1old = runScenario({ name: 'Chăm chỉ — CÙNG kịch bản, cây ăn 
 printScenario(s1old);
 const s2 = runScenario({ name: 'Vừa phải — 6 luống cải + xoài + ổi, không lợn/vịt (mô hình MỚI)', plots: 6, crop: 'cai', trees: ['xoai', 'oi'], pigs: false, ducks: false, treeModel: 'new' });
 printScenario(s2);
+// --- Chỉ trồng 1 loại rau, 12 luống, không cây/lợn/vịt: xem loại nào áp đảo ---
+// (lãi ròng = thu bán rau − tiền hạt; chồng + nhiệm vụ vẫn chạy như mọi kịch bản)
+const sTom = runScenario({ name: 'CHỈ cà chua — 12 luống, không cây/lợn/vịt', plots: 12, crop: 'cachua', trees: [], pigs: false, ducks: false, treeModel: 'new' });
+printScenario(sTom);
+const sBi = runScenario({ name: 'CHỈ bí đỏ — 12 luống, không cây/lợn/vịt', plots: 12, crop: 'bido', trees: [], pigs: false, ducks: false, treeModel: 'new' });
+printScenario(sBi);
+const sNgo = runScenario({ name: 'CHỈ ngô — 12 luống, không cây/lợn/vịt', plots: 12, crop: 'ngo', trees: [], pigs: false, ducks: false, treeModel: 'new' });
+printScenario(sNgo);
+const sCai = runScenario({ name: 'CHỈ cải — 12 luống, không cây/lợn/vịt', plots: 12, crop: 'cai', trees: [], pigs: false, ducks: false, treeModel: 'new' });
+printScenario(sCai);
 
 console.log('\n========== KẾT LUẬN ==========');
+function netCrop(r) { return r.tot.crops - r.tot.seeds; }
+console.log('Lãi ròng rau 30 ngày (12 luống, chỉ trồng rau): cà chua ' + fmt(netCrop(sTom)) + ' · bí đỏ ' + fmt(netCrop(sBi)) + ' · ngô ' + fmt(netCrop(sNgo)) + ' · cải ' + fmt(netCrop(sCai)) + ' — chênh nhau tối đa ' + (Math.max(netCrop(sTom), netCrop(sBi), netCrop(sNgo), netCrop(sCai)) / Math.min(netCrop(sTom), netCrop(sBi), netCrop(sNgo), netCrop(sCai))).toFixed(1) + ' lần.');
+console.log('So với hoạt động khác (30 ngày, kịch bản chăm chỉ): trái cây ' + fmt(s1.tot.fruit) + ' · lợn (bán ' + fmt(s1.tot.pigs) + ', trừ mua lợn con ' + fmt(s1.tot.piglets) + ' + cám) · vịt (trứng ' + fmt(s1.tot.ducks) + ', trừ cám 4.000đ/ngày) · chồng ' + fmt(s1.tot.husband) + ' · nhiệm vụ ' + fmt(s1.tot.quests) + '.');
 console.log('Cây ăn quả 30 ngày: mô hình MỚI cho ' + fmt(s1.tot.fruit) + ' — mô hình CŨ cho ' + fmt(s1old.tot.fruit) + ' (giảm ' + Math.round((1 - s1.tot.fruit / s1old.tot.fruit) * 100) + '%).');
 console.log('Số dư cuối 30 ngày: chăm chỉ (mới) ' + fmt(s1.endMoney) + ' vs chăm chỉ (cũ) ' + fmt(s1old.endMoney) + ' — cây cũ chiếm ' + fmt(s1old.endMoney - s1.endMoney) + ' tiền thừa.');
 console.log('Người chơi vừa phải (mới): ' + fmt(s2.endMoney) + ' sau 30 ngày — ' + (s2.endMoney >= 300000 ? 'đủ Quỹ sửa nhà 300k sau ~' + Math.ceil(300000 / ((s2.endMoney - s2.startMoney) / 30)) + ' ngày.' : 'chưa đủ Quỹ sửa nhà 300k — cần cày thêm hoặc chăm hơn.'));
+console.log('Đầu game: ngày 1–6 của kịch bản vừa phải: số dư ngày 1 ' + fmt(s2.rows[0].balance) + ', ngày 6 ' + fmt(s2.rows[5].balance) + ' — ' + (s2.rows[5].balance < 600000 ? 'vẫn chật vật thật.' : 'đã dư dả sớm, cần xem lại.'));

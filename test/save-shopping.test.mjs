@@ -19,6 +19,19 @@ execSync(`node ${path.join(TEST_DIR, 'build-bundle.mjs')} ${BUNDLE}`, { cwd: ROO
 // 2) Cài stub DOM rồi mới nạp bundle (module game chạm document/window khi nạp)
 const { installDomStubs } = await import('./dom-stub.mjs');
 const { localStorage } = installDomStubs();
+// RNG có seed — game bốc rất nhiều thứ ngẫu nhiên (nhiệm vụ lúc nạp qua
+// rollQuests() ở save.ts, giá ngày, trộm, mưa...). Không seed thì test
+// chạy lúc đậu lúc rớt. Dùng cùng seed với economy-sim.mjs.
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+Math.random = mulberry32(20261112);
 const require = createRequire(import.meta.url);
 const g = require(BUNDLE);
 const { G } = g;
@@ -40,6 +53,12 @@ function resetState() {
   Object.assign(G, JSON.parse(JSON.stringify(freshG)));
   localStorage.clear();
   G.started = true;
+  // Xóa nhiệm vụ đã bốc lúc nạp (save.ts bốc 3 việc ngẫu nhiên khi nạp
+  // module): nếu trong đó có việc "mua 1 món" (thưởng 5.000đ) thì mua tivi
+  // hay chuồng lợn sẽ hoàn thành việc đó và tiền lệch đúng 5.000đ — các
+  // kiểm tra tiền ở phần C/E rớt lúc đậu lúc rớt (~20% số lần chạy).
+  // Nhiệm vụ nào cần thì test tự đặt lại tường minh.
+  G.quests = [];
 }
 function nextDay() {
   // Bấm nút "Ngày mới" thật — chạy đúng code qua đêm của day.ts
@@ -238,9 +257,9 @@ resetState();
 G.money = 200000;
 // --- Lịch sinh hoạt theo giờ ---
 const ba = g.villagerById('ba');
-eq('cô Ba 5:30 ở nhà (H2)', g.currentSegment(ba, 330).at, g.HOUSE_POS.h2);
+eq('cô Ba 5:30 ở nhà (trước cửa H2)', g.currentSegment(ba, 330).at, g.HOUSE_FRONT.h2[0]);
 eq('cô Ba 8:00 đang bán ở sạp', g.currentSegment(ba, 480).stall, 'ba');
-eq('cô Ba 18:00 về nhà', g.currentSegment(ba, 1080).at, g.HOUSE_POS.h2);
+eq('cô Ba 18:00 về nhà (trước cửa H2)', g.currentSegment(ba, 1080).at, g.HOUSE_FRONT.h2[0]);
 eq('cô giáo 10:00 ở sân trường', g.currentSegment(g.villagerById('giao'), 600).at, g.SCHOOL_YARD_SPOT);
 eq('bác Hai 8:00 ở ruộng', g.currentSegment(g.villagerById('hai'), 480).at, g.FIELD_SPOT);
 eq('ông Tư 10:00 ở tiệm tạp hóa', g.currentSegment(g.villagerById('tu'), 600).at, g.GROCERY_FRONT);

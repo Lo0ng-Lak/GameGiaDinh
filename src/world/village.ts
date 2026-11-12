@@ -16,11 +16,22 @@ export var MARKET_STALLS = [
   { x: -2, z: -11.5, vendor: "lan", label: "Sạp trái cây chị Lan" },
   { x: 2,  z: -11.5, vendor: "duc", label: "Sạp đồ khô anh Đức" }
 ];
-// Chỗ đứng để nói chuyện với người bán: phía nam sạp, hướng ra đường
-export function stallFront(s) { return { x: s.x, z: s.z + 1.3 }; }
+// Chỗ đứng để nói chuyện với người bán: phía nam sạp, hướng ra đường.
+// +1.65m để đứng NGOÀI vòng chặn của sạp (r=1.5) — trước đây +1.3m nên
+// người bán đứng lọt trong vòng chặn, đi lại phải trượt ra mép mỗi lần.
+export function stallFront(s) { return { x: s.x, z: s.z + 1.65 }; }
 export var GROCERY_POS = { x: -12, z: -12 };
 export var GROCERY_FRONT = { x: -12, z: -9.8 };
 export var HOUSE_POS = { h1: { x: -22, z: -11 }, h2: { x: -22, z: -17.5 } };
+// Chỗ đứng "ở nhà" của dân làng: TRƯỚC CỬA nhà (cửa quay về phía nam),
+// mỗi người một điểm riêng cách nhau 1,2m — trước đây cả 3 người chung
+// 1 điểm nên chồng lên nhau lúc 05:30. h1: bác Hai [0], bà Năm [1],
+// anh Đức [2]; h2: cô Ba [0], chị Lan [1], cô giáo [2]. Mỗi điểm cách
+// tâm nhà ~3m — ngoài vòng chặn nhà (r=2.5).
+export var HOUSE_FRONT = {
+  h1: [{ x: -23.8, z: -8 }, { x: -22.6, z: -8 }, { x: -21.4, z: -8 }],
+  h2: [{ x: -23.8, z: -14.5 }, { x: -22.6, z: -14.5 }, { x: -21.4, z: -14.5 }]
+};
 export var SCHOOL_YARD_SPOT = { x: 21, z: -14.5 };   // cô giáo đứng
 export var SCHOOL_PLAY_SPOT = { x: 19, z: -15 };      // bé An ra sân trường chơi
 export var FIELD_SPOT = { x: -18, z: 2 };             // ruộng bác Hai làm

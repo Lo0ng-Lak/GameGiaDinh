@@ -296,7 +296,14 @@ import * as THREE from 'three';
       bench.position.set(-2.4, 0.5, 3.6); g.add(bench);
       g.position.set(-11, 0, -6); g.rotation.y = 0.5;
       scene.add(g);
-      block(-11, -6, 5.2);
+      // Nhà xoay 0.5 rad (8×5,4m) — 1 vòng tròn r=5,2 phủ lấn ~2,5m ra phía
+      // bắc, nuốt cả điểm đứng trước tiệm tạp hóa (-12,-9,8) khiến ông Tư
+      // kẹt không tới được tiệm, và nuốt cả điểm chợ của bác Hai. Thay bằng
+      // 2 vòng r=3,4 đặt dọc trục dài của nhà (đã xoay), ôm sát 4 góc tường
+      // (góc xa nhất cách tâm 3,36m) + 1 vòng nhỏ cho ghế dài trên hiên.
+      // Xem test/npc-pathing.test.mjs.
+      block(-9.24, -6.96, 3.4); block(-12.76, -5.04, 3.4);
+      block(-11.38, -1.69, 1.2); // ghế dài trên hiên
       window.__doorPos = new THREE.Vector3(-9.2, 0, -2.6);
     })();
 

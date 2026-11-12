@@ -7,11 +7,21 @@
  */
 "use strict";
     /* ================== DỮ LIỆU CÂY ================== */
+    // Cân bằng lại 12/11 (sau review GĐ3: cà chua quá mạnh — 12 luống cho
+    // 13.041.600đ/30 ngày, gấp ~9 lần tiền công chồng và gấp ~34 lần cây ăn
+    // quả). Lãi ròng/vụ/luống (bán − hạt): cải 7.000đ, ngô 9.000đ, cà chua
+    // 10.000đ, bí đỏ 12.000đ — chênh nhau tối đa 1,7 lần (cũ: 9.000–42.000đ,
+    // chênh 4,7 lần). 12 luống trồng 1 loại 30 ngày lãi ròng: cải 2,52tr,
+    // ngô 3,24tr, cà chua 3,6tr, bí 4,32tr — ngang tầm tiền công chồng
+    // (~1,5tr) + nhiệm vụ (~0,34tr) + cây/vịt/lợn (~0,8tr) cộng lại, nên
+    // trồng rau vẫn là việc chính nhưng không còn áp đảo mọi hoạt động
+    // khác. Thứ tự lãi theo công chăm: cải (34s, tưới 1) < ngô (46s, 1)
+    // < cà chua (58s, tưới 2) < bí đỏ (92s, tưới 2).
     export var CROPS = {
-      cai:    { name: "Rau cải", seed: 5000,  sell: 14000, grow: 34, waters: 1, yield: 1, fruit: 0x8fce4f },
-      cachua: { name: "Cà chua", seed: 10000, sell: 26000, grow: 58, waters: 2, yield: 2, fruit: 0xe2483a },
-      bido:   { name: "Bí đỏ",   seed: 18000, sell: 52000, grow: 92, waters: 2, yield: 1, fruit: 0xef8f2e },
-      ngo:    { name: "Ngô",     seed: 8000,  sell: 20000, grow: 46, waters: 1, yield: 2, fruit: 0xf2c230 }
+      cai:    { name: "Rau cải", seed: 5000,  sell: 12000, grow: 34, waters: 1, yield: 1, fruit: 0x8fce4f },
+      cachua: { name: "Cà chua", seed: 12000, sell: 11000, grow: 58, waters: 2, yield: 2, fruit: 0xe2483a },
+      bido:   { name: "Bí đỏ",   seed: 18000, sell: 30000, grow: 92, waters: 2, yield: 1, fruit: 0xef8f2e },
+      ngo:    { name: "Ngô",     seed: 9000,  sell: 9000,  grow: 46, waters: 1, yield: 2, fruit: 0xf2c230 }
     };
     export var CROP_KEYS = ["cai", "cachua", "bido", "ngo"];
     // Nông sản không trồng theo luống: nhặt / câu / hái được
