@@ -92,7 +92,7 @@
         position: fixed; left: 50%; transform: translateX(-50%);
         bottom: calc(10px + env(safe-area-inset-bottom));
         z-index: 10; display: flex; gap: 8px; align-items: stretch; padding: 8px;
-        max-width: 96vw;
+        max-width: 96vw; flex-wrap: wrap; justify-content: center;
       }
       .seed-btn {
         border: 2px solid transparent; background: rgba(253,246,227,.08); color: #fdf6e3;
@@ -275,6 +275,9 @@
       <button data-goto="garden" type="button">Tới vườn</button>
       <button data-goto="stall" type="button">Tới sạp bán</button>
       <button data-goto="school" type="button">Tới trường</button>
+      <button data-goto="pond" type="button">Tới ao cá</button>
+      <button data-goto="stove" type="button">Tới bếp</button>
+      <button data-goto="coop" type="button">Tới chuồng gà</button>
       <button data-goto="home" type="button">Về nhà</button>
     </div>
 
@@ -282,11 +285,13 @@
       <button class="seed-btn sel" data-seed="cai" type="button"><span class="nm">Rau cải</span><span class="ct" data-seed-count="cai">Hạt: 4</span></button>
       <button class="seed-btn" data-seed="cachua" type="button"><span class="nm">Cà chua</span><span class="ct" data-seed-count="cachua">Hạt: 2</span></button>
       <button class="seed-btn" data-seed="bido" type="button"><span class="nm">Bí đỏ</span><span class="ct" data-seed-count="bido">Hạt: 1</span></button>
+      <button class="seed-btn" data-seed="ngo" type="button"><span class="nm">Ngô</span><span class="ct" data-seed-count="ngo">Hạt: 2</span></button>
       <div class="tool-chip"><span class="t">Bình tưới</span><span class="v" id="can-text">5/5</span><div id="can-fill"><i style="width:100%"></i></div></div>
-      <div class="tool-chip"><span class="t">Giỏ rau</span><span class="v" id="basket-text">Trống</span></div>
+      <div class="tool-chip"><span class="t">Giỏ nông sản</span><span class="v" id="basket-text">Trống</span></div>
+      <div class="tool-chip"><span class="t">Bữa cơm nhà</span><span class="v" id="meal-text">Chưa nấu</span></div>
     </div>
 
-    <div class="card" id="hint-keys">Đi: <b>W A S D</b> · Nhìn: <b>di chuột tự do</b> (bấm vào cảnh để khóa chuột, <b>Esc</b> để thả)<br />Làm việc: <b>E</b> hoặc <b>bấm chuột</b> · Đổi hạt: <b>1 2 3</b></div>
+    <div class="card" id="hint-keys">Đi: <b>W A S D</b> · Nhìn: <b>di chuột tự do</b> (bấm vào cảnh để khóa chuột, <b>Esc</b> để thả)<br />Làm việc: <b>E</b> hoặc <b>bấm chuột</b> · Đổi hạt: <b>1 2 3 4</b></div>
 
     <div id="joy"><div id="joy-knob"></div></div>
     <button id="btn-act" type="button">Chạm</button>
@@ -296,7 +301,7 @@
     <div class="overlay" id="shop-overlay">
       <div class="panel">
         <h2>Sạp của cô Tư ở đầu chợ</h2>
-        <p class="sub">Bán rau mình trồng, mua thêm hạt giống. Giá để sẵn, không mặc cả — bản chơi thử giữ nhẹ nhàng vậy thôi.</p>
+        <p class="sub">Bán hết nông sản trong giỏ — rau, ngô, trứng gà, cá câu ở ao, chuối hái trong vườn — rồi mua thêm hạt giống. Giá để sẵn, không mặc cả.</p>
         <div id="shop-sell"></div>
         <div id="shop-rows"></div>
         <button class="ghost-btn" id="shop-close" type="button">Đóng sạp, về làm vườn</button>
@@ -322,7 +327,12 @@
           <li><b>Đưa con đi học:</b> lại gần bé An ở hiên nhà, bấm <b>E</b> rồi dẫn bé tới cổng trường trước <b>7:30</b>.</li>
           <li><b>Trồng rau:</b> chọn hạt ở thanh dưới, lại gần luống đất trống, bấm <b>E</b>.</li>
           <li><b>Tưới nước:</b> ra giếng múc đầy bình, rồi tưới từng luống. Đất khô thì cây ngừng lớn.</li>
-          <li><b>Thu hoạch &amp; bán:</b> cây chín thì hái vào giỏ, mang ra sạp cô Tư ở đầu đường để bán và mua hạt mới.</li>
+          <li><b>Thu hoạch &amp; bán:</b> cây chín thì hái vào giỏ, mang ra sạp cô Tư ở đầu đường để bán và mua hạt mới. Giờ có thêm cây <b>ngô</b> nữa.</li>
+          <li><b>Nuôi gà:</b> ra chuồng cho gà ăn (3.000đ cám), chờ gà đẻ rồi nhặt trứng mang bán.</li>
+          <li><b>Câu cá:</b> ra bờ ao thả câu, chờ cá cắn rồi giật cần đúng lúc cá cắn câu.</li>
+          <li><b>Nấu cơm:</b> ghé bếp củi nấu bữa cơm nhà — có cá hay trứng trong giỏ thì dùng luôn, không thì tốn 8.000đ đồ ăn. Nấu xong cả nhà vui, được +1 sao.</li>
+          <li><b>Hái chuối:</b> buồng chuối chín vàng ở các cây chuối quanh sân thì hái mang bán; hái xong cây ra buồng mới.</li>
+          <li><b>Chiều về:</b> khoảng 17:00 anh đi làm thuê về tới hiên, mang theo tiền công ngày — hôm được hôm ít, như đi làm thật.</li>
           <li>Đi bằng <b>WASD</b>, làm việc bằng <b>E</b>. Nhìn quanh: <b>bấm một lần vào cảnh rồi di chuột tự do</b> — không cần giữ chuột; bấm <b>Esc</b> khi muốn thả chuột ra. Trên điện thoại: cần điều khiển để đi, vuốt để nhìn, nút <b>Chạm</b> để làm việc.</li>
         </ul>
         <button class="big-btn" id="btn-start" type="button">Ra sân, bắt đầu ngày mới</button>
@@ -336,23 +346,38 @@
     var CROPS = {
       cai:    { name: "Rau cải", seed: 5000,  sell: 14000, grow: 34, waters: 1, yield: 1, fruit: 0x8fce4f },
       cachua: { name: "Cà chua", seed: 10000, sell: 26000, grow: 58, waters: 2, yield: 2, fruit: 0xe2483a },
-      bido:   { name: "Bí đỏ",   seed: 18000, sell: 52000, grow: 92, waters: 2, yield: 1, fruit: 0xef8f2e }
+      bido:   { name: "Bí đỏ",   seed: 18000, sell: 52000, grow: 92, waters: 2, yield: 1, fruit: 0xef8f2e },
+      ngo:    { name: "Ngô",     seed: 8000,  sell: 20000, grow: 46, waters: 1, yield: 2, fruit: 0xf2c230 }
     };
-    var CROP_KEYS = ["cai", "cachua", "bido"];
+    var CROP_KEYS = ["cai", "cachua", "bido", "ngo"];
+    // Nông sản không trồng theo luống: nhặt / câu / hái được
+    var GOODS = {
+      trung: { name: "Trứng gà", sell: 4000 },
+      ca:    { name: "Cá rô ao", sell: 22000 },
+      chuoi: { name: "Nải chuối", sell: 15000 }
+    };
+    var GOOD_KEYS = ["trung", "ca", "chuoi"];
+    function priceOf(k) { return CROPS[k] ? CROPS[k].sell : GOODS[k].sell; }
 
     /* ================== TRẠNG THÁI GAME ================== */
     var G = {
       started: false, dayOver: false,
       day: 1, minutes: 5 * 60 + 30,           // 05:30
       money: 60000, stars: 0,
-      seeds: { cai: 4, cachua: 2, bido: 1 },
-      produce: { cai: 0, cachua: 0, bido: 0 },
+      seeds: { cai: 4, cachua: 2, bido: 1, ngo: 2 },
+      produce: { cai: 0, cachua: 0, bido: 0, ngo: 0, trung: 0, ca: 0, chuoi: 0 },
       selSeed: "cai",
       can: 5, canMax: 5,
       childState: "home",                      // home | follow | school | away
       schoolOnTime: null,                      // true/false khi đã đưa
       earnedToday: 0, harvestedToday: 0, plantedToday: 0,
-      dayStatsReset: false
+      dayStatsReset: false,
+      // Hoạt động mới: gà đẻ trứng, câu cá, nấu cơm, chuối, chồng đi làm về
+      chicken: { fed: false, timer: 0, ready: 0 },
+      eggsToday: 0, fishToday: 0,
+      fish: { state: "idle", t: 0 },          // idle | wait | bite
+      cookedToday: false, smokeBoost: 0,
+      husband: { state: "notyet", wage: 0, wp: 0, talked: false }  // notyet | walking | home
     };
     var SCHOOL_BELL = 7 * 60 + 30;             // 7:30
     var DAY_END = 19 * 60;                     // 19:00
@@ -362,9 +387,9 @@
       var h = Math.floor(m / 60), mm = Math.floor(m % 60);
       return (h < 10 ? "0" : "") + h + ":" + (mm < 10 ? "0" : "") + mm;
     }
-    function produceTotal() { return G.produce.cai + G.produce.cachua + G.produce.bido; }
+    function produceTotal() { var t = 0; for (var k in G.produce) t += G.produce[k]; return t; }
     function produceValue() {
-      var v = 0; CROP_KEYS.forEach(function (k) { v += G.produce[k] * CROPS[k].sell; }); return v;
+      var v = 0; for (var k in G.produce) v += G.produce[k] * priceOf(k); return v;
     }
 
     /* ================== ÂM THANH NHẸ (tổng hợp) ================== */
@@ -384,6 +409,9 @@
     function sndCoin() { beep(990, 0.1, "square", 0.09); beep(1320, 0.18, "square", 0.09, 0.08); }
     function sndBell() { beep(1568, 0.5, "sine", 0.1); beep(1568, 0.7, "sine", 0.08, 0.55); }
     function sndStep() { beep(120 + Math.random() * 40, 0.05, "triangle", 0.03); }
+    function sndCluck() { beep(500, 0.07, "square", 0.07); beep(420, 0.09, "square", 0.07, 0.1); beep(560, 0.07, "square", 0.06, 0.22); }
+    function sndSplash() { beep(340, 0.16, "sine", 0.1); beep(620, 0.22, "sine", 0.07, 0.07); beep(950, 0.14, "sine", 0.05, 0.15); }
+    function sndCook() { beep(180, 0.3, "sine", 0.07); beep(240, 0.3, "sine", 0.06, 0.18); beep(150, 0.4, "sine", 0.06, 0.4); }
 
     /* ================== THREE — DỰNG CẢNH QUÊ ================== */
     var container = document.getElementById("scene");
@@ -392,7 +420,7 @@
     scene.fog = new THREE.Fog(0xcfe3d8, 34, 95);
 
     var camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 300);
-    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    var renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -639,6 +667,31 @@
         var log = cyl(0.11, 0.11, 1.1, 0x8a5a2b, -15.2, 0.14 + (i > 2 ? 0.24 : 0), -0.4 + (i % 3) * 0.3, 8);
         log.rotation.z = Math.PI / 2;
       }
+      // Bếp củi ngoài trời trước bếp phụ: thân gạch, nồi, khói bốc
+      var stove = new THREE.Group();
+      var sbase = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.62, 0.8), mat(0xa0522d));
+      sbase.position.y = 0.31; sbase.castShadow = true; stove.add(sbase);
+      var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.26, 0.28, 12), mat(0x3c3c40));
+      pot.position.y = 0.76; stove.add(pot);
+      var lid = new THREE.Mesh(new THREE.SphereGeometry(0.29, 12, 6), mat(0x55555a));
+      lid.position.y = 0.9; lid.scale.y = 0.35; stove.add(lid);
+      stove.position.set(-16.4, 0, 0.9); scene.add(stove);
+      window.__stovePos = new THREE.Vector3(-16.4, 0, 0.9);
+      block(-16.4, 0.9, 0.75);
+      // Khói bếp: chùm sprite xám bốc lên, nấu cơm thì bốc mạnh hơn
+      var smkCv = document.createElement("canvas"); smkCv.width = smkCv.height = 64;
+      var smkCx = smkCv.getContext("2d");
+      var smkGr = smkCx.createRadialGradient(32, 32, 3, 32, 32, 32);
+      smkGr.addColorStop(0, "rgba(235,235,235,0.55)"); smkGr.addColorStop(1, "rgba(235,235,235,0)");
+      smkCx.fillStyle = smkGr; smkCx.fillRect(0, 0, 64, 64);
+      var smkTex = new THREE.CanvasTexture(smkCv);
+      window.__smoke = [];
+      for (var smi = 0; smi < 9; smi++) {
+        var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: smkTex, transparent: true, opacity: 0.3, depthWrite: false }));
+        sp.userData.ph = smi / 9;
+        sp.position.set(-17.4, 2.8, -1.4);
+        scene.add(sp); window.__smoke.push(sp);
+      }
       block(-17.5, -1.5, 2.3); block(-15.2, -0.2, 0.8);
     })();
 
@@ -718,6 +771,17 @@
         scene.add(rp); window.__ripples.push(rp);
       }
       block(15.5, 3, 3.2);
+      // Cầu gỗ nhỏ ra ao để đứng câu cá + phao câu (hiện khi thả câu)
+      var dock = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.14, 1.1), texMat(woodTex));
+      dock.position.set(13.1, 0.1, 4.9); dock.rotation.y = 0.5; dock.receiveShadow = true; scene.add(dock);
+      window.__fishPos = new THREE.Vector3(12.9, 0, 4.6);
+      var bob = new THREE.Group();
+      var bobTop = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xe2483a }));
+      bobTop.position.y = 0.03; bob.add(bobTop);
+      var bobBot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      bobBot.position.y = -0.04; bob.add(bobBot);
+      bob.position.set(14.6, 0.06, 3.4); bob.visible = false; scene.add(bob);
+      window.__bobber = bob;
     })();
 
     /* ---- Cỏ, hoa, cây trái: lớp chi tiết làm cảnh sống ---- */
@@ -771,7 +835,8 @@
       fim.count = fi; fim.instanceMatrix.needsUpdate = true;
       if (fim.instanceColor) fim.instanceColor.needsUpdate = true;
       scene.add(fim);
-      // Cây chuối: thân + tàu lá xòe + buồng chuối xanh
+      // Cây chuối: thân + tàu lá xòe + buồng chuối (xanh -> chín vàng thì hái được)
+      window.__bananas = [];
       function banana(x, z, s) {
         var g = new THREE.Group();
         var trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.09 * s, 0.15 * s, 2.4 * s, 8), mat(0x8fa653));
@@ -785,9 +850,11 @@
           leaf.rotation.z = -0.28 - Math.random() * 0.3;
           leaf.castShadow = true; g.add(leaf);
         }
-        var bunch = new THREE.Mesh(new THREE.SphereGeometry(0.2 * s, 8, 8), mat(0xa8c256));
-        bunch.position.set(0.18 * s, 2.05 * s, 0); bunch.scale.y = 1.3; g.add(bunch);
+        var bunchMat = mat(0xf2d13c);
+        var bunch = new THREE.Mesh(new THREE.SphereGeometry(0.2 * s, 8, 8), bunchMat);
+        bunch.position.set(0.18 * s, 2.05 * s, 0); bunch.scale.y = 1.3; bunch.castShadow = true; g.add(bunch);
         g.position.set(x, 0, z); scene.add(g);
+        window.__bananas.push({ x: x, z: z, bunch: bunch, mat: bunchMat, ripe: true, timer: 0, s: s });
         block(x, z, 0.55);
       }
       banana(19.5, 8.5, 1.1); banana(-19.5, -5.5, 1.0); banana(13.5, -9.2, 0.95); banana(-6, 13.8, 1.05);
@@ -886,6 +953,34 @@
       }
     })();
 
+    /* ---- Chuồng gà + ổ rơm đẻ trứng ---- */
+    var coopPos = new THREE.Vector3(-0.5, 0, 8.1);
+    (function buildCoop() {
+      var g = new THREE.Group();
+      var nest = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.32, 0.7), texMat(woodTex));
+      nest.position.y = 0.16; nest.castShadow = true; g.add(nest);
+      var straw = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.1, 0.55), texMat(riceTex));
+      straw.position.y = 0.36; g.add(straw);
+      var roofC = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, 0.95), mat(0xb4552f));
+      roofC.position.y = 0.95; roofC.rotation.x = 0.2; g.add(roofC);
+      [-0.8, 0.8].forEach(function (s) {
+        var p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 0.08), mat(0x7a4a21));
+        p.position.set(s, 0.48, -0.3); g.add(p);
+      });
+      g.position.copy(coopPos); scene.add(g);
+      // Trứng trong ổ: hiện dần khi gà đẻ
+      window.__eggMeshes = [];
+      var eggGeo = new THREE.SphereGeometry(0.085, 8, 8);
+      var eggMat = mat(0xfdf6e3);
+      for (var ei = 0; ei < 5; ei++) {
+        var egg = new THREE.Mesh(eggGeo, eggMat);
+        egg.scale.y = 1.25;
+        egg.position.set(coopPos.x - 0.6 + ei * 0.3, 0.46, coopPos.z + (ei % 2) * 0.18 - 0.08);
+        egg.visible = false; scene.add(egg); window.__eggMeshes.push(egg);
+      }
+      block(coopPos.x, coopPos.z, 0.9);
+    })();
+
     /* ---- Sào phơi áo ---- */
     (function buildClothesline() {
       [-1.6, 1.6].forEach(function (s) {
@@ -926,10 +1021,33 @@
     function clearGroup(gr) {
       while (gr.children.length) {
         var c = gr.children.pop();
-        if (c.geometry) c.geometry.dispose();
+        if (c.geometry && !c.geometry.userData.shared) c.geometry.dispose();
         gr.remove(c);
       }
     }
+    // Hình khối dùng chung cho cây trồng — tạo 1 lần, dùng lại mọi lần vẽ, khỏi tốn bộ nhớ
+    function sharedGeo(geo) { geo.userData.shared = true; return geo; }
+    var GEO = {
+      coneLeaf: sharedGeo(new THREE.ConeGeometry(0.3, 0.55, 7)),
+      ballLeaf: sharedGeo(new THREE.SphereGeometry(0.3, 10, 8)),
+      bush: sharedGeo(new THREE.SphereGeometry(0.55, 10, 8)),
+      flatLeaf: sharedGeo(new THREE.SphereGeometry(0.42, 9, 7)),
+      fruitS: sharedGeo(new THREE.SphereGeometry(0.13, 8, 8)),
+      pumpL: sharedGeo(new THREE.SphereGeometry(0.34, 12, 10)),
+      pumpS: sharedGeo(new THREE.SphereGeometry(0.26, 12, 10)),
+      sprout: sharedGeo(new THREE.ConeGeometry(0.12, 0.3, 6)),
+      stalk: sharedGeo(new THREE.CylinderGeometry(0.035, 0.05, 1.5, 6)),
+      stake: sharedGeo(new THREE.CylinderGeometry(0.04, 0.05, 1.1, 6)),
+      cob: sharedGeo(new THREE.CylinderGeometry(0.07, 0.09, 0.42, 8)),
+      dropBall: sharedGeo(new THREE.SphereGeometry(0.11, 8, 8)),
+      dropTip: sharedGeo(new THREE.ConeGeometry(0.07, 0.14, 8))
+    };
+    var fruitMats = {};
+    function fruitMat(k) {
+      if (!fruitMats[k]) fruitMats[k] = mat(CROPS[k].fruit);
+      return fruitMats[k];
+    }
+    var stakeMat = mat(0x7a4a21);
     function addMesh(gr, geo, material, x, y, z, sy) {
       var m = new THREE.Mesh(geo, material);
       m.position.set(x, y, z); if (sy) m.scale.y = sy;
@@ -947,36 +1065,54 @@
         for (i = 0; i < 5; i++) {
           a = i / 5 * Math.PI * 2;
           x = Math.cos(a) * 0.45; z = Math.sin(a) * 0.45;
-          addMesh(p.cropGroup, new THREE.ConeGeometry(0.3 * s + 0.08, 0.55 * s + 0.12, 7),
-            stage === 0 ? sproutMat : leafLight, x, 0.35 + 0.25 * s, z);
+          var cm = addMesh(p.cropGroup, GEO.coneLeaf, stage === 0 ? sproutMat : leafLight, x, 0.35 + 0.25 * s, z);
+          cm.scale.set(s + 0.27, s + 0.22, s + 0.27);
         }
-        addMesh(p.cropGroup, new THREE.SphereGeometry(0.3 * s, 10, 8), stage === 0 ? sproutMat : leafMat, 0, 0.35 + 0.3 * s, 0, 0.75);
+        var bm = addMesh(p.cropGroup, GEO.ballLeaf, stage === 0 ? sproutMat : leafMat, 0, 0.35 + 0.3 * s, 0);
+        bm.scale.set(s, s * 0.75, s);
       } else if (p.type === "cachua") {
-        addMesh(p.cropGroup, new THREE.SphereGeometry(0.55 * s + 0.1, 10, 8), leafMat, 0, 0.35 + 0.55 * s, 0, 0.8);
-        addMesh(p.cropGroup, new THREE.CylinderGeometry(0.04, 0.05, 0.9 * s + 0.2, 6), mat(0x7a4a21), 0.25, 0.35 + 0.45 * s, 0.25);
+        var tm = addMesh(p.cropGroup, GEO.bush, leafMat, 0, 0.35 + 0.55 * s, 0);
+        tm.scale.set(s + 0.18, (s + 0.18) * 0.8, s + 0.18);
+        var sm = addMesh(p.cropGroup, GEO.stake, stakeMat, 0.25, 0.35 + 0.45 * s, 0.25);
+        sm.scale.y = (0.9 * s + 0.2) / 1.1;
         if (stage === 2) for (i = 0; i < 5; i++) {
           a = i / 5 * Math.PI * 2 + 0.5;
-          addMesh(p.cropGroup, new THREE.SphereGeometry(0.13, 8, 8), mat(c.fruit),
+          addMesh(p.cropGroup, GEO.fruitS, fruitMat(p.type),
             Math.cos(a) * 0.5, 0.75 + (i % 2) * 0.25, Math.sin(a) * 0.5);
         }
+      } else if (p.type === "ngo") {
+        // Ngô: 3 thân cao, lá dài, chín thì có bắp vàng
+        [[-0.35, -0.2], [0.3, 0.25], [0.05, -0.45]].forEach(function (sp2, si) {
+          var st = addMesh(p.cropGroup, GEO.stalk, leafMat, sp2[0], 0.35 + 0.75 * s, sp2[1]);
+          st.scale.y = s;
+          var lf = addMesh(p.cropGroup, GEO.flatLeaf, leafLight, sp2[0], 0.35 + 1.5 * s, sp2[1]);
+          lf.scale.set(0.55 * s + 0.15, 0.3 * s + 0.1, 0.55 * s + 0.15);
+          if (stage === 2) {
+            var cob = addMesh(p.cropGroup, GEO.cob, fruitMat("ngo"), sp2[0] + 0.14, 0.35 + 0.95 * s, sp2[1]);
+            cob.rotation.z = 0.55; cob.rotation.y = si * 1.7;
+          }
+        });
+        if (stage === 0) addMesh(p.cropGroup, GEO.sprout, sproutMat, 0, 0.45, 0);
       } else { // bí đỏ: dây bò + quả nằm đất
         for (i = 0; i < 4; i++) {
           a = i / 4 * Math.PI * 2 + 0.4;
-          addMesh(p.cropGroup, new THREE.SphereGeometry(0.42 * s + 0.06, 9, 7), leafMat,
-            Math.cos(a) * 0.55, 0.42, Math.sin(a) * 0.55, 0.5);
+          var pm = addMesh(p.cropGroup, GEO.flatLeaf, leafMat,
+            Math.cos(a) * 0.55, 0.42, Math.sin(a) * 0.55);
+          pm.scale.set(s + 0.14, (s + 0.14) * 0.5, s + 0.14);
         }
         if (stage === 2) {
-          addMesh(p.cropGroup, new THREE.SphereGeometry(0.34, 12, 10), mat(c.fruit), 0.3, 0.5, 0.15, 0.78);
-          addMesh(p.cropGroup, new THREE.SphereGeometry(0.26, 12, 10), mat(c.fruit), -0.45, 0.44, -0.3, 0.78);
+          addMesh(p.cropGroup, GEO.pumpL, fruitMat(p.type), 0.3, 0.5, 0.15, 0.78);
+          addMesh(p.cropGroup, GEO.pumpS, fruitMat(p.type), -0.45, 0.44, -0.3, 0.78);
         } else if (stage === 0) {
-          addMesh(p.cropGroup, new THREE.ConeGeometry(0.12, 0.3, 6), sproutMat, 0, 0.45, 0);
+          addMesh(p.cropGroup, GEO.sprout, sproutMat, 0, 0.45, 0);
         }
       }
       // Dấu hiệu: khô nước -> giọt nước xanh lơ lửng; chín -> vòng vàng dưới đất
       if (p.state === "growing" && !p.watered) {
-        var drop = addMesh(p.markGroup, new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: 0x6ec3e8 }), 0, 1.35, 0, 1.35);
+        var dm = drawCrop._dm || (drawCrop._dm = new THREE.MeshBasicMaterial({ color: 0x6ec3e8 }));
+        var drop = addMesh(p.markGroup, GEO.dropBall, dm, 0, 1.35, 0, 1.35);
         drop.name = "drop";
-        var tip = addMesh(p.markGroup, new THREE.ConeGeometry(0.07, 0.14, 8), new THREE.MeshBasicMaterial({ color: 0x6ec3e8 }), 0, 1.52, 0);
+        var tip = addMesh(p.markGroup, GEO.dropTip, dm, 0, 1.52, 0);
         tip.name = "drop";
       }
       if (p.state === "mature") {
@@ -1140,6 +1276,89 @@
       scene.add(child);
     })();
 
+    /* ================== ANH CHỒNG — CHIỀU ĐI LÀM THUÊ VỀ ================== */
+    var husband, husbandParts = {};
+    var husbandPath = [
+      new THREE.Vector3(30, 0, -14), new THREE.Vector3(16, 0, -13.4), new THREE.Vector3(4, 0, -9.5),
+      new THREE.Vector3(-3, 0, -5), new THREE.Vector3(-7.6, 0, -2.2)
+    ];
+    (function buildHusband() {
+      husband = new THREE.Group();
+      [-0.11, 0.11].forEach(function (s, idx) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.62, 0.14), mat(0x4a4a52));
+        leg.position.y = -0.31;
+        var piv = new THREE.Group(); piv.position.set(s, 0.78, 0); piv.add(leg); husband.add(piv);
+        husbandParts[idx === 0 ? "legL" : "legR"] = piv;
+      });
+      var torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.66, 0.27), mat(0x7a6a4f));
+      torso.position.y = 1.11; torso.castShadow = true; husband.add(torso);
+      [-1, 1].forEach(function (s) {
+        var piv = new THREE.Group(); piv.position.set(s * 0.31, 1.38, 0);
+        var arm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.58, 0.11), mat(0xe8b48c));
+        arm.position.y = -0.26; piv.add(arm); husband.add(piv);
+        husbandParts[s < 0 ? "armL" : "armR"] = piv;
+      });
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat(0xd9a878));
+      head.position.y = 1.68; head.castShadow = true; husband.add(head);
+      var hat = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.17, 12), mat(0xd6b26a));
+      hat.position.y = 1.84; husband.add(hat);
+      // Bọc đồ nghề vác trên vai
+      var bundle = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.3, 0.3), mat(0x38618c));
+      bundle.position.set(0.3, 1.32, -0.24); husband.add(bundle);
+      husband.position.copy(husbandPath[0]);
+      husband.visible = false;
+      scene.add(husband);
+    })();
+
+    /* ================== ĐỜI SỐNG NỀN: CHIM BAY, LÁ RƠI, SAO ĐÊM, ĐÈN HIÊN ================== */
+    (function buildAmbientLife() {
+      // Đàn chim bay ngang trời
+      window.__birds = [];
+      var birdMat = new THREE.MeshBasicMaterial({ color: 0x2e3a2a, side: THREE.DoubleSide });
+      for (var bi = 0; bi < 6; bi++) {
+        var b = new THREE.Group();
+        var wgeoL = new THREE.PlaneGeometry(0.75, 0.22); wgeoL.translate(-0.37, 0, 0);
+        var wgeoR = new THREE.PlaneGeometry(0.75, 0.22); wgeoR.translate(0.37, 0, 0);
+        var wl = new THREE.Mesh(wgeoL, birdMat), wr = new THREE.Mesh(wgeoR, birdMat);
+        wl.rotation.x = -Math.PI / 2; wr.rotation.x = -Math.PI / 2;
+        b.add(wl); b.add(wr);
+        b.userData = { off: bi * 1.6, row: (bi % 3) * 1.3, wl: wl, wr: wr };
+        b.position.set(-130, 25 + (bi % 3) * 1.6, -55 + bi * 3);
+        scene.add(b); window.__birds.push(b);
+      }
+      // Lá rơi quanh mấy cây lớn
+      var ln = 36, lpos = new Float32Array(ln * 3);
+      window.__leafBase = [];
+      var treeSpots = [[-16, 9], [16.5, 7.5], [-7, -11.5], [12, 14.5]];
+      for (var li = 0; li < ln; li++) {
+        var ts = treeSpots[li % treeSpots.length];
+        var bx = ts[0] + (Math.random() - 0.5) * 3.4, bz = ts[1] + (Math.random() - 0.5) * 3.4;
+        window.__leafBase.push({ x: bx, z: bz, ph: Math.random() });
+        lpos[li * 3] = bx; lpos[li * 3 + 1] = 3; lpos[li * 3 + 2] = bz;
+      }
+      var lgeo = new THREE.BufferGeometry(); lgeo.setAttribute("position", new THREE.BufferAttribute(lpos, 3));
+      var leaves = new THREE.Points(lgeo, new THREE.PointsMaterial({ color: 0x86b45c, size: 0.16, transparent: true, opacity: 0.85, depthWrite: false }));
+      scene.add(leaves); window.__leaves = leaves;
+      // Sao trên trời, hiện dần lúc chập tối
+      var sn = 240, spos = new Float32Array(sn * 3);
+      for (var si2 = 0; si2 < sn; si2++) {
+        var th = Math.random() * Math.PI * 2, ph2 = Math.random() * Math.PI * 0.42;
+        spos[si2 * 3] = Math.cos(th) * Math.cos(ph2) * 215;
+        spos[si2 * 3 + 1] = Math.sin(ph2) * 215 + 8;
+        spos[si2 * 3 + 2] = Math.sin(th) * Math.cos(ph2) * 215;
+      }
+      var sgeo = new THREE.BufferGeometry(); sgeo.setAttribute("position", new THREE.BufferAttribute(spos, 3));
+      var stars = new THREE.Points(sgeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+      stars.frustumCulled = false; scene.add(stars); window.__stars = stars;
+      // Đèn vàng trước hiên nhà, chập tối tự sáng
+      var lamp = new THREE.PointLight(0xffb45e, 0, 11, 1.6);
+      lamp.position.set(-9.4, 2.3, -2.4); scene.add(lamp);
+      window.__porchLight = lamp;
+      var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffe9a8 }));
+      bulb.position.copy(lamp.position); scene.add(bulb);
+      window.__porchBulb = bulb;
+    })();
+
     /* ================== NGƯỜI CHƠI (POV) ================== */
     var player = { x: 13.5, z: 12.5, yaw: 0.85, pitch: -0.04, bobT: 0, moving: false };
     var keys = {};
@@ -1149,6 +1368,7 @@
       if (e.code === "Digit1") selectSeed("cai");
       if (e.code === "Digit2") selectSeed("cachua");
       if (e.code === "Digit3") selectSeed("bido");
+      if (e.code === "Digit4") selectSeed("ngo");
     });
     document.addEventListener("keyup", function (e) { keys[e.code] = false; });
 
@@ -1257,6 +1477,7 @@
       el("can-fill").firstElementChild.style.width = (G.can / G.canMax * 100) + "%";
       var bt = produceTotal();
       el("basket-text").textContent = bt === 0 ? "Trống" : bt + " món";
+      el("meal-text").textContent = G.cookedToday ? "Đã nấu" : "Chưa nấu";
       CROP_KEYS.forEach(function (k) {
         document.querySelector('[data-seed-count="' + k + '"]').textContent =
           "Hạt: " + G.seeds[k] + " · Giỏ: " + G.produce[k];
@@ -1277,6 +1498,11 @@
         return "Đang nắm tay bé An — đi theo đường đất tới <b>cổng trường</b> (vòng vàng ở cuối đường).";
       var mature = plots.some(function (p) { return p.state === "mature"; });
       if (mature) return "Có luống <b>rau đã chín</b> (vòng vàng) — lại gần bấm E để thu hoạch.";
+      if (G.fish.state === "bite") return "<b>Cá đang cắn câu ở ao!</b> — chạy nhanh ra bờ ao giật cần.";
+      if (G.chicken.ready > 0) return "Ổ gà có <b>" + G.chicken.ready + " trứng</b> — ra chuồng gà nhặt trứng vào giỏ.";
+      if (!G.cookedToday && G.minutes >= 630 && G.minutes < 1080)
+        return "Nhớ ghé <b>bếp củi nấu cơm</b> cho cả nhà — có cá hay trứng trong giỏ thì dùng luôn.";
+      if (G.husband.state === "walking") return "Anh đi làm thuê đang về tới — ra hiên đón anh nhé.";
       if (produceTotal() > 0) return "Giỏ đang có rau — mang ra <b>sạp cô Tư</b> ở đầu đường để bán, mua thêm hạt.";
       var dry = plots.some(function (p) { return p.state === "growing" && !p.watered; });
       if (dry) return "Có luống đang <b>khô nước</b> (giọt xanh) — múc nước ở giếng rồi tưới, cây mới lớn tiếp.";
@@ -1300,6 +1526,11 @@
       consider("well", wellPos.x, wellPos.z, 2.6);
       consider("stall", stallPos.x, stallPos.z, 3.1);
       consider("door", doorPos.x, doorPos.z, 2.6);
+      consider("coop", coopPos.x, coopPos.z, 2.6);
+      consider("fish", window.__fishPos.x, window.__fishPos.z, 2.5);
+      consider("stove", window.__stovePos.x, window.__stovePos.z, 2.5);
+      (window.__bananas || []).forEach(function (b) { consider("banana", b.x, b.z, 2.3, { banana: b }); });
+      if (G.husband.state === "home") consider("husband", husband.position.x, husband.position.z, 2.4);
       if (G.childState === "home") consider("child", child.position.x, child.position.z, 2.4);
       if (!best) return null;
       // Nhãn theo ngữ cảnh
@@ -1313,7 +1544,35 @@
       else if (best.kind === "stall") best.label = "Tới sạp cô Tư — bán rau, mua hạt";
       else if (best.kind === "door") best.label = "Vào nhà nghỉ — kết thúc ngày";
       else if (best.kind === "child") best.label = "Nắm tay bé An, đưa đi học";
+      else if (best.kind === "coop") {
+        if (G.chicken.ready > 0) best.label = "Nhặt " + G.chicken.ready + " trứng gà trong ổ";
+        else if (G.chicken.fed) best.label = "Gà đang ăn cám… sắp đẻ trứng";
+        else best.label = "Cho gà ăn cám (3.000đ)";
+      }
+      else if (best.kind === "fish") {
+        if (G.fish.state === "bite") best.label = "Cá cắn câu! Giật cần ngay!";
+        else if (G.fish.state === "wait") best.label = "Đang thả câu… suỵt, chờ cá cắn";
+        else best.label = "Thả câu câu cá ở ao";
+      }
+      else if (best.kind === "stove") {
+        if (G.cookedToday) best.label = "Cơm đã nấu rồi — thơm cả nhà";
+        else if (G.produce.ca > 0) best.label = "Nấu cơm với cá rô trong giỏ";
+        else if (G.produce.trung >= 2) best.label = "Nấu cơm với trứng gà trong giỏ";
+        else best.label = "Nấu cơm nhà (8.000đ đồ ăn)";
+      }
+      else if (best.kind === "banana") best.label = best.banana.ripe ? "Hái nải chuối chín vàng" : "Buồng chuối còn xanh…";
+      else if (best.kind === "husband") best.label = "Nói chuyện với anh";
       return best;
+    }
+
+    function refreshEggs() {
+      if (!window.__eggMeshes) return;
+      window.__eggMeshes.forEach(function (e, i) { e.visible = i < G.chicken.ready; });
+    }
+    function cookMeal(dish) {
+      G.cookedToday = true; G.stars++; G.smokeBoost = 22;
+      sndCook();
+      toast("Đã nấu xong bữa cơm " + dish + ". Cả nhà vui vẻ +1 sao", true);
     }
 
     function doInteract() {
@@ -1353,6 +1612,57 @@
       } else if (t.kind === "child") {
         G.childState = "follow"; sndBell();
         toast("Bé An: \"Đi học thôi mẹ!\" — dẫn bé tới cổng trường nhé.");
+      } else if (t.kind === "coop") {
+        if (G.chicken.ready > 0) {
+          var nEgg = G.chicken.ready;
+          G.produce.trung += nEgg; G.eggsToday += nEgg;
+          G.chicken.ready = 0; G.chicken.fed = false; refreshEggs(); sndHarvest();
+          toast("Nhặt được " + nEgg + " trứng gà vào giỏ.", true);
+        } else if (G.chicken.fed) {
+          toast("Gà đang mổ cám, lát nữa mới đẻ trứng.");
+        } else if (G.money >= 3000) {
+          G.money -= 3000; G.chicken.fed = true; G.chicken.timer = 26 + Math.random() * 10;
+          sndCluck();
+          toast("Đã rải cám cho gà (3.000đ). Chờ một lát gà đẻ trứng nhé.");
+        } else {
+          toast("Không đủ tiền mua cám cho gà — cần 3.000đ.");
+        }
+      } else if (t.kind === "fish") {
+        if (G.fish.state === "idle") {
+          G.fish.state = "wait"; G.fish.t = 3.5 + Math.random() * 3.5;
+          window.__bobber.visible = true; sndSplash();
+          toast("Đã thả câu xuống ao. Chờ cá cắn câu…");
+        } else if (G.fish.state === "wait") {
+          G.fish.state = "idle"; window.__bobber.visible = false;
+          toast("Giật sớm quá — cá chạy mất rồi. Thả câu lại nhé.");
+        } else { // bite
+          G.fish.state = "idle"; window.__bobber.visible = false;
+          G.produce.ca++; G.fishToday++;
+          sndSplash(); sndCoin();
+          toast("Câu được 1 con cá rô! Cho vào giỏ mang bán hoặc nấu cơm.", true);
+        }
+      } else if (t.kind === "stove") {
+        if (G.cookedToday) { toast("Cơm đã nấu rồi, để dành tối cả nhà ăn."); return; }
+        if (G.produce.ca > 0) { G.produce.ca--; cookMeal("cá rô kho tộ"); }
+        else if (G.produce.trung >= 2) { G.produce.trung -= 2; cookMeal("trứng chiên hành"); }
+        else if (G.money >= 8000) { G.money -= 8000; cookMeal("thịt kho trứng"); }
+        else { toast("Chưa có cá hay trứng trong giỏ, tiền cũng không đủ 8.000đ mua đồ ăn."); return; }
+      } else if (t.kind === "banana") {
+        var bn = t.banana;
+        if (bn.ripe) {
+          bn.ripe = false; bn.timer = 80;
+          bn.mat.color.setHex(0xa8c256); bn.bunch.scale.set(0.55, 0.75, 0.55);
+          G.produce.chuoi++; sndHarvest();
+          toast("Hái được 1 nải chuối chín vào giỏ.", true);
+        } else toast("Buồng chuối này còn xanh, chờ chín vàng đã.");
+      } else if (t.kind === "husband") {
+        var lines = [
+          "Anh: \"Hôm nay chủ trả công đàng hoàng. Nhà mình cứ yên tâm.\"",
+          "Anh: \"Cơm em nấu thơm quá, đi làm cả ngày chỉ mong tới bữa này.\"",
+          "Anh: \"Bé An khoe được cô khen. Con gái mình giỏi giống mẹ nó.\""
+        ];
+        toast(lines[Math.min(G.husband.talked, lines.length - 1)]);
+        G.husband.talked++;
       }
       updateHUD();
     }
@@ -1365,11 +1675,11 @@
         sellBox.innerHTML = "";
         var b = document.createElement("button");
         b.className = "big-btn"; b.type = "button";
-        b.textContent = "Bán hết rau trong giỏ — nhận " + fmt(produceValue());
+        b.textContent = "Bán hết nông sản trong giỏ — nhận " + fmt(produceValue());
         b.addEventListener("click", function () {
           var v = produceValue();
           G.money += v; G.earnedToday += v;
-          CROP_KEYS.forEach(function (k) { G.produce[k] = 0; });
+          for (var kk in G.produce) G.produce[kk] = 0;
           sndCoin(); toast("Cô Tư: \"Rau tươi quá!\" Đã bán được " + fmt(v) + ".", true);
           renderShop(); updateHUD();
         });
@@ -1426,9 +1736,12 @@
       var schoolTxt = G.schoolOnTime === true ? "Đúng giờ, bé được khen"
         : G.schoolOnTime === false ? "Hơi trễ một chút" : "Bà Tư hàng xóm đưa hộ";
       el("sum-rows").innerHTML =
-        '<div class="sum-row"><span>Tiền bán rau hôm nay</span><b>' + fmt(G.earnedToday) + '</b></div>' +
+        '<div class="sum-row"><span>Tiền bán nông sản hôm nay</span><b>' + fmt(G.earnedToday) + '</b></div>' +
+        '<div class="sum-row"><span>Tiền công anh đi làm thuê</span><b>' + (G.husband.wage > 0 ? fmt(G.husband.wage) : "Anh về trễ, chưa kịp") + '</b></div>' +
         '<div class="sum-row"><span>Số rau đã thu hoạch</span><b>' + G.harvestedToday + ' món</b></div>' +
+        '<div class="sum-row"><span>Trứng nhặt được · Cá câu được</span><b>' + G.eggsToday + ' trứng · ' + G.fishToday + ' cá</b></div>' +
         '<div class="sum-row"><span>Số luống đã trồng</span><b>' + G.plantedToday + ' luống</b></div>' +
+        '<div class="sum-row"><span>Bữa cơm nhà</span><b>' + (G.cookedToday ? "Đã nấu, cả nhà vui vẻ" : "Chưa nấu hôm nay") + '</b></div>' +
         '<div class="sum-row"><span>Đưa con đi học</span><b>' + schoolTxt + '</b></div>' +
         '<div class="sum-row"><span>Tiền hiện có</span><b>' + fmt(G.money) + '</b></div>';
       dayOverlay.classList.add("show");
@@ -1437,6 +1750,15 @@
       dayOverlay.classList.remove("show");
       G.day++; G.minutes = 5 * 60 + 30; G.dayOver = false;
       G.earnedToday = 0; G.harvestedToday = 0; G.plantedToday = 0;
+      G.eggsToday = 0; G.fishToday = 0;
+      G.cookedToday = false; G.smokeBoost = 0;
+      G.chicken.fed = false; G.chicken.ready = 0; G.chicken.timer = 0; refreshEggs();
+      G.fish.state = "idle"; if (window.__bobber) window.__bobber.visible = false;
+      G.husband.state = "notyet"; G.husband.wage = 0; G.husband.wp = 0; G.husband.talked = false;
+      husband.visible = false; husband.position.copy(husbandPath[0]);
+      (window.__bananas || []).forEach(function (b) {
+        if (!b.ripe && b.timer > 30) b.timer = 30;   // qua đêm chuối chín nhanh hơn
+      });
       G.schoolOnTime = null; G.childState = "home";
       child.position.copy(childHome); child.rotation.y = 2.4; child.visible = true;
       // Qua đêm: luống đã tưới thì lớn thêm một đoạn, đất khô lại
@@ -1453,7 +1775,8 @@
     /* ================== NÚT ĐI TỚI ================== */
     var gotoTargets = {
       well: { x: -4.5, z: 5.6, yaw: 0 }, garden: { x: 9.2, z: 9.2, yaw: 0.82 }, stall: { x: 9, z: -9, yaw: 0 },
-      school: { x: 19.9, z: -12.4, yaw: -1.1 }, home: { x: -7.2, z: -1.2, yaw: 1.1 }
+      school: { x: 19.9, z: -12.4, yaw: -1.1 }, home: { x: -7.2, z: -1.2, yaw: 1.1 },
+      pond: { x: 12.4, z: 5.4, yaw: -0.9 }, stove: { x: -14.2, z: 1.9, yaw: 0.75 }, coop: { x: -0.5, z: 5.6, yaw: 3.14 }
     };
     document.querySelectorAll("[data-goto]").forEach(function (b) {
       b.addEventListener("click", function () {
@@ -1501,6 +1824,11 @@
       sun.color.setHSL(0.09 + 0.03 * Math.sin(sunAng * Math.PI), 0.65, 0.72);
       hemi.intensity = 0.45 + 0.4 * Math.sin(sunAng * Math.PI);
       fireflies.material.opacity = m > 1080 ? Math.min(0.9, (m - 1080) / 60) : 0;
+      // Sao đêm hiện dần + đèn hiên nhà sáng lên lúc chập tối
+      if (window.__stars) window.__stars.material.opacity = m > 1065 ? Math.min(0.95, (m - 1065) / 70) : 0;
+      if (window.__porchLight) window.__porchLight.intensity = m > 1030 ? Math.min(1.15, (m - 1030) / 55 * 1.15) : 0;
+      if (window.__porchBulb) window.__porchBulb.material.color.setHex(m > 1030 ? 0xffd97a : 0xcfc8ae);
+      if (window.__stars) window.__stars.position.copy(camera.position);
       // Đèn cửa sổ nhà sáng lên lúc chập tối
       var glow = m > 1050 ? 1 : 0.15;
       scene.traverse(function (o) { if (o.name === "window-glass") o.material.color.setRGB(1 * glow + 0.3, 0.91 * glow + 0.25, 0.66 * glow); });
@@ -1508,6 +1836,8 @@
 
     /* ================== VÒNG LẶP CHÍNH ================== */
     var clockT = new THREE.Clock();
+    var fpsEMA = 60, prLevel = 0, prTimer = 0;
+    var PR_STEPS = [2, 1.75, 1.5, 1.3, 1.15, 1];
     var stepSndT = 0, promptEl = el("prompt"), promptText = el("prompt-text"), objEl = el("objective");
     var hudT = 0;
     function animate() {
@@ -1635,6 +1965,113 @@
         if (head) head.position.y = 0.42 + (Math.sin(tNow * 6 + i * 2) > 0.6 ? -0.09 : 0);
       });
 
+      /* --- Hoạt động mới: gà đẻ, cá cắn, chuối chín, chồng về --- */
+      if (G.started && !G.dayOver) {
+        if (G.smokeBoost > 0) G.smokeBoost -= dt;
+        // Cho gà ăn rồi thì chờ đẻ trứng
+        if (G.chicken.fed && G.chicken.ready === 0) {
+          G.chicken.timer -= dt;
+          if (G.chicken.timer <= 0) {
+            G.chicken.ready = 3 + Math.floor(Math.random() * 3);
+            refreshEggs(); sndCluck();
+            toast("Gà đẻ trứng rồi — ra ổ ở chuồng gà nhặt trứng!");
+          }
+        }
+        // Câu cá: chờ -> cắn câu (1,6 giây để giật) -> tuột
+        if (G.fish.state !== "idle") {
+          var fdx = player.x - window.__fishPos.x, fdz = player.z - window.__fishPos.z;
+          if (Math.hypot(fdx, fdz) > 5) {
+            G.fish.state = "idle"; window.__bobber.visible = false;
+            toast("Đi xa quá, thu cần rồi.");
+          } else {
+            G.fish.t -= dt;
+            if (G.fish.state === "wait" && G.fish.t <= 0) {
+              G.fish.state = "bite"; G.fish.t = 1.6; beep(1250, 0.09, "square", 0.08);
+              toast("Cá cắn câu! Bấm E giật cần ngay!");
+            } else if (G.fish.state === "bite" && G.fish.t <= 0) {
+              G.fish.state = "idle"; window.__bobber.visible = false;
+              toast("Cá tuột mất rồi… thả câu lại nhé.");
+            }
+          }
+        }
+        if (window.__bobber && window.__bobber.visible) {
+          window.__bobber.position.y = G.fish.state === "bite"
+            ? 0.01 + Math.sin(tNow * 11) * 0.02
+            : 0.06 + Math.sin(tNow * 2.2) * 0.018;
+          window.__bobber.rotation.y = tNow * 0.8;
+        }
+        // Chuối hái rồi thì ra buồng mới
+        (window.__bananas || []).forEach(function (b) {
+          if (!b.ripe) {
+            b.timer -= dt;
+            if (b.timer <= 0) {
+              b.ripe = true; b.mat.color.setHex(0xf2d13c); b.bunch.scale.set(1, 1.3, 1);
+            }
+          }
+        });
+        // 17:00 anh đi làm thuê về
+        if (G.husband.state === "notyet" && G.minutes >= 1020) {
+          G.husband.state = "walking"; G.husband.wp = 1;
+          husband.visible = true;
+          toast("Anh đi làm về rồi — đang đi bộ từ đầu đường về nhà.");
+        }
+      }
+      if (husband.visible && G.husband.state === "walking") {
+        var wp = husbandPath[G.husband.wp];
+        var hx = wp.x - husband.position.x, hz = wp.z - husband.position.z;
+        var hd = Math.hypot(hx, hz);
+        if (hd < 0.25) {
+          G.husband.wp++;
+          if (G.husband.wp >= husbandPath.length) {
+            G.husband.state = "home";
+            husband.rotation.y = 2.3;
+            G.husband.wage = Math.round((40000 + Math.random() * 30000) / 1000) * 1000;
+            G.money += G.husband.wage; sndCoin();
+            toast("Anh về tới nhà, đưa vợ tiền công hôm nay: " + fmt(G.husband.wage) + ".", true);
+            updateHUD();
+          }
+        } else {
+          husband.position.x += hx / hd * dt * 2.3;
+          husband.position.z += hz / hd * dt * 2.3;
+          husband.rotation.y = Math.atan2(hx, hz);
+          var hsw = Math.sin(tNow * 8) * 0.45;
+          husbandParts.legL.rotation.x = hsw; husbandParts.legR.rotation.x = -hsw;
+          husbandParts.armL.rotation.x = -hsw * 0.6; husbandParts.armR.rotation.x = hsw * 0.6;
+        }
+      } else if (husband.visible && G.husband.state === "home") {
+        husbandParts.legL.rotation.x *= 0.8; husbandParts.legR.rotation.x *= 0.8;
+        husbandParts.armL.rotation.x *= 0.8;
+        husbandParts.armR.rotation.x = Math.sin(tNow * 1.4) * 0.08;
+      }
+      // Khói bếp bốc lên (nấu cơm thì bốc mạnh)
+      if (window.__smoke) {
+        var sBoost = G.cookedToday || G.smokeBoost > 0 ? 1.5 : 0.55;
+        window.__smoke.forEach(function (sp2) {
+          var sph = (tNow * 0.13 * sBoost + sp2.userData.ph) % 1;
+          sp2.position.set(-17.4 + sph * 0.8 + Math.sin(tNow * 0.8 + sp2.userData.ph * 9) * 0.13, 2.75 + sph * 2.4, -1.4 + sph * 0.35);
+          var ssc = 0.7 + sph * 2; sp2.scale.set(ssc, ssc, 1);
+          sp2.material.opacity = 0.32 * (1 - sph) * (G.smokeBoost > 0 ? 1.3 : 1);
+        });
+      }
+      // Đàn chim bay ngang + lá rơi
+      if (window.__birds) window.__birds.forEach(function (b) {
+        var bu = b.userData;
+        b.position.x = -135 + ((tNow * 4.6 + bu.off * 16) % 285);
+        b.position.y = 24 + bu.row + Math.sin(tNow * 0.9 + bu.off) * 0.6;
+        b.position.z = -58 + bu.row * 7 + Math.sin(tNow * 0.25 + bu.off) * 2.5;
+        var bfl = Math.sin(tNow * 7 + bu.off) * 0.5;
+        bu.wl.rotation.z = bfl * 0.45; bu.wr.rotation.z = -bfl * 0.45;
+        b.rotation.z = Math.sin(tNow * 0.6 + bu.off) * 0.06;
+      });
+      if (window.__leaves) {
+        var lpos = window.__leaves.geometry.attributes.position;
+        for (var li2 = 0; li2 < window.__leafBase.length; li2++) {
+          var lb = window.__leafBase[li2], cyc = (tNow * 0.085 + lb.ph) % 1;
+          lpos.setXYZ(li2, lb.x + Math.sin(tNow * 0.7 + lb.ph * 8) * 0.55, 3.4 - cyc * 3.35, lb.z + Math.cos(tNow * 0.5 + lb.ph * 6) * 0.3);
+        }
+        lpos.needsUpdate = true;
+      }
+
       /* --- Mục tiêu + gợi ý + HUD --- */
       hudT += dt;
       if (hudT > 0.2) {
@@ -1671,6 +2108,15 @@
         u.wl.rotation.y = fl; u.wr.rotation.y = -fl;
       });
       if (window.__dust) { window.__dust.rotation.y = tNow * 0.008; window.__dust.position.y = Math.sin(tNow * 0.24) * 0.12; }
+      /* --- Tự chỉnh độ nét theo sức máy: máy yếu hạ phân giải cho mượt, máy khỏe nâng lên đẹp --- */
+      if (dt > 0.0001) fpsEMA = fpsEMA * 0.95 + (1 / dt) * 0.05;
+      prTimer += dt;
+      if (prTimer > 2.5) {
+        prTimer = 0;
+        var maxPR = Math.min(window.devicePixelRatio || 1, 2);
+        if (fpsEMA < 42 && prLevel < PR_STEPS.length - 1) { prLevel++; renderer.setPixelRatio(Math.min(maxPR, PR_STEPS[prLevel])); }
+        else if (fpsEMA > 57 && prLevel > 0) { prLevel--; renderer.setPixelRatio(Math.min(maxPR, PR_STEPS[prLevel])); }
+      }
       renderer.render(scene, camera);
     }
 
